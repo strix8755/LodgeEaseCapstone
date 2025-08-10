@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Lodge Ease</title>
+    <link rel="icon" type="image/x-icon" href="../images/LodgeEaseLogo.png">
+    
+    <!-- Debug Script for Auth -->
+    <script>
+        // Debug helper to check session storage and authentication state
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Dashboard loaded');
+            console.log('Session storage justLoggedIn:', sessionStorage.getItem('justLoggedIn'));
+            console.log('Local storage authToken:', localStorage.getItem('authToken'));
+        });
+    </script>
+    
+    <!-- Firebase and Auth Check must be first -->
+    <script type="module" src="../firebase.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    
+    <!-- Other scripts -->
+    <script type="module" src="chartData.js"></script>
+    <script type="module" src="app.js"></script>
+    <script type="module" src="transitions.js"></script>
+    <script type="module" src="../AInalysis/auth-check.js"></script>
+    
+    <!-- Replace local Tailwind with CDN version -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Other resources -->
+    <link rel="stylesheet" href="styles.css">   
+    <link rel="stylesheet" href="transitionStyle.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.min.js"></script>
+    <script type="module" src="../ActivityLog/activityLogger.js"></script>
+
+    <!-- Sidebar and Settings Loader -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { Sidebar } from '../components/sidebar.js';
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js';
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Dashboard.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Dashboard:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML
+            const appElement = document.getElementById('app');
+            if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+            } else {
+                console.error('App element #app not found for sidebar injection');
+                return;
+            }
+
+            // Wait for Firebase initialization
+            try {
+                await initializeFirebasePromise;
+                if (!firebaseInitialized) {
+                    console.warn("Firebase failed to initialize, using default settings");
+                    sidebar.init(false); // Initialize with default if Firebase fails
+                    return;
+                }
+
+                // Fetch setting and initialize sidebar
+                try {
+                    const preferLongTerm = await getPreferLongTermSetting();
+                    sidebar.init(preferLongTerm);
+                    console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+                } catch (error) {
+                    console.error('Error initializing sidebar with setting:', error);
+                    sidebar.init(); // Initialize with default on error
+                }
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+
+    <!-- Notification Service -->
+    <script type="module">
+        import notificationService from './notificationService.js';
+        import { createTestNotification } from './testNotification.js';
+        
+        // Make test function globally available
+        window.createTestNotification = createTestNotification;
+        
+        // Initialize notification service when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Wait a bit for other components to initialize
+                setTimeout(async () => {
+                    await notificationService.initialize();
+                }, 2000);
+            } catch (error) {
+                console.error('Error initializing notification service:', error);
+            }
+        });
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            notificationService.destroy();
+        });
+    </script>
+</head>
+<body>
+    <!-- Sidebar injected here -->
+    <div id="app">
+        <!-- Main Content -->
+        <main class="main-content">
+            <div v-if="loading" class="flex items-center justify-center h-screen">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p class="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+
+            <div v-else-if="!isAuthenticated" class="flex items-center justify-center h-screen">
+                <div class="text-center">
+                    <p class="text-xl text-gray-800 mb-4">Please log in to access the dashboard</p>
+                    <a href="../Login/index.html" class="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600">
+                        Log In
+                    </a>
+                </div>
+            </div>
+
+            <div v-else>
+                <!-- Dashboard Header -->
+                <header class="dashboard-header">
+                    <div class="flex justify-between items-center">
+                        <h1>Dashboard Overview</h1>
+                        <!-- Notification Bell Icon -->
+                        <div class="relative">
+                            <button id="notificationBell" class="notification-bell-btn relative p-2 text-gray-600 hover:text-gray-800 focus:outline-none">
+                                <i class="fas fa-bell text-xl"></i>
+                                <!-- Notification Badge -->
+                                <span id="notificationBadge" class="notification-badge absolute -top-1 -right-1 hidden bg-red-500 text-white rounded-full text-xs px-1.5 py-0.5 min-w-[1.25rem] text-center"></span>
+                            </button>
+                            
+                            <!-- Notification Dropdown -->
+                            <div id="notificationDropdown" class="notification-dropdown absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden">
+                                <div class="notification-header px-4 py-3 border-b border-gray-200">
+                                    <div class="flex justify-between items-center">
+                                        <h3 class="text-lg font-semibold text-gray-800">Notifications</h3>
+                                        <button id="markAllReadBtn" class="text-sm text-blue-600 hover:text-blue-800">Mark all as read</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-list max-h-96 overflow-y-auto">
+                                    <!-- Notifications will be populated here -->
+                                    <div id="noNotifications" class="px-4 py-6 text-center text-gray-500">
+                                        <i class="fas fa-bell-slash text-2xl mb-2"></i>
+                                        <p>No notifications yet</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="notification-footer px-4 py-3 border-t border-gray-200">
+                                    <button id="viewAllNotificationsBtn" class="w-full text-center text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        View All Notifications
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Notification Detail Modal -->
+                <div id="notificationModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+                    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+                        <div class="modal-header px-6 py-4 border-b border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <h2 class="text-xl font-semibold text-gray-800">Booking Details</h2>
+                                <button id="closeNotificationModal" class="text-gray-400 hover:text-gray-600">
+                                    <i class="fas fa-times text-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-body px-6 py-4">
+                            <div id="notificationModalContent">
+                                <!-- Booking details will be populated here -->
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                            <button id="closeNotificationModalBtn" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors">
+                                Close
+                            </button>
+                            <button id="viewFullBookingBtn" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                                View Full Booking
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Unified Metrics Dashboard -->
+                <section class="metrics-dashboard">
+                    <div class="metric-card">
+                        <i class="fas fa-calendar-plus"></i>
+                        <div class="metric-content">
+                            <h3>Today's Bookings <button @click="showMetricInfo('checkins')" class="metric-info-btn"><i class="fas fa-info-circle text-sm text-gray-400"></i></button></h3>
+                            <p class="metric-value">{{ todayCheckIns }}</p>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-door-open"></i>
+                        <div class="metric-content">
+                            <h3>Available Rooms <button @click="showMetricInfo('rooms')" class="metric-info-btn"><i class="fas fa-info-circle text-sm text-gray-400"></i></button></h3>
+                            <p class="metric-value">{{ availableRooms }}</p>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-book"></i>
+                        <div class="metric-content">
+                            <h3>Total Bookings <button @click="showMetricInfo('bookings')" class="metric-info-btn"><i class="fas fa-info-circle text-sm text-gray-400"></i></button></h3>
+                            <p class="metric-value">{{ stats.totalBookings }}</p>
+                            <span class="metric-period">This Month</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-chart-line"></i>
+                        <div class="metric-content">
+                            <h3>Occupancy Rate <button @click="showMetricInfo('occupancy')" class="metric-info-btn"><i class="fas fa-info-circle text-sm text-gray-400"></i></button></h3>
+                            <p class="metric-value">{{ stats.occupancyRate }}</p>
+                            <span class="metric-period">Current</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section" v-cloak>
+                    <div class="chart-container sales-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-chart-line"></i> Sales Analysis
+                                <button @click="showChartInfo('sales')" class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button @click="explainChartContent('sales')" class="chart-explain-btn" title="Explain current data">
+                                    <i class="fas fa-lightbulb"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <div class="chart-controls">
+                            <div class="chart-metrics">
+                                <div class="metric">
+                                    <span>Total Sales:</span>
+                                    <strong>{{ formatCurrency(salesData?.metrics?.totalSales || 0) }}</strong>
+                                </div>
+                                <div class="metric">
+                                    <span>Monthly Growth:</span>
+                                    <strong :class="{'positive': (salesData?.metrics?.monthlyGrowth || 0) > 0, 
+                                                    'negative': (salesData?.metrics?.monthlyGrowth || 0) < 0}">
+                                        {{ (salesData?.metrics?.monthlyGrowth || 0).toFixed(1) }}%
+                                    </strong>
+                                </div>
+                                <div class="metric">
+                                    <span>Yearly Growth:</span>
+                                    <strong :class="{'positive': (salesData?.metrics?.yearOverYearGrowth || 0) > 0, 
+                                                    'negative': (salesData?.metrics?.yearOverYearGrowth || 0) < 0}">
+                                        {{ (salesData?.metrics?.yearOverYearGrowth || 0).toFixed(1) }}%
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container occupancy-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-percentage"></i> Occupancy Analysis
+                                <button @click="showChartInfo('occupancy')" class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button @click="explainChartContent('occupancy')" class="chart-explain-btn" title="Explain current data">
+                                    <i class="fas fa-lightbulb"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="occupancyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container room-type-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-bed"></i> Room Type Distribution
+                                <button @click="showChartInfo('rooms')" class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button @click="explainChartContent('rooms')" class="chart-explain-btn" title="Explain current data">
+                                    <i class="fas fa-lightbulb"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="roomTypeChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="chart-container booking-trend-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-chart-line"></i> Booking Trends
+                                <button @click="showChartInfo('bookings')" class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                                <button @click="explainChartContent('bookings')" class="chart-explain-btn" title="Explain current data">
+                                    <i class="fas fa-lightbulb"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <div class="canvas-container">
+                            <canvas id="bookingTrendChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add modal for chart explanations -->
+                <div v-if="showingChartInfo" class="chart-info-modal" @click.self="closeChartInfo">
+                    <div class="chart-info-content">
+                        <h4>{{ chartInfoTitle }}</h4>
+                        <div class="chart-info-body">{{ chartInfoText }}</div>
+                        <button @click="closeChartInfo" class="chart-info-close">Close</button>
+                    </div>
+                </div>
+
+                <!-- Add explanation modal -->
+                <div v-if="showingExplanation" class="chart-explanation-modal" @click.self="closeExplanation">
+                    <div class="chart-explanation-content">
+                        <h4>{{ explanationTitle }}</h4>
+                        <div class="chart-explanation-body" v-html="explanationText"></div>
+                        <button @click="closeExplanation" class="chart-explanation-close">Close</button>
+                    </div>
+                </div>
+
+                <!-- Add metrics explanation modal before closing main content div -->
+                <div v-if="showingMetricsExplanation" class="chart-explanation-modal" @click.self="closeMetricsExplanation">
+                    <div class="chart-explanation-content">
+                        <h4>Dashboard Metrics Explanation</h4>
+                        <div class="chart-explanation-body">
+                            <h5 class="font-bold text-lg mt-3 mb-2">Today's Bookings</h5>
+                            <p>Number of new bookings created today. This shows how many new reservations were made on the current date.</p>
+                            
+                            <h5 class="font-bold text-lg mt-3 mb-2">Available Rooms</h5>
+                            <p>Current number of rooms that are not occupied and available for booking.</p>
+                            
+                            <h5 class="font-bold text-lg mt-3 mb-2">Total Bookings</h5>
+                            <p>Total number of bookings for the current month.</p>
+                            
+                            <h5 class="font-bold text-lg mt-3 mb-2">Occupancy Rate</h5>
+                            <p>Percentage of rooms currently occupied out of total rooms available.</p>
+                            
+                            <h5 class="font-bold text-lg mt-3 mb-2">Sales Growth Metrics</h5>
+                            <p class="mb-2">
+                                <span class="font-semibold">Monthly Growth:</span> Percentage change in sales compared to previous month. Negative values indicate a decrease in sales.
+                            </p>
+                            <p class="mb-4">
+                                <span class="font-semibold">Yearly Growth:</span> Percentage change in sales compared to the same period last year or averaged across available data. Negative values indicate a downward trend.
+                            </p>
+
+                            <div class="alert alert-info">
+                                <h6 class="font-bold mb-2">Understanding Negative Growth</h6>
+                                <p class="mt-2">Negative growth values indicate a decrease in sales compared to the previous period. This could be due to:</p>
+                                <ul class="list-disc ml-6 mt-1">
+                                    <li>Seasonal fluctuations</li>
+                                    <li>Market conditions</li>
+                                    <li>Changes in pricing strategy</li>
+                                    <li>Competition</li>
+                                </ul>
+                                <p class="mt-2">Consider implementing promotional strategies or reviewing pricing to increase sales.</p>
+                            </div>
+                        </div>
+                        <button @click="closeMetricsExplanation" class="chart-explanation-close mt-4">Close</button>
+                    </div>
+                </div>
+
+                <!-- Add metric info modal -->
+                <div v-if="showingMetricInfo" class="chart-info-modal" @click.self="closeMetricInfo">
+                    <div class="chart-info-content">
+                        <h4>{{ metricInfoTitle }}</h4>
+                        <div class="chart-info-body">{{ metricInfoText }}</div>
+                        <button @click="closeMetricInfo" class="chart-info-close">Close</button>
+                    </div>
+                </div>
+
+                <!-- Recent Bookings -->
+                <section class="recent-bookings">
+                    <div class="section-header">
+                        <h2><i class="fas fa-list"></i> Recent Bookings (Last 5)</h2>
+                        <div class="search-container">
+                            <i class="fas fa-search"></i>
+                            <input 
+                                v-model="searchQuery" 
+                                type="text" 
+                                placeholder="Search bookings..."
+                                class="search-input"
+                            >
+                        </div>
+                    </div>
+                    <div class="bookings-table-container">
+                        <table class="bookings-table">
+                            <thead>
+                                <tr>
+                                    <th>Guest Name</th>
+                                    <th>Contact</th>
+                                    <th>Room</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Nights</th>
+                                    <th>Rate</th>
+                                    <th>Status</th>
+                                    <th>Payment</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="booking in filteredBookings" :key="booking.id">
+                                    <td>{{ booking.guestName }}</td>
+                                    <td>{{ booking.contactNumber }}</td>
+                                    <td>
+                                        <div>{{ booking.propertyDetails.roomNumber }}</div>
+                                        <div class="text-sm text-gray-500">{{ booking.propertyDetails.roomType }}</div>
+                                    </td>
+                                    <td>{{ formatDate(booking.checkIn) }}</td>
+                                    <td>{{ formatDate(booking.checkOut) }}</td>
+                                    <td>{{ booking.numberOfNights }}</td>
+                                    <td>₱{{ (booking.nightlyRate || 0).toLocaleString('en-PH') }}</td>
+                                    <td>
+                                        <span :class="'status-badge ' + (booking.status ? booking.status.toLowerCase() : 'pending')">
+                                            {{ booking.status || 'Pending' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span :class="'payment-badge ' + (booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'unpaid')">
+                                            {{ booking.paymentStatus || 'Unpaid' }}
+                                        </span>
+                                    </td>
+                                    <td>₱{{ (booking.totalPrice || 0).toLocaleString('en-PH') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+    <!-- Move the script to end of body and modify it -->
+    <script type="module">
+        import { logActivity } from '../ActivityLog/activityLogger.js';
+        import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { auth } from '../firebase.js';
+
+        const authInstance = auth();
+        authInstance.onAuthStateChanged((user) => {
+            if (user) {
+                try {
+                    // Simplify the log message to match the requirement
+                    logActivity('navigation', 'Navigated to Dashboard')
+                        .catch(err => console.warn('Non-critical error logging activity:', err.message));
+                } catch (error) {
+                    console.warn('Could not log navigation activity:', error.message);
+                }
+            }
+        });
+    </script>
+    <!-- Add CSS styles for the filters -->
+    <style>
+        .chart-controls {
+            margin: 1rem 0;
+            padding: 0.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .chart-filters {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .chart-select {
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            background-color: white;
+            font-size: 0.875rem;
+            min-width: 150px;
+            cursor: pointer;
+        }
+
+        .chart-metrics {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .metric {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .metric span {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .metric strong {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .metric strong.positive {
+            color: #10b981;
+        }
+
+        .metric strong.negative {
+            color: #ef4444;
+        }
+        
+        .metric-info-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 3px;
+        }
+        
+        .metric-info-btn:hover i {
+            color: #3b82f6 !important;
+        }
+
+        /* Status badges */
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+        
+        .status-badge.pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .status-badge.confirmed {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+        
+        .status-badge.completed {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+        }
+        
+        .status-badge.cancelled {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        /* Payment badges */
+        .payment-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: capitalize;
+        }
+        
+        .payment-badge.pending {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        
+        .payment-badge.paid {
+            background-color: #DCFCE7;
+            color: #166534;
+        }
+        
+        .payment-badge.refunded {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        .payment-badge.failed {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        /* Table styles */
+        .bookings-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .bookings-table th {
+            background-color: #F9FAFB;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #E5E7EB;
+        }
+        
+        .bookings-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #E5E7EB;
+            color: #1F2937;
+        }
+        
+        .bookings-table tr:hover {
+            background-color: #F9FAFB;
+        }
+    </style>
+</body>
+</html>

@@ -1,0 +1,1849 @@
+/* Content-Type: text/css */
+/* styles.css for LodgeEase */
+
+/* Z-index hierarchy */
+:root {
+    --z-base: 1;
+    --z-content: 10;
+    --z-header: 100;     /* Increased to ensure header is above all content */
+    --z-search: 90;      /* Increased but below header */
+    --z-modal: 1000;
+    --z-dropdown: 99999; /* Significantly increased to ensure dropdowns are always on top */
+    --z-overlay: 100000;
+    --z-map: 500;        /* Added specific z-index for map view */
+}
+
+/* Base Styles */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f5f5f5;
+    background-image: url('../components/marita-kavelashvili-ugnrXk1129g-unsplash.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; 
+    background-repeat: no-repeat;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+/* Hero Section */
+.hero-section {
+    position: relative;
+    min-height: 80px;
+    background: linear-gradient(90deg, rgba(40, 58, 151, 0.9) 0%, rgba(65, 88, 208, 0.85) 100%);
+    padding: 8px 0;
+    overflow: visible;
+    z-index: var(--z-search);
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('../components/baguio-city-mirador-hill-sunset.jpg');
+    background-size: cover;
+    background-position: center;
+    filter: brightness(0.7);
+    z-index: -1;
+}
+
+.hero-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.hero-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    margin-bottom: 0.25rem;
+}
+
+.hero-subtitle {
+    font-size: 0.875rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1.5rem; /* Increased margin to give space for new search bar */
+}
+
+/* Header Styles */
+.main-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    height: 43px; /* Decreased by 30% from 50px */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    z-index: var(--z-header);
+}
+
+.main-header.scrolled {
+    height: 60px;
+    background-color: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.logo img {
+    height: 48px;
+    width: auto;
+}
+
+.logo:hover {
+    color: #1d4ed8;
+}
+
+.nav-link {
+    color: #4b5563;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+    color: #2563eb;
+}
+
+.nav-search {
+    width: 240px;
+    height: 40px;
+    padding: 0 2.5rem 0 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 9999px;
+    background-color: #f9fafb;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.nav-search:focus {
+    outline: none;
+    border-color: #2563eb;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.user-btn,
+.mobile-menu-btn {
+    padding: 0.5rem;
+    color: #4b5563;
+    border-radius: 9999px;
+    transition: all 0.2s ease;
+}
+
+.user-btn:hover,
+.mobile-menu-btn:hover {
+    background-color: #f3f4f6;
+    color: #2563eb;
+}
+
+#mobile-menu {
+    display: none;
+    transition: all 0.3s ease;
+}
+
+#mobile-menu.show {
+    display: block;
+}
+
+/* Navigation Styles */
+.main-header {
+    background-color: white;
+    border-bottom: 1px solid #e5e7eb;
+    height: 65px; /* Consistent height */
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: var(--z-header);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.main-header nav {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+}
+
+.nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.nav-button:hover {
+    background-color: #f3f4f6;
+    color: #2563eb;
+}
+
+.nav-button i {
+    font-size: 1.25rem;
+}
+
+.menu-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 2rem;
+    background-color: white;
+    color: #4b5563;
+    transition: all 0.2s;
+}
+
+.menu-button:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    color: #2563eb;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+}
+
+.logo img {
+    height: 30px;
+    width: auto;
+}
+
+@media (max-width: 768px) {
+    .nav-button span {
+        display: none;
+    }
+    
+    .nav-button {
+        padding: 0.5rem;
+    }
+    
+    .nav-button i {
+        font-size: 1.5rem;
+    }
+
+    .main-header nav {
+        padding: 0 1rem;
+    }
+
+    .nav-buttons {
+        gap: 0.5rem;
+    }
+}
+
+.logo img {
+    height: 28px; /* Decreased by 30% from 40px */
+    width: auto;
+}
+
+.nav-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.nav-button:hover {
+    background-color: #f3f4f6;
+    color: #1f2937;
+}
+
+.nav-button i {
+    font-size: 1.25rem;
+}
+
+.menu-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 2rem;
+    background-color: white;
+    color: #4b5563;
+    transition: all 0.2s;
+}
+
+.menu-button:hover {
+    border-color: #d1d5db;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.menu-button i {
+    font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    .nav-button span {
+        display: none;
+    }
+    
+    .nav-button {
+        padding: 0.5rem;
+    }
+    
+    .nav-button i {
+        font-size: 1.5rem;
+    }
+}
+
+/* Update container width */
+.container {
+    max-width: 1600px !important;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0 1rem;
+    padding-top: 43px; /* Match new header height */
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+    .main-header {
+        height: 32px; /* Decreased by 30% from 45px */
+    }
+
+    .main-header nav {
+        height: 100%;
+        display: flex;
+        align-items: center;
+    }
+
+    .hero-section {
+        margin-top: 45px; /* Adjusted for mobile */
+        min-height: 80px; /* Decreased by 30% from 120px */
+        padding: 7px 0; /* Decreased by 30% from 10px */
+    }
+
+    .search-container {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+        width: 90%;
+    }
+
+    .search-input-group {
+        min-width: 100%;
+        padding: 0;
+    }
+
+    .input-wrapper {
+        padding: 0.75rem 1.25rem;
+    }
+
+    .hero-section {
+        min-height: 120px;
+        padding: 10px 0;
+    }
+}
+
+.search-input-group:not(:last-child)::after {
+    display: none;
+}
+
+.input-wrapper {
+    padding: 0.625rem 1rem;
+}
+
+.search-container-wrapper {
+    padding: 0.75rem;
+}
+
+/* Guest Dropdown Specific Styles */
+#guestsDropdown {
+    position: fixed !important;
+    z-index: var(--z-overlay) !important;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid #e5e7eb;
+    margin-top: 0.5rem;
+    transform-origin: top;
+    transition: all 0.2s ease;
+    z-index: var(--z-dropdown);
+}
+
+.guest-btn {
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.guest-btn:not(:disabled):hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background-color: #eff6ff;
+}
+
+.guest-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    border-color: #e5e7eb;
+    color: #d1d5db;
+}
+
+@media (max-width: 640px) {
+    .search-container-wrapper {
+        margin: 0 16px;
+        max-width: 280px;
+    }
+    
+    .input-wrapper {
+        padding: 6px 12px;
+    }
+    
+    .hero-title {
+        font-size: 1.75rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.875rem;
+    }
+}
+
+/* Dividers between sections */
+@media (min-width: 768px) {
+    .search-input-group:not(:last-child) {
+        border-right: 1px solid #e5e7eb;
+    }
+}
+
+/* Guest Counter Button */
+#guestsDropdownBtn {
+    width: 100%;
+    height: 40px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background: transparent;
+    border: none;
+    font-size: 0.938rem;
+    color: #6b7280;
+}
+
+/* Mobile Responsive */
+@media (max-width: 767px) {
+    .search-container-wrapper {
+        border-radius: 16px;
+        margin: 0 16px;
+    }
+    
+    .search-container {
+        flex-direction: column;
+    }
+    
+    .search-input-group {
+        width: 100%;
+        padding: 4px 8px;
+    }
+    
+    .search-input-group:not(:last-child) {
+        border-right: none;
+        border-bottom: 1px solid #e5e7eb;
+    }
+}
+
+/* Grid Layout */
+@media (min-width: 768px) {
+    .search-container .grid {
+        gap: 0.75rem;
+    }
+    
+    .search-input-group:not(:last-child::after) {
+        content: '';
+        position: absolute;
+        right: -0.375rem;
+        top: 25%;
+        height: 50%;
+        width: 1px;
+        background-color: #e5e7eb;
+    }
+}
+
+@media (max-width: 767px) {
+    .search-container {
+        padding: 0.5rem;
+    }
+    
+    .search-input-group {
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-input-group:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* Guest Counter Buttons */
+.guest-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #f3f4f6;
+    color: #4b5563;
+    transition: all 0.2s ease;
+}
+
+.guest-btn:hover {
+    background-color: #e5e7eb;
+}
+
+.guest-btn:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+.guest-count {
+    min-width: 16px;
+    text-align: center;
+    font-weight: 500;
+}
+
+#guestsDropdown {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#guestsDropdownBtn {
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+#guestsDropdownBtn:hover {
+    background-color: #f3f4f6;
+}
+
+/* Lodge Cards */
+main {
+    min-height: 100vh;
+    background: #f9fafb;
+    padding: 2rem;
+}
+
+/* Main Content Layout - Added sticky sidebar */
+.flex.flex-col.md\:flex-row.md\:space-x-6 {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+@media (min-width: 768px) {
+    .flex.flex-col.md\:flex-row.md\:space-x-6 {
+        flex-direction: row;
+        gap: 1.5rem;
+    }
+}
+
+/* Filter Sidebar - Added sticky positioning */
+aside.w-full.md\:w-1\/4 {
+    position: sticky;
+    top: 80px; /* Adjust based on header height */
+    height: max-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    margin-bottom: 1.5rem;
+    z-index: 10;
+    align-self: flex-start;
+}
+
+/* Adjust the width of the filter section */
+@media (min-width: 768px) {
+    aside.w-full.md\:w-1\/4 {
+        width: 300px;
+        flex-shrink: 0;
+    }
+    
+    main.w-full.md\:w-3\/4 {
+        width: calc(100% - 300px - 1.5rem);
+        flex-grow: 1;
+    }
+}
+
+/* Lodge Container - Adjusted spacing */
+.lodge-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    padding-top: 12px; /* Space for badges */
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Lodge Card Base Styles - Updated for all cards */
+.lodge-card {
+    position: relative;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: visible;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Make cards look consistent */
+.lodge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-color: #d1d5db;
+}
+
+/* Image Container - Standardized for all cards */
+.lodge-card .relative {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16/9; /* Maintain consistent image ratio */
+    height: 180px; /* Fixed height for all images */
+}
+
+.lodge-card img.absolute {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.lodge-card:hover img.absolute {
+    transform: scale(1.05);
+}
+
+/* Card Content - Adjusted for consistent height */
+.lodge-card .p-4 {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    height: calc(100% - 180px); /* Subtract image height */
+}
+
+/* Making sure elements in the content are properly spaced */
+.lodge-card h2 {
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+    line-height: 1.3;
+}
+
+.lodge-card .location {
+    margin-bottom: 0.75rem;
+}
+
+.lodge-card .amenities {
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Price and ratings at the bottom */
+.lodge-card .flex.items-center.justify-between {
+    margin-top: auto;
+}
+
+.lodge-card .favorite-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+}
+
+.lodge-card .favorite-btn:hover {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.lodge-card .favorite-btn i {
+    font-size: 1.25rem;
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.lodge-card .favorite-btn:hover i {
+    color: #ef4444;
+}
+
+.lodge-card .rating {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.lodge-card .rating i {
+    color: #fbbf24;
+    font-size: 1.125rem;
+}
+
+.lodge-card .rating span {
+    color: #4b5563;
+    font-weight: 500;
+}
+
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+
+    .lodge-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .lodge-card .lodge-image {
+        height: 200px;
+    }
+
+    .lodge-card .content {
+        padding: 1rem;
+    }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .search-container {
+        padding: 0.5rem;
+    }
+    
+    .date-picker-dropdown,
+    #guestsDropdown {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: calc(100% - 2rem);
+        max-width: 320px;
+        margin: 0;
+    }
+}
+
+/* Search Bar */
+.search-bar {
+    transition: all 0.3s ease;
+}
+
+.search-bar:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Guest Dropdown */
+#guests-dropdown:hover {
+    border-color: #3B82F6;
+}
+
+.guest-btn {
+    transition: all 0.2s ease;
+}
+
+.guest-btn:hover {
+    border-color: #3B82F6;
+    color: #3B82F6;
+}
+
+/* Mobile Menu */
+#mobile-menu {
+    position: fixed;
+    top: 72px; /* Match header height */
+    left: 0;
+    right: 0;
+    background-color: white;
+    z-index: 999;
+    border-top: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Notification Badge */
+#notification-badge {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#notification-badge.show {
+    transform: translate(1px, -1px) scale(1);
+}
+
+/* Custom Range Slider */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: #E5E7EB;
+    border-radius: 4px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #3B82F6;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    background: #2563EB;
+}
+
+/* Checkbox Styles */
+.form-checkbox {
+    @apply rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50;
+}
+
+/* Drawer Animations */
+.drawer-enter {
+    transform: translateX(100%);
+}
+
+.drawer-enter-active {
+    transform: translateX(0%);
+    transition: transform 300ms ease-in-out;
+}
+
+.drawer-exit {
+    transform: translateX(0%);
+}
+
+.drawer-exit-active {
+    transform: translateX(100%);
+    transition: transform 300ms ease-in-out;
+}
+
+/* Compare Drawer */
+#compareDrawer {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Scrollbar Styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Card Styles */
+.glass-card {
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.page-content {
+    background-color: rgba(255, 255, 255, 0.85);
+    max-width: 1200px;
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* Map Styles */
+#mapView {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    z-index: var(--z-map);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#mapView.hidden {
+    display: none !important;
+}
+
+#map {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+}
+
+#closeMap {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 101;
+    background-color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+}
+
+/* Map Controls */
+.custom-map-control {
+    background-color: white;
+    border: 2px solid #fff;
+    border-radius: 3px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    cursor: pointer;
+    margin: 10px;
+    text-align: center;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    font-weight: bold;
+    color: rgb(25, 25, 25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s ease;
+}
+
+.custom-map-control:hover {
+    background-color: #f8f9fa;
+}
+
+.custom-map-control i {
+    font-size: 20px;
+}
+
+#map {
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation;
+}
+
+/* Improve Map View Container */
+#mapView {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: var(--z-modal);
+    background: white;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+#mapView.hidden {
+    display: none;
+}
+
+#closeMap {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background-color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,.3);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#closeMap:hover {
+    background-color: #f8f9fa;
+}
+
+/* Google Maps Info Window Styles */
+.gm-style .gm-style-iw-c {
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.gm-style .gm-style-iw-d {
+    overflow: hidden !important;
+    padding: 0;
+}
+
+/* Map Container */
+#map {
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+#mapView {
+    display: flex;
+    flex-direction: column;
+}
+
+#mapView.hidden {
+    display: none;
+}
+
+.leaflet-container {
+    height: 100%;
+    width: 100%;
+}
+
+/* Additional map-related styles */
+.map-popup {
+    min-width: 200px;
+}
+
+.map-popup img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    margin: 0;
+    padding: 10px;
+}
+
+/* Map View Container */
+#mapView {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    z-index: var(--z-modal);
+    background: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    overflow: hidden;
+    background: white;
+    padding: 1rem;
+}
+
+#mapView.hidden {
+    display: none !important;
+}
+
+/* Map Container */
+#map {
+    width: 100%;
+    height: calc(100% - 60px); /* Subtract header height */
+    z-index: 1;
+    min-height: 500px;
+}
+
+/* Leaflet Specific Styles */
+.leaflet-container {
+    width: 100%;
+    height: 100%;
+}
+
+/* Additional map-related styles */
+.map-popup {
+    min-width: 200px;
+    padding: 10px;
+}
+
+/* Navigation button styles */
+.nav-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    color: #4b5563;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.nav-button:hover,
+.nav-button.active {
+    background-color: #f3f4f6;
+    color: #2563eb;
+}
+
+.nav-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 24px;
+    height: 2px;
+    background-color: #2563eb;
+    border-radius: 2px;
+}
+
+/* Search container highlight animation */
+.search-container-wrapper.highlight {
+    animation: highlight 2s ease-out;
+}
+
+@keyframes highlight {
+    0% {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0);
+    }
+    25% {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0);
+    }
+}
+
+/* Ever Lodge Highlighting */
+.lodge-card[data-property-type="hotel"] .border-green-500 {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    position: relative;
+    z-index: 1; /* Ensure proper stacking context */
+}
+
+.lodge-card[data-property-type="hotel"] .border-green-500:before {
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background-color: #10B981; /* green-500 */
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 4px;
+    border-radius: 4px;
+    z-index: 10; /* Higher z-index to ensure visibility */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap; /* Prevent text wrapping */
+    line-height: 1.2;
+}
+
+/* Add a hover effect to make the badge more noticeable */
+.lodge-card:hover .border-green-500:before {
+    background-color: #059669; /* green-600 - slightly darker on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Add animation to make it more attention-grabbing */
+@keyframes pulse-badge {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.lodge-card[data-property-type="hotel"] .border-green-500:before {
+    animation: pulse-badge 2s infinite;
+}
+
+/* Night Promo Badge Animation */
+.lodge-card .absolute.top-2.right-2 {
+    animation: pulse-glow 2s infinite;
+    z-index: 10; /* Higher z-index to ensure visibility */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes pulse-border {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Night Promo Badge Animation */
+.lodge-card .absolute.top-2.right-2 {
+    animation: pulse-glow 2s infinite;
+    z-index: 5;
+}
+
+@keyframes pulse-glow {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.05);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Additional styling to fix Ever Lodge highlighting */
+.lodge-card {
+    overflow: visible !important; /* Allow badges to render outside the container */
+    position: relative;
+}
+
+.lodge-card[data-property-type="hotel"] .border-green-500 {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+    position: relative;
+    z-index: 1;
+    border-width: 2px;
+    border-color: #10B981;
+    transition: all 0.3s ease;
+}
+
+.lodge-card[data-property-type="hotel"] .border-green-500:before {
+    position: absolute;
+    top: -12px;
+    left: 10px;
+    background-color: #10B981; /* green-500 */
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 20; /* Ensure it's above all other elements */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    line-height: 1.2;
+    transform: translateY(-4px);
+    animation: pulse-badge 2s infinite;
+}
+
+/* Enhanced hover states */
+.lodge-card:hover .border-green-500 {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+    border-color: #059669; /* green-600 */
+}
+
+.lodge-card:hover .border-green-500:before {
+    background-color: #059669; /* green-600 - slightly darker on hover */
+    transform: translateY(-6px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom badge animation */
+@keyframes pulse-badge {
+    0% { 
+        transform: translateY(-4px) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    50% { 
+        transform: translateY(-6px) scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    100% { 
+        transform: translateY(-4px) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Night Promo Badge Animation - Enhanced with better z-indexing */
+.lodge-card .absolute.top-2.right-2 {
+    animation: pulse-glow 2s infinite;
+    z-index: 15; /* Ensure it's above most content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    transform-origin: center;
+}
+
+/* Improved animation for the promo tag */
+@keyframes pulse-glow {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 3px 7px rgba(0, 0, 0, 0.2);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+    }
+}
+
+/* Fix for Safari which might cut off absolutely positioned elements */
+.lodge-container {
+    padding-top: 12px; /* Add space for the badge that might overflow */
+}
+
+/* Ensure modal badges display properly */
+#lodgeDetailsContent h2 .inline-block.bg-green-600 {
+    position: relative;
+    top: -1px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+
+/* Update the badge animation */
+@keyframes badgePulse {
+    0% { 
+        transform: translateX(-50%) translateY(0) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    50% { 
+        transform: translateX(-50%) translateY(2px) scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    100% { 
+        transform: translateX(-50%) translateY(0) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Promo Price Tag */
+.promo-tag {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(5, 150, 105, 0.95);
+    backdrop-filter: blur(4px);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: promoPulse 3s infinite;
+    min-width: max-content;
+}
+
+.promo-tag-label {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    margin-bottom: 2px;
+    white-space: nowrap;
+}
+
+.promo-tag-price {
+    font-size: 0.9rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Animations */
+@keyframes badgePulse {
+    0% { 
+        transform: translateX(-50%) translateY(0) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    50% { 
+        transform: translateX(-50%) translateY(2px) scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    100% { 
+        transform: translateX(-50%) translateY(0) scale(1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@keyframes promoPulse {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
+    100% { transform: translateY(0); }
+}
+
+/* Quick Actions Animation */
+.quick-actions button:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+/* Service Card Hover Effects */
+.service-card {
+    transition: all 0.3s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-4px);
+}
+
+/* Activity Rating Stars */
+.activity-rating {
+    color: #f59e0b;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Transportation Button Effects */
+.transport-button {
+    position: relative;
+    overflow: hidden;
+}
+
+.transport-button::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: currentColor;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.transport-button:hover::after {
+    transform: scaleX(1);
+}
+
+/* Review system styles */
+.rating-star {
+    cursor: pointer;
+    color: #d1d5db;
+    transition: color 0.2s;
+}
+
+.rating-star.selected,
+.rating-star:hover {
+    color: #fbbf24;
+}
+
+.rating-star:hover ~ .rating-star {
+    color: #d1d5db;
+}
+
+/* Styles for the new Search Bar (mostly handled by Tailwind) */
+.search-bar-container {
+    position: relative; /* For potential dropdown positioning */
+    z-index: var(--z-search); /* Ensure it's below header but above hero bg */
+    margin-top: 1rem; /* Add some space below subtitle */
+}
+
+/* Filter Styles */
+.filter-section {
+  margin-bottom: 1.5rem;
+}
+
+.filter-section h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+/* Custom Checkbox Styling */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 4px;
+  margin-right: 10px;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+  background-color: #fff;
+  vertical-align: middle;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"]:hover {
+  border-color: #9ca3af;
+}
+
+input[type="checkbox"]:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+/* Custom Range Slider Styling */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 5px;
+  background: #e2e8f0;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%; 
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: 2px solid white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  background: #2563eb;
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  background: #2563eb;
+}
+
+/* Filter checkbox labels */
+.space-y-2 label {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #4b5563;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.2s ease;
+}
+
+.space-y-2 label:hover {
+  color: #1f2937;
+}
+
+/* Sidebar responsiveness */
+@media (max-width: 768px) {
+  .filter-sidebar {
+    margin-bottom: 1rem;
+  }
+  
+  .filter-section h3 {
+    font-size: 0.85rem;
+  }
+}
+
+/* Main container for layout */
+.container-main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 1.5rem 0;
+}
+
+@media (min-width: 768px) {
+    .container-main {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+}
+
+/* Filter sidebar styling */
+.filter-sidebar {
+    position: sticky;
+    top: 85px; /* Adjusted for header */
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: max-content;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    z-index: 5; /* Reduced from 20 to give dropdown priority */
+    transition: all 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .filter-sidebar {
+        width: 300px;
+        flex-shrink: 0;
+        margin-right: 1.5rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .filter-sidebar {
+        position: relative;
+        top: 0;
+        width: 100%;
+        max-height: none;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Lodge main content area */
+.lodge-main-content {
+    flex: 1;
+    min-width: 0; /* Prevent flex items from overflowing */
+}
+
+@media (min-width: 768px) {
+    .lodge-main-content {
+        padding-left: 0.5rem;
+    }
+}
+
+/* Filter sidebar scrollbar styling */
+.filter-sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.filter-sidebar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb {
+    background: #c5c7ca;
+    border-radius: 10px;
+}
+
+.filter-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #a1a3a7;
+}
+
+/* Barangay Dropdown Specific Styles */
+#barangayDropdown {
+    position: fixed !important;
+    z-index: 2147483647 !important; /* Maximum possible z-index value */
+    background-color: white !important;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    border: 1px solid #e5e7eb;
+    width: 320px;
+    max-height: 400px;
+    overflow-y: auto;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    transition: all 0.2s ease;
+    /* Ensure it creates its own stacking context and breaks out of parent contexts */
+    isolation: isolate;
+    /* Force it to be the topmost layer */
+    contain: layout style;
+}
+
+#barangayDropdown.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+#barangayDropdown .p-4 {
+    padding: 1rem;
+}
+
+#barangayDropdown h3 {
+    color: #1f2937;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+#barangaySearchInput {
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #1f2937;
+    background-color: white;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+#barangaySearchInput:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#barangayDropdownBtn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+}
+
+#barangayDropdownBtn:hover {
+    color: #2563eb;
+}
+
+#barangayDropdownBtn:focus {
+    outline: none;
+}
+
+#barangayText {
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+#barangayList {
+    margin-top: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#barangayList button {
+    width: 100%;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: #1f2937;
+    background: transparent;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin: 1px 0;
+}
+
+#barangayList button:hover {
+    background-color: #f3f4f6;
+    color: #1f2937;
+}
+
+#barangayList button:focus {
+    outline: none;
+    background-color: #e5e7eb;
+}
+
+#barangayList .border-t {
+    border-top: 1px solid #e5e7eb;
+    margin: 0.25rem 0;
+}
+
+/* Ensure dropdown appears above all other elements */
+.search-bar-container {
+    position: relative;
+    z-index: 1;
+}
+
+/* Scrollbar styling for dropdown list */
+#barangayList::-webkit-scrollbar {
+    width: 6px;
+}
+
+#barangayList::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#barangayList::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+#barangayList::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+
+/* Clear button styling */
+#clearBarangaySearch {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    color: #9ca3af;
+    transition: color 0.2s ease;
+}
+
+#clearBarangaySearch:hover {
+    color: #6b7280;
+}
+
+/* Search icon styling */
+#searchIcon {
+    color: #9ca3af;
+    pointer-events: none;
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - LodgeEase</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="fixed w-full z-50 bg-white/80 backdrop-blur-md shadow-lg">
+        <header class="main-header fixed w-full z-50">
+            <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between">
+              <!-- Logo -->
+              <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+                <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+              </a>
+        
+              <!-- Navigation Links -->
+              <div class="flex items-center space-x-4">
+                <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+                  <i class="ri-home-line"></i>
+                  <span>Home</span>
+                </a>
+                <button id="loginButton" class="nav-button">
+                  <i class="ri-login-box-line"></i>
+                  <span>Log in</span>
+                </button>
+                <button id="userIconBtn" class="menu-button">
+                  <i class="ri-menu-line"></i>
+                  <i class="ri-user-line"></i>
+                </button>
+              </div>
+            </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto max-w-6xl px-4 pt-24 pb-12">
+        <h1 class="text-3xl font-bold mb-8">My Bookings</h1>
+
+        <!-- Tabs -->
+        <div class="mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex space-x-8">
+                    <button class="tab-btn active border-b-2 border-blue-500 py-4 px-1 text-blue-600 font-medium" data-tab="current">
+                        Current Bookings
+                    </button>
+                    <button class="tab-btn py-4 px-1 text-gray-500 hover:text-gray-700 font-medium" data-tab="past">
+                        Past Bookings
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Current Bookings Section -->
+        <div id="currentBookings" class="tab-content space-y-6">
+            <!-- Booking cards will be dynamically inserted here -->
+        </div>
+
+        <!-- Past Bookings Section -->
+        <div id="pastBookings" class="tab-content hidden space-y-6">
+            <!-- Past booking cards will be dynamically inserted here -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-6 text-center">
+            <div class="mb-8">
+                <h3 class="text-3xl font-bold text-blue-500 mb-4">LodgeEase</h3>
+                <p class="text-gray-300">Aspiras palispis highway, Baguio City, Benguet, 2600 Philippines</p>
+                <p class="text-gray-300">Contact: +(63) 9129 912 6584 | lodgeease.baguio@email.com</p>
+            </div>
+            <div class="flex justify-center space-x-6">
+                <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+                    <i class="fab fa-facebook"></i>
+                </a>
+                <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+                    <i class="fab fa-twitter"></i>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- User Drawer -->
+    <div 
+        id="userDrawer" 
+        class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full"
+    >
+        <div class="drawer-content">
+            <!-- Content will be dynamically inserted by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="../components/userDrawer.js"></script>
+    <script type="module" src="mybookings.js"></script>
+</body>
+</html> 

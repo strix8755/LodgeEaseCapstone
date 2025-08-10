@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <title>LodgeEase - Baguio City Hotels</title>
+  <link rel="icon" type="image/x-icon" href="../components/favicon.ico">
+  
+  <!-- Preconnect to important domains -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="preconnect" href="https://www.gstatic.com">
+  <link rel="preconnect" href="https://maps.googleapis.com">
+  <link rel="preconnect" href="https://firebase.googleapis.com">
+  <link rel="preconnect" href="https://firestore.googleapis.com">
+  
+  <!-- CSS Libraries -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css">
+  <!-- Flatpickr library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  
+  <!-- CSS Loading Script - Defined BEFORE the CSS link tags -->
+  <script>
+    // Track CSS loading status
+    window.mainStylesLoaded = false;
+    window.transitionStylesLoaded = false;
+    window.cssCheckAttempts = 0;
+    
+    // Check if CSS files are already loaded (for when scripts load after CSS)
+    const stylesLink = document.querySelector('link[href="styles.css"]');
+    const transitionsLink = document.querySelector('link[href="transitions.css"]');
+    
+    if (stylesLink && stylesLink.sheet) {
+      window.mainStylesLoaded = true;
+      console.log('styles.css already loaded');
+    }
+    
+    if (transitionsLink && transitionsLink.sheet) {
+      window.transitionStylesLoaded = true;
+      console.log('transitions.css already loaded');
+    }
+    
+    function checkAllStylesLoaded() {
+      if (window.mainStylesLoaded && window.transitionStylesLoaded) {
+        console.log('All critical CSS files loaded');
+        
+        // Safely mark CSS as loaded only if body is available
+        if (document.body) {
+          document.body.classList.add('css-loaded');
+        } else {
+          // Body not available yet, wait for it
+          console.log('Body element not yet available, setting up MutationObserver');
+          window.cssLoadedPending = true;
+          
+          // Use MutationObserver to detect when body becomes available
+          const observer = new MutationObserver(function(mutations) {
+            if (document.body) {
+              document.body.classList.add('css-loaded');
+              console.log('Body now available, added css-loaded class');
+              observer.disconnect();
+              window.cssLoadedPending = false;
+              
+              if (window.checkAndFixCSS) {
+                setTimeout(window.checkAndFixCSS, 100);
+              }
+            }
+          });
+          
+          observer.observe(document.documentElement, { childList: true, subtree: true });
+          
+          // Fallback: also check on DOMContentLoaded
+          document.addEventListener('DOMContentLoaded', function() {
+            if (window.cssLoadedPending && document.body) {
+              document.body.classList.add('css-loaded');
+              console.log('Added css-loaded class on DOMContentLoaded');
+              window.cssLoadedPending = false;
+            }
+          });
+        }
+        
+        // Only run checkAndFixCSS if body exists
+        if (document.body && window.checkAndFixCSS) {
+          setTimeout(window.checkAndFixCSS, 100); // Check CSS after a brief delay
+        }
+      }
+    }
+    
+    // Run initial check in case CSS is already loaded
+    checkAllStylesLoaded();
+    
+    // Fallback checker in case onload events don't fire
+    function checkCSSLoadingStatus() {
+      window.cssCheckAttempts++;
+      
+      // First make sure the body element exists
+      if (!document.body) {
+        console.log('Body element not available yet in checkCSSLoadingStatus');
+        if (window.cssCheckAttempts < 10) {
+          setTimeout(checkCSSLoadingStatus, 200);
+        }
+        return;
+      }
+      
+      if (!document.body.classList.contains('css-loaded') && window.cssCheckAttempts < 5) {
+        // Check if styles are actually applied despite missing onload events
+        const heroSection = document.querySelector('.hero-section');
+        const header = document.querySelector('.main-header');
+        if (heroSection && header) {
+          const heroStyles = getComputedStyle(heroSection);
+          const headerStyles = getComputedStyle(header);
+          if (heroStyles.height !== '0px' && headerStyles.position === 'fixed') {
+            console.log('CSS appears to be applied correctly despite missing onload events');
+            document.body.classList.add('css-loaded');
+            return;
+          }
+        }
+        setTimeout(checkCSSLoadingStatus, 500); // Check again in 500ms
+      }
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(checkCSSLoadingStatus, 1000); // Start checking 1 second after DOM is loaded
+    });
+  </script>
+  
+  <!-- Site CSS files to be inserted dynamically to ensure proper loading -->
+  <script>
+    // Insert CSS files dynamically to ensure proper loading sequence and error handling
+    function insertStylesheet(href, callback) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.type = 'text/css';
+      link.href = href;
+      
+      link.onload = function() {
+        console.log(`CSS file loaded: ${href}`);
+        if (callback) callback(true);
+      };
+      
+      link.onerror = function() {
+        console.error(`Failed to load CSS: ${href}`);
+        if (callback) callback(false);
+      };
+      
+      document.head.appendChild(link);
+      return link;
+    }
+    
+    // Insert main CSS files with proper callbacks
+    insertStylesheet('styles.css', function(success) {
+      window.mainStylesLoaded = success;
+      checkAllStylesLoaded();
+    });
+    
+    insertStylesheet('transitions.css', function(success) {
+      window.transitionStylesLoaded = success;
+      checkAllStylesLoaded();
+    });
+  </script>
+  
+  <!-- All CSS inlined to avoid MIME type issues -->
+  <style>
+    /* Essential styles */
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+    
+    .main-header {
+      background-color: white;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      height: 70px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 110;
+      animation: fadeIn 0.5s ease-in-out;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .main-header.scrolled {
+      background-color: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .container {
+      max-width: 2000px;
+      margin: 0 auto;
+      padding: 0 1rem;
+    }
+    
+    .logo img {
+      height: 48px;
+    }
+    
+    .text-gray-800 {
+      color: #1f2937;
+    }
+    
+    .flex {
+      display: flex;
+    }
+    
+    .items-center {
+      align-items: center;
+    }
+    
+    .justify-between {
+      justify-content: space-between;
+    }
+    
+    .space-x-4 > * + * {
+      margin-left: 1rem;
+    }
+    
+    .h-full {
+      height: 100%;
+    }
+    
+    .w-full {
+      width: 100%;
+    }
+    
+    .hero-section {
+      margin-top: 70px;
+      position: relative;
+      height: 400px;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      margin-bottom: 2rem;
+      animation: fadeIn 0.7s ease-in-out;
+      animation-fill-mode: both;
+      z-index: 1;
+    }
+    
+    .hero-bg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://lms-app-2b903.web.app/components/baguio-city-mirador-hill-sunset.jpg');
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.7);
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 20px 2rem;
+      color: white;
+    }
+    
+    .hero-title {
+      font-size: 4rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.8s ease-out 0.2s both;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      animation: slideUp 0.8s ease-out 0.4s both;
+    }
+    
+    .lodge-card {
+      background-color: white;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+      animation: scaleIn 0.5s ease-in-out;
+      animation-fill-mode: both;
+    }
+    
+    .lodge-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .lodge-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+      .lodge-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    
+    .nav-button {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      color: #374151;
+      font-weight: 500;
+      font-size: 1.125rem; /* text-lg */
+      border-radius: 0.5rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .nav-button:hover, .nav-button.active {
+      background-color: #f3f4f6;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    /* Map styles */
+    #mapView {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      background-color: white;
+      z-index: 100;
+      transition: opacity 0.3s ease;
+    }
+    
+    #mapView.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    
+    #closeMap {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      z-index: 101;
+      background-color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+    }
+    
+    .promo-tag { 
+      position: absolute; 
+      top: 12px; 
+      right: 12px; 
+      background: rgba(5, 150, 105, 0.95); 
+      color: white; 
+      padding: 8px 12px; 
+      border-radius: 8px; 
+      z-index: 2; 
+    }
+    
+    .promo-tag-label { 
+      font-size: 0.7rem; 
+      opacity: 0.9; 
+      margin-bottom: 2px; 
+    }
+    
+    .promo-tag-price { 
+      font-size: 0.9rem; 
+      font-weight: 700; 
+    }
+    
+    .amenity-tag { 
+      background: #f3f4f6; 
+      color: #4b5563; 
+      padding: 0.375rem 0.75rem; 
+      border-radius: 9999px; 
+      font-size: 0.75rem; 
+    }
+    
+    /* Transitions and Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes slideUp {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes scaleIn {
+      from {
+        transform: scale(0.95);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+    
+    /* Spinner animation */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Add specific padding for sections immediately after the header */
+    .header-cleared-section {
+      padding-top: 80px; /* Ensure content starts below the fixed header */
+    }
+    
+    .lodge-main-content {
+      background-color: white;
+      border-radius: 0.75rem; /* Rounded corners */
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+      padding: 1.5rem; /* Add some internal padding */
+    }
+
+    /* Main container for layout */
+    .container-main {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        width: 100%; /* Ensure it takes full width up to max-width */
+        max-width: 5000px; /* Increased max width further */
+        margin: 0 auto;
+        padding: 1.5rem 0;
+    }
+  </style>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  
+  <!-- Firebase Config -->
+  <script>
+    // Initialize Firebase immediately when scripts are loaded
+    (function() {
+      const firebaseConfig = {
+        apiKey: "AIzaSyBAJr0JQgWRfGTmSXTK6P7Yn8fkHXG2YeE",
+        authDomain: "lms-app-2b903.firebaseapp.com",
+        projectId: "lms-app-2b903",
+        storageBucket: "lms-app-2b903.appspot.com",
+        messagingSenderId: "1046108373013",
+        appId: "1:1046108373013:web:fc366db1d92b9c4b860e1c",
+        measurementId: "G-WRMW9Z8867"
+      };
+
+      try {
+        // Initialize Firebase
+        if (typeof firebase !== 'undefined') {
+          if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+            console.log('Firebase initialized successfully from inline script');
+          }
+          
+          // Make Firebase available globally
+          window.firebaseAuth = firebase.auth();
+          window.firebaseDb = firebase.firestore();
+          
+          // Set a flag to indicate Firebase is ready
+          window.firebaseReady = true;
+        } else {
+          console.error('Firebase SDK not available, will try again when DOMContentLoaded');
+          
+          // Set up a retry when DOM is loaded
+          document.addEventListener('DOMContentLoaded', function() {
+            if (typeof firebase !== 'undefined') {
+              if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log('Firebase initialized on DOMContentLoaded');
+              }
+              
+              // Make Firebase available globally
+              window.firebaseAuth = firebase.auth();
+              window.firebaseDb = firebase.firestore();
+              window.firebaseReady = true;
+            } else {
+              console.error('Firebase SDK still not available after DOMContentLoaded');
+              
+              // Final attempt with a delay
+              setTimeout(function() {
+                if (typeof firebase !== 'undefined') {
+                  if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                    console.log('Firebase initialized after timeout');
+                  }
+                  
+                  window.firebaseAuth = firebase.auth();
+                  window.firebaseDb = firebase.firestore();
+                  window.firebaseReady = true;
+                } else {
+                  console.error('Firebase SDK could not be loaded after multiple attempts');
+                }
+              }, 2000);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error initializing Firebase:', error);
+      }
+    })();
+  </script>
+  
+  <!-- Inline Main Scripts -->
+  <script>
+    // Basic functionality that would normally be in main.js
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOM loaded - setting up event handlers');
+      
+      // Basic functionality for login button
+      const loginBtn = document.getElementById('loginButton');
+      if (loginBtn) {
+        loginBtn.addEventListener('click', function() {
+          window.location.href = '../Login/index.html';
+        });
+      }
+      
+      // Basic functionality for map button
+      const mapBtn = document.getElementById('showMap');
+      if (mapBtn) {
+        mapBtn.addEventListener('click', function() {
+          const mapView = document.getElementById('mapView');
+          if (mapView) {
+            mapView.classList.remove('hidden');
+          }
+        });
+      }
+      
+      // Basic functionality for close map button
+      const closeMapBtn = document.getElementById('closeMap');
+      if (closeMapBtn) {
+        closeMapBtn.addEventListener('click', function() {
+          const mapView = document.getElementById('mapView');
+          if (mapView) {
+            mapView.classList.add('hidden');
+          }
+        });
+      }
+      
+      // Mobile menu toggle
+      const userIconBtn = document.getElementById('userIconBtn');
+      const mobileMenu = document.getElementById('mobile-menu');
+      if (userIconBtn && mobileMenu) {
+        userIconBtn.addEventListener('click', function() {
+          mobileMenu.classList.toggle('hidden');
+        });
+      }
+      
+      // Hide loader
+      const loader = document.getElementById('pageLoader');
+      if (loader) {
+        loader.style.display = 'none';
+      }
+    });
+  </script>
+
+  <!-- Google Maps API -->
+  <script>
+    // Prevent JavaScript syntax errors from earlier failed loads
+    window.addEventListener('error', function(event) {
+      if (event.filename && (
+          event.filename.includes('main.js') || 
+          event.filename.includes('map-init.js'))) {
+        console.warn('Prevented error from:', event.filename);
+        event.preventDefault();
+        return true;
+      }
+    }, true);
+    
+    window.initMap = function() {
+      // This function will be called by Google Maps API
+      console.log('Google Maps API loaded');
+      
+      // Create a map centered on Baguio
+      if (document.getElementById('map')) {
+        const baguio = { lat: 16.4023, lng: 120.5960 };
+        const map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 14,
+          center: baguio,
+        });
+        
+        // Add markers for the lodges
+        const lodges = [
+          {
+            position: { lat: 16.4123, lng: 120.5960 },
+            title: "Ever Lodge",
+            price: "₱1,300"
+          },
+          {
+            position: { lat: 16.3923, lng: 120.6160 },
+            title: "Pine Haven Lodge",
+            price: "₱6,500"
+          }
+        ];
+        
+        lodges.forEach(lodge => {
+          const marker = new google.maps.Marker({
+            position: lodge.position,
+            map: map,
+            title: lodge.title
+          });
+          
+          const infowindow = new google.maps.InfoWindow({
+            content: `<div style="padding: 10px;"><strong>${lodge.title}</strong><br>${lodge.price}/night</div>`
+          });
+          
+          marker.addListener('click', () => {
+            infowindow.open(map, marker);
+          });
+        });
+      }
+    };
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAaKZC47lvxIv0ej9bECXhUyaoL3FYuDM8&libraries=places&callback=initMap"></script>
+
+  <!-- Add cache busting script to force reloading resources -->
+  <script>
+    // Cache busting function for static HTML
+    (function() {
+      // Get today's date as a version number
+      const now = new Date();
+      const version = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}`;
+      
+      // Add version to all script and CSS tags
+      window.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('script[src]').forEach(script => {
+          if (script.src.includes('/Homepage/') && !script.src.includes('?v=')) {
+            script.src = script.src + '?v=' + version;
+          }
+        });
+        
+        document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+          if (link.href.includes('/Homepage/') && !link.href.includes('?v=')) {
+            link.href = link.href + '?v=' + version;
+          }
+        });
+      });
+    })();
+  </script>
+
+  <!-- JavaScript files (rooms.js must load first) -->
+  <script src="rooms.js"></script>
+  
+  <!-- Bridge script to ensure LodgeEasePublicAPI is loaded -->
+  <script>
+    // Verify LodgeEasePublicAPI is available after rooms.js loads
+    (function() {
+      if (!window.LodgeEasePublicAPI) {
+        console.warn('LodgeEasePublicAPI not found after loading rooms.js - attempting manual initialization');
+        
+        // Create fallback API if needed
+        window.LodgeEasePublicAPI = window.LodgeEasePublicAPI || {
+          getAllLodges: function() {
+            console.log('Using fallback getAllLodges');
+            return window.lodgeData || [];
+          },
+          renderLodges: function(lodges) {
+            console.log('Using fallback renderLodges');
+            if (typeof createLodgeCards === 'function') {
+              createLodgeCards(lodges);
+            }
+          },
+          addNewLodge: function() { return false; },
+          updateLodge: function() { return false; },
+          removeLodge: function() { return false; }
+        };
+      }
+    })();
+  </script>
+  
+  <script src="main.js"></script>
+  <script src="map-init.js"></script>
+  <script src="initializeNavigation.js"></script>
+  <script src="bookingHistory.js" defer></script>
+  <script src="admin-connector.js" defer></script>
+  <script src="rooms-fallback.js"></script>
+
+  <!-- Script to handle JS-based feature detection for better CSS loading -->
+  <script>
+    // Add initial detection class to help with CSS loading detection
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('DOMContentLoaded event fired - body is now definitely available');
+      document.body.classList.add('js-loaded');
+      
+      // Handle case where CSS was already loaded before body was available
+      if (window.cssLoadedPending === true) {
+        console.log('Applying pending CSS loaded flag from DOMContentLoaded');
+        document.body.classList.add('css-loaded');
+        window.cssLoadedPending = false;
+      }
+      
+      // Add browser info to help with debugging
+      const browserInfo = navigator.userAgent;
+      console.log('Browser: ' + browserInfo);
+      document.body.setAttribute('data-browser', browserInfo);
+      
+      // Compatibility check for modern browser features
+      const isModernBrowser = 'fetch' in window && 'Promise' in window && 'classList' in document.documentElement;
+      document.body.classList.toggle('modern-browser', isModernBrowser);
+      
+      // Trigger CSS check in case onload events didn't fire
+      if (!document.body.classList.contains('css-loaded')) {
+        console.log('DOM loaded but CSS not marked as loaded yet - triggering manual check');
+        if (typeof checkAllStylesLoaded === 'function') {
+          checkAllStylesLoaded();
+        }
+      }
+      
+      // Ensure loader is hidden when DOM is loaded
+      const loader = document.getElementById('pageLoader');
+      if (loader) {
+        setTimeout(function() {
+          loader.style.display = 'none';
+        }, 300); // Small delay for smoother transition
+      }
+
+      // DROPDOWN FIX: Ensure all dropdowns close properly
+      try {
+        // Direct fix for barangay dropdown
+        const fixDropdowns = function() {
+          const barangayDropdown = document.getElementById('barangayDropdown');
+          const barangayList = document.getElementById('barangayList');
+          
+          if (barangayList) {
+            // Add a direct click handler to the list container
+            barangayList.addEventListener('click', function(e) {
+              console.log('Click in barangay list');
+              if (barangayDropdown) {
+                barangayDropdown.classList.add('hidden');
+              }
+              e.stopPropagation();
+            });
+            
+            // Add handlers to any existing buttons
+            const buttons = barangayList.querySelectorAll('button');
+            buttons.forEach(function(button) {
+              button.addEventListener('click', function(e) {
+                console.log('Button in barangay list clicked');
+                if (barangayDropdown) {
+                  barangayDropdown.classList.add('hidden');
+                }
+                e.stopPropagation();
+              });
+            });
+          }
+          
+          // Add a global click handler to close any open dropdowns
+          document.addEventListener('click', function(e) {
+            const allDropdowns = document.querySelectorAll('.absolute:not(.hidden)');
+            allDropdowns.forEach(function(dropdown) {
+              if (dropdown.id === 'barangayDropdown' && !dropdown.contains(e.target) && 
+                  !e.target.matches('#barangayDropdownBtn') && 
+                  !e.target.closest('#barangayDropdownBtn')) {
+                console.log('Global click outside dropdown, hiding');
+                dropdown.classList.add('hidden');
+              }
+            });
+          });
+        };
+        
+        // Run immediately and also with a slight delay to ensure it works
+        fixDropdowns();
+        setTimeout(fixDropdowns, 1000);
+      } catch (err) {
+        console.error('Error in dropdown fix:', err);
+      }
+    });
+  </script>
+
+  <!-- User Drawer Initialization Script -->
+  <script>
+    // This script ensures user drawer functionality works even if the main initialization fails
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('User drawer init script running');
+      
+      // Load userDrawer-fallback.js directly to ensure it's available when needed
+      if (!document.querySelector('script[src*="userDrawer-fallback.js"]')) {
+        const fallbackScript = document.createElement('script');
+        fallbackScript.src = 'userDrawer-fallback.js';
+        fallbackScript.onload = function() {
+          console.log('userDrawer-fallback.js loaded successfully');
+          
+          // Initialize the drawer if Firebase is available
+          setTimeout(function() {
+            if (window.firebase && window.firebase.auth && window.firebase.firestore && typeof window.initializeUserDrawer === 'function') {
+              try {
+                const auth = window.firebase.auth();
+                const db = window.firebase.firestore();
+                console.log('Initializing user drawer after fallback script loaded');
+                window.initializeUserDrawer(auth, db);
+              } catch (e) {
+                console.error('Error initializing user drawer:', e);
+              }
+            }
+          }, 300);
+        };
+        document.head.appendChild(fallbackScript);
+      }
+      
+      // Create a global initializeUserDrawer function if it doesn't exist
+      if (typeof window.initializeUserDrawer !== 'function') {
+        console.log('Creating global initializeUserDrawer function');
+        
+        window.initializeUserDrawer = function(auth, db) {
+          console.log('Global initializeUserDrawer called');
+          
+          const userIconBtn = document.getElementById('userIconBtn');
+          const drawer = document.getElementById('userDrawer');
+          
+          if (!userIconBtn || !drawer) {
+            console.error('User drawer elements not found');
+            return;
+          }
+          
+          // Ensure drawer has correct styles
+          if (drawer.classList.contains('w-96')) {
+            drawer.classList.remove('w-96');
+            drawer.classList.add('w-80');
+          }
+          
+          // Make sure z-index is high enough
+          if (!drawer.classList.contains('z-[200000]')) {
+            drawer.classList.remove('z-50');
+            drawer.classList.remove('z-[999]');
+            drawer.classList.add('z-[200000]');
+            drawer.style.zIndex = "200000 !important";
+          }
+          
+          // Make sure overlay has correct z-index
+          const drawerOverlay = document.getElementById('drawerOverlay');
+          if (drawerOverlay) {
+            drawerOverlay.style.zIndex = "199999 !important";
+          }
+          
+          // Toggle drawer when user icon is clicked
+          userIconBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            drawer.classList.remove('translate-x-full');
+          });
+          
+          // Close drawer when close button is clicked
+          const closeBtn = drawer.querySelector('#closeDrawer');
+          if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+              drawer.classList.add('translate-x-full');
+            });
+          }
+          
+          // Check auth state and update drawer content
+          const updateDrawerContent = function(user) {
+            const content = drawer.querySelector('.drawer-content');
+            if (!content) return;
+            
+            if (user) {
+              // User is signed in
+              content.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xl font-bold">User Profile</h3>
+                  <button id="closeDrawer" class="text-gray-500 hover:text-gray-700">
+                    <i class="ri-close-line text-2xl"></i>
+                  </button>
+                </div>
+                <div class="py-4">
+                  <div class="flex justify-center mb-4">
+                    <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span class="text-2xl text-blue-600">${(user.displayName || user.email || 'U').charAt(0).toUpperCase()}</span>
+                    </div>
+                  </div>
+                  <h3 class="text-center text-lg font-bold mb-1">${user.displayName || 'LodgeEase User'}</h3>
+                  <p class="text-center text-gray-500 mb-6 text-sm">${user.email || ''}</p>
+                  
+                  <div class="space-y-2">
+                    <button class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded flex items-center text-sm" id="showBookingsButton">
+                      <i class="ri-calendar-line mr-2"></i>
+                      <span>My Bookings</span>
+                    </button>
+                    <button class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded flex items-center text-sm" onclick="window.location.href='../Dashboard/dashboard.html'">
+                      <i class="ri-dashboard-line mr-2"></i>
+                      <span>Dashboard</span>
+                    </button>
+                    <button id="signOutBtn" class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 rounded flex items-center text-sm">
+                      <i class="ri-logout-box-line mr-2"></i>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              `;
+              
+              // Add sign out functionality
+              const signOutBtn = content.querySelector('#signOutBtn');
+              if (signOutBtn && auth) {
+                signOutBtn.addEventListener('click', function() {
+                  auth.signOut().then(function() {
+                    drawer.classList.add('translate-x-full');
+                    console.log('User signed out');
+                    // Update login button visibility
+                    const loginButton = document.getElementById('loginButton');
+                    const mobileLoginButton = document.getElementById('mobileLoginButton');
+                    if (loginButton) loginButton.style.display = 'flex';
+                    if (mobileLoginButton) mobileLoginButton.style.display = 'block';
+                  }).catch(function(error) {
+                    console.error('Sign out error', error);
+                  });
+                });
+              }
+              
+              // Add bookings functionality
+              const showBookingsButton = content.querySelector('#showBookingsButton');
+              if (showBookingsButton) {
+                showBookingsButton.addEventListener('click', function() {
+                  if (typeof window.showBookingsModal === 'function') {
+                    window.showBookingsModal();
+                    drawer.classList.add('translate-x-full'); // Close drawer when showing bookings
+                  } else {
+                    console.warn('showBookingsModal function not available');
+                  }
+                });
+              }
+              
+              // Reinitialize close button
+              const newCloseBtn = content.querySelector('#closeDrawer');
+              if (newCloseBtn) {
+                newCloseBtn.addEventListener('click', function() {
+                  drawer.classList.add('translate-x-full');
+                });
+              }
+              
+            } else {
+              // User is signed out
+              content.innerHTML = `
+                <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xl font-bold">User Profile</h3>
+                  <button id="closeDrawer" class="text-gray-500 hover:text-gray-700">
+                    <i class="ri-close-line text-2xl"></i>
+                  </button>
+                </div>
+                <div class="py-6 text-center">
+                  <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="ri-user-line text-2xl text-gray-400"></i>
+                  </div>
+                  <p class="mb-6 text-sm">Please sign in to access your profile</p>
+                  <a href="../Login/index.html" class="inline-block bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition-colors text-sm">
+                    Sign In
+                  </a>
+                  <p class="mt-4 text-xs text-gray-500">
+                    Don't have an account? 
+                    <a href="../Login/index.html#signup" class="text-blue-600 hover:underline">Sign Up</a>
+                  </p>
+                </div>
+              `;
+              
+              // Reinitialize close button
+              const newCloseBtn = content.querySelector('#closeDrawer');
+              if (newCloseBtn) {
+                newCloseBtn.addEventListener('click', function() {
+                  drawer.classList.add('translate-x-full');
+                });
+              }
+            }
+          };
+          
+          // Listen for auth state changes
+          if (auth) {
+            auth.onAuthStateChanged(function(user) {
+              updateDrawerContent(user);
+              
+              // Update login button visibility
+              const loginButton = document.getElementById('loginButton');
+              const mobileLoginButton = document.getElementById('mobileLoginButton');
+              
+              if (loginButton) {
+                loginButton.style.display = user ? 'none' : 'flex';
+              }
+              
+              if (mobileLoginButton) {
+                mobileLoginButton.style.display = user ? 'none' : 'block';
+              }
+            });
+          } else {
+            updateDrawerContent(null);
+          }
+          
+          // Listen for clicks outside the drawer to close it
+          document.addEventListener('click', function(e) {
+            if (!drawer.classList.contains('translate-x-full') && 
+                e.target !== userIconBtn && 
+                !userIconBtn.contains(e.target) && 
+                !drawer.contains(e.target)) {
+              drawer.classList.add('translate-x-full');
+            }
+          });
+          
+          // Set flag to indicate initialization
+          window.userDrawerInitialized = true;
+        };
+      }
+      
+      // Try to initialize with Firebase if available
+      setTimeout(function() {
+        try {
+          if (!window.userDrawerInitialized && window.firebase) {
+            const auth = window.firebase.auth();
+            const db = window.firebase.firestore();
+            if (auth) {
+              console.log('Initializing user drawer with Firebase from setTimeout handler');
+              window.initializeUserDrawer(auth, db);
+            }
+          }
+        } catch (err) {
+          console.error('Error initializing user drawer:', err);
+        }
+      }, 500);
+    });
+  </script>
+
+  <!-- Emergency script in case main.js fails to load -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      // Hide loader after page is loaded
+      setTimeout(function() {
+        var loader = document.getElementById('pageLoader');
+        if (loader) {
+          loader.style.display = 'none';
+        }
+      }, 800);
+      
+      // Check if main.js loaded properly
+      if (typeof createLodgeCards !== 'function') {
+        console.log("Main.js did not load properly. Using emergency fallback.");
+        
+        // Fallback functionality for lodge cards
+        const lodgeContainers = document.querySelectorAll('.lodge-card');
+        if (lodgeContainers) {
+          lodgeContainers.forEach(function(card) {
+            card.style.display = 'block';
+            card.style.opacity = '1';
+            card.style.transform = 'scale(1)';
+            
+            // Add click event for cards
+            card.addEventListener('click', function() {
+              alert('Lodge details will be available once the site is fully loaded.');
+            });
+          });
+        }
+        
+        // Ensure the sort button has basic functionality
+        const sortSelect = document.getElementById('sortBySelect');
+        if (sortSelect) {
+          sortSelect.addEventListener('change', function() {
+            alert('Sorting will be available once the site is fully loaded.');
+          });
+        }
+      }
+    });
+  </script>
+  
+  <!-- Debugging script to help diagnose deployment issues -->
+  <script>
+    // Will run after everything else has loaded
+    window.addEventListener('load', function() {
+      console.group('LodgeEase Deployment Diagnostic');
+      
+      // Check if LodgeEasePublicAPI is available
+      if (window.LodgeEasePublicAPI) {
+        console.log('✅ LodgeEasePublicAPI is available');
+        console.log('Lodge count:', window.LodgeEasePublicAPI.getAllLodges()?.length || 0);
+      } else {
+        console.error('❌ LodgeEasePublicAPI is not available');
+      }
+      
+      // Check for lodge cards
+      const lodgeCards = document.querySelectorAll('.lodge-container .lodge-card');
+      console.log(`${lodgeCards.length > 2 ? '✅' : '❌'} Lodge cards found: ${lodgeCards.length}`);
+      
+      // Check if CSS is loaded
+      const styles = getComputedStyle(document.querySelector('.lodge-container'));
+      console.log(`${styles.display === 'grid' ? '✅' : '❌'} CSS loaded correctly`);
+      
+      // Check Firebase
+      if (window.firebase) {
+        console.log('✅ Firebase is loaded');
+      } else {
+        console.warn('⚠️ Firebase not detected');
+      }
+      
+      console.groupEnd();
+    });
+  </script>
+
+  <!-- Debug script to fix user drawer and bookings modal z-index issues -->
+  <script>
+    // Ensure drawer and bookings modal have correct z-index on page load
+    window.addEventListener('load', function() {
+      // Fix user drawer z-index
+      const drawer = document.getElementById('userDrawer');
+      const overlay = document.getElementById('drawerOverlay');
+      
+      if (drawer) {
+        // Force correct z-index with inline style 
+        drawer.style.cssText = drawer.style.cssText + "; z-index: 200000 !important;";
+        
+        // Also apply translateX to ensure it's hidden initially
+        if (!drawer.classList.contains('translate-x-full')) {
+          drawer.classList.add('translate-x-full');
+        }
+        
+        console.log('Fixed drawer z-index');
+      }
+      
+      if (overlay) {
+        // Force correct z-index with inline style
+        overlay.style.cssText = overlay.style.cssText + "; z-index: 199999 !important;";
+        console.log('Fixed overlay z-index');
+      }
+      
+      // Fix bookings modal z-index
+      const bookingsPopup = document.getElementById('bookingsPopup');
+      if (bookingsPopup) {
+        // Force correct z-index with inline style
+        bookingsPopup.style.cssText = bookingsPopup.style.cssText + "; z-index: 200000 !important;";
+        
+        // Find and fix the modal container inside bookings popup
+        const modalContainer = bookingsPopup.querySelector('.fixed.right-0.top-0');
+        if (modalContainer) {
+          modalContainer.style.cssText = modalContainer.style.cssText + "; z-index: 200001 !important;";
+        }
+        
+        console.log('Fixed bookings modal z-index');
+      }
+      
+      // Set up a more robust mutation observer to fix z-index issues
+      // This will catch both additions and attribute changes to maintain z-index values
+      const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+          // Check for added nodes
+          if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.id === 'bookingsPopup') {
+                node.style.cssText = node.style.cssText + "; z-index: 200000 !important;";
+                
+                setTimeout(function() {
+                  const modalContainer = node.querySelector('.fixed.right-0.top-0');
+                  if (modalContainer) {
+                    modalContainer.style.cssText = modalContainer.style.cssText + "; z-index: 200001 !important;";
+                  }
+                }, 0);
+                
+                console.log('Fixed dynamically added bookings modal z-index');
+              }
+            });
+          }
+          
+          // Check for existing elements with changed attributes (like display or z-index)
+          if (mutation.type === 'attributes') {
+            if (mutation.target.id === 'bookingsPopup') {
+              // If class changed and hidden class was removed (modal is being shown)
+              if (mutation.attributeName === 'class' && !mutation.target.classList.contains('hidden')) {
+                mutation.target.style.cssText = mutation.target.style.cssText + "; z-index: 200000 !important;";
+                
+                const modalContainer = mutation.target.querySelector('.fixed.right-0.top-0');
+                if (modalContainer) {
+                  modalContainer.style.cssText = modalContainer.style.cssText + "; z-index: 200001 !important;";
+                }
+                
+                console.log('Fixed bookings modal z-index after display change');
+              }
+            }
+          }
+        });
+      });
+      
+      // Start observing the document with the configured parameters
+      observer.observe(document.body, { 
+        childList: true,  // observe direct children
+        subtree: true,    // and lower descendants too
+        attributes: true, // observe attribute changes
+        attributeFilter: ['class', 'style'] // only these attributes
+      });
+      
+      // Create a persistent click handler for any elements that might open the bookings modal
+      document.addEventListener('click', function(e) {
+        // If click event involved a button that might show the bookings modal
+        if (e.target.id === 'showBookingsButton' || 
+            e.target.id === 'drawerBookingsBtn' || 
+            e.target.id === 'myBookingsBtn' ||
+            e.target.closest('#showBookingsButton') ||
+            e.target.closest('#drawerBookingsBtn') ||
+            e.target.closest('#myBookingsBtn')) {
+          
+          // Use a timeout to let the modal get created/shown first
+          setTimeout(function() {
+            const bookingsPopup = document.getElementById('bookingsPopup');
+            if (bookingsPopup && !bookingsPopup.classList.contains('hidden')) {
+              bookingsPopup.style.cssText = bookingsPopup.style.cssText + "; z-index: 200000 !important;";
+              
+              const modalContainer = bookingsPopup.querySelector('.fixed.right-0.top-0');
+              if (modalContainer) {
+                modalContainer.style.cssText = modalContainer.style.cssText + "; z-index: 200001 !important;";
+              }
+              
+              console.log('Fixed bookings modal z-index after click event');
+            }
+          }, 50); // Small delay to ensure modal is in the DOM
+        }
+      });
+    });
+  </script>
+
+  <!-- Custom script to fix the barangay dropdown -->
+  <script>
+    window.addEventListener('DOMContentLoaded', function() {
+      // Allow time for the main script to initialize
+      setTimeout(function() {
+        console.log('Applying new barangay dropdown fix - v3');
+        
+        // Get elements
+        const barangayDropdownBtn = document.getElementById('barangayDropdownBtn');
+        const barangayDropdown = document.getElementById('barangayDropdown');
+        const barangayList = document.getElementById('barangayList');
+        
+        if (!barangayDropdownBtn || !barangayDropdown || !barangayList) {
+          console.error('Cannot find dropdown elements');
+          return;
+        }
+        
+        // Make sure all lodge cards have proper barangay data attributes
+        ensureLodgeCardAttributes();
+        
+        // Function to ensure all lodge cards have proper data attributes
+        function ensureLodgeCardAttributes() {
+          const cards = document.querySelectorAll('.lodge-card');
+          console.log('Checking data attributes for', cards.length, 'lodge cards');
+          
+          cards.forEach((card, index) => {
+            // If card doesn't have barangay attribute or it's empty
+            if (!card.dataset.barangay || card.dataset.barangay === '') {
+              const lodgeName = card.querySelector('h2')?.textContent || `Lodge ${index}`;
+              const locationText = card.querySelector('.location span')?.textContent || '';
+              
+              // Extract barangay from location text if possible
+              let barangay = '';
+              if (locationText.includes('Session Road')) {
+                barangay = 'Session Road';
+              } else if (locationText.includes('Camp John Hay')) {
+                barangay = 'Camp 7';
+              } else if (locationText.includes('Burnham')) {
+                barangay = 'Burnham-Legarda';
+              } else if (locationText.includes('City Center')) {
+                barangay = 'City Camp Central';
+              } else if (locationText.includes('Wright Park')) {
+                barangay = 'Kisad';
+              } else {
+                // Default if we can't determine
+                barangay = 'All Barangays';
+              }
+              
+              // Set the barangay attribute
+              card.dataset.barangay = barangay;
+              console.log(`Fixed missing barangay attribute for ${lodgeName}: set to ${barangay}`);
+            }
+          });
+        }
+        
+        // Remove existing event listeners by cloning
+        const newBtn = barangayDropdownBtn.cloneNode(true);
+        barangayDropdownBtn.parentNode.replaceChild(newBtn, barangayDropdownBtn);
+        
+        const newDropdown = barangayDropdown.cloneNode(true);
+        barangayDropdown.parentNode.replaceChild(newDropdown, barangayDropdown);
+        
+        // Get fresh references
+        const btn = document.getElementById('barangayDropdownBtn');
+        const dropdown = document.getElementById('barangayDropdown');
+        const list = document.getElementById('barangayList');
+        
+        // Force dropdown to be hidden initially
+        dropdown.classList.add('hidden');
+        
+        // Create barangay options
+        const barangays = [
+          'All Barangays',
+          'Abanao-Zandueta-Kayong-Chugum-Otek',
+          'Alfonso Tabora',
+          'Ambiong',
+          'Andres Bonifacio',
+          'Apugan-Loakan',
+          'Session Road',
+          'Camp 7',
+          'Burnham-Legarda',
+          'City Camp Central',
+          'Kisad'
+        ];
+        
+        // Populate list with buttons
+        list.innerHTML = '';
+        barangays.forEach(function(barangay) {
+          const btn = document.createElement('button');
+          btn.className = 'w-full text-left px-4 py-2 hover:bg-gray-100 text-black';
+          btn.textContent = barangay;
+          
+          // Handle click on barangay option
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('barangayText').textContent = barangay;
+            dropdown.classList.add('hidden');
+            console.log('Selected: ' + barangay + ', applying filter');
+            
+            // Direct call to the filterLodgesByBarangay function
+            if (typeof window.filterLodgesByBarangay === 'function') {
+              window.filterLodgesByBarangay(barangay);
+            } else if (typeof filterLodgesByBarangay === 'function') {
+              filterLodgesByBarangay(barangay);
+            } else {
+              // Fallback method: Apply filter directly
+              const cards = document.querySelectorAll('.lodge-card');
+              let visibleCount = 0;
+              
+              cards.forEach(card => {
+                if (barangay === 'All Barangays' || card.dataset.barangay === barangay) {
+                  card.style.display = 'block';
+                  visibleCount++;
+                } else {
+                  card.style.display = 'none';
+                }
+              });
+              
+              const resultsCount = document.querySelector('.lodge-count');
+              if (resultsCount) {
+                resultsCount.textContent = `Showing ${visibleCount} of ${cards.length} lodges`;
+              }
+            }
+          });
+          
+          list.appendChild(btn);
+          
+          // Add separator after first item
+          if (barangay === 'All Barangays') {
+            const sep = document.createElement('div');
+            sep.className = 'border-t border-gray-200 my-2';
+            list.appendChild(sep);
+          }
+        });
+        
+        // Toggle dropdown when button is clicked
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Position dropdown
+          const btnRect = btn.getBoundingClientRect();
+          dropdown.style.position = 'fixed';
+          dropdown.style.top = (btnRect.bottom + window.scrollY) + 'px';
+          dropdown.style.left = btnRect.left + 'px';
+          dropdown.style.width = '300px';
+          dropdown.style.zIndex = '10000';
+          dropdown.style.background = 'white';
+          dropdown.style.borderRadius = '8px';
+          dropdown.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+          
+          // Toggle visibility
+          if (dropdown.classList.contains('hidden')) {
+            dropdown.classList.remove('hidden');
+            console.log('Opened dropdown');
+          } else {
+            dropdown.classList.add('hidden');
+            console.log('Closed dropdown');
+          }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          // Only process if dropdown is visible
+          if (!dropdown.classList.contains('hidden')) {
+            // If click is outside dropdown and button
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+              dropdown.classList.add('hidden');
+              console.log('Outside click, hiding dropdown');
+            }
+          }
+        });
+        
+        // Close dropdown when pressing Escape
+        document.addEventListener('keydown', function(e) {
+          if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+            dropdown.classList.add('hidden');
+            console.log('Escape pressed, hiding dropdown');
+          }
+        });
+        
+        // Expose the filterLodgesByBarangay function to the window scope for direct access
+        if (typeof window.filterLodgesByBarangay !== 'function' && typeof filterLodgesByBarangay === 'function') {
+          window.filterLodgesByBarangay = filterLodgesByBarangay;
+        }
+        
+        console.log('Barangay dropdown fix v3 complete');
+      }, 1000); // Increased timeout to ensure main script is loaded
+    });
+  </script>
+</head>
+
+<body class="text-gray-800">
+  <!-- Page Loader -->
+  <div id="pageLoader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #fff; z-index: 9999; display: flex; justify-content: center; align-items: center;">
+    <div style="text-align: center;">
+      <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; margin: 0 auto; animation: spin 1s linear infinite;"></div>
+      <p style="margin-top: 10px; font-family: sans-serif;">Loading LodgeEase...</p>
+    </div>
+  </div>
+  
+  <header class="main-header fixed w-full z-[110]">
+    <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="rooms.html" class="logo flex items-center space-x-2">
+        <img src="https://lms-app-2b903.web.app/components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="flex items-center space-x-4">
+        <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+          <i class="ri-home-line"></i>
+          <span>Home</span>
+        </a>
+        <button id="loginButton" class="nav-button">
+          <i class="ri-login-box-line"></i>
+          <span>Log in</span>
+        </button>
+        <button id="userIconBtn" class="menu-button">
+          <i class="ri-menu-line"></i>
+          <i class="ri-user-line"></i>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden bg-white border-t border-gray-100 shadow-sm">
+      <div class="container mx-auto px-4 py-3 space-y-3">
+        <a href="rooms.html" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <i class="ri-home-line mr-2"></i>Home
+        </a>
+        <a href="../Login/index.html" id="mobileLoginButton" class="block px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
+          <i class="ri-login-box-line mr-2"></i>Log In
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div class="container pt-40">
+    <section class="hero-section header-cleared-section">
+      <div class="hero-bg"></div>
+      
+      <div class="hero-content">
+        <h1 class="hero-title">Discover Baguio City</h1>
+        <p class="hero-subtitle">Find your perfect mountain retreat</p>
+        
+        <div class="search-bar-container bg-white rounded-full shadow-md p-2 mx-auto flex items-center gap-2" style="max-width: 1200px; width: 100%;">
+          <!-- Location Segment -->
+          <div class="flex-1 flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-gray-100 rounded-full">
+            <i class="ri-map-pin-line text-gray-500"></i>
+            <button id="barangayDropdownBtn" class="w-full text-left focus:outline-none bg-transparent text-base">
+              <span id="barangayText" class="text-gray-500">Where are you going?</span>
+            </button>
+          </div>
+
+          <!-- Add the missing dropdown container for barangays -->
+          <div id="barangayDropdown" class="hidden fixed bg-white rounded-lg shadow-lg max-h-96 overflow-y-auto" style="z-index: 99999;">
+            <div class="p-4">
+              <h3 class="font-semibold mb-2 text-black">Choose Area</h3>
+              <div class="relative mb-2">
+                <input type="text" id="barangaySearchInput" placeholder="Search areas..." class="w-full border rounded-lg px-3 py-2 text-sm text-black pr-8">
+                <button id="clearBarangaySearch" class="absolute right-2 top-2 text-gray-400 hover:text-gray-600" style="display: none;">
+                  <i class="ri-close-circle-line text-lg"></i>
+                </button>
+                <i id="searchIcon" class="ri-search-line absolute right-3 top-2 text-gray-400"></i>
+              </div>
+              <div id="barangayList" class="mt-2 space-y-1">
+                <!-- Items will be populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Vertical Divider -->
+          <div class="h-6 w-px bg-gray-200"></div>
+
+          <!-- Check-in Date Segment -->
+          <div class="flex-1 flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-gray-100 rounded-full relative">
+            <i class="ri-calendar-line text-gray-500"></i>
+            <button id="checkInDropdownBtn" class="w-full text-left focus:outline-none bg-transparent text-base">
+              <span id="checkInText" class="text-gray-500">Check-in Date</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="flex flex-col md:flex-row md:space-x-6 container-main">
+      <!-- Filters -->
+      <aside class="w-full md:w-1/4 bg-white shadow-md rounded-xl p-6 mb-6 filter-sidebar">
+        <div class="mb-6">
+          <button id="showMap" class="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition shadow-md">
+            <i class="ri-map-pin-line text-lg"></i>
+            <span class="font-medium">Show Map</span>
+          </button>
+        </div>
+
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold">Filters</h2>
+          <button class="text-blue-600 hover:bg-blue-50 p-2 rounded-full">
+            <i class="ri-refresh-line"></i>
+          </button>
+        </div>
+
+        <!-- Price Range Slider -->
+        <div class="mb-6 filter-section">
+          <label class="block text-sm font-semibold mb-3">Price Range (per night)</label>
+          <input 
+            type="range" 
+            min="0" 
+            max="25000" 
+            class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer"
+          >
+          <div class="flex justify-between text-sm text-gray-600 mt-2">
+            <span>₱0</span>
+            <span class="price-display">₱25,000</span>
+          </div>
+        </div>
+
+        <!-- Property Type Filter -->
+        <div class="mb-6 filter-section">
+          <h3 class="text-sm font-semibold mb-3">Property Type</h3>
+          <div class="space-y-2" data-filter="property-type">
+            <label class="flex items-center">
+              <input type="checkbox" value="hotel" class="mr-2">
+              <span>Hotel</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="resort" class="mr-2">
+              <span>Resort</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="apartment" class="mr-2">
+              <span>Apartment</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="vacation-home" class="mr-2">
+              <span>Vacation Home</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" value="bed-breakfast" class="mr-2">
+              <span>Bed & Breakfast</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Amenities Filter -->
+        <div class="mb-6 filter-section">
+          <h3 class="text-sm font-semibold mb-3">Amenities</h3>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" name="amenity" value="wifi" class="mr-2">
+              <span>WiFi</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="amenity" value="mountain view" class="mr-2">
+              <span>Mountain View</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="amenity" value="kitchen" class="mr-2">
+              <span>Kitchen</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="amenity" value="parking" class="mr-2">
+              <span>Parking</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Guest Rating Filter -->
+        <div class="mb-6 filter-section">
+          <h3 class="text-sm font-semibold mb-3">Guest Rating</h3>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" name="guest-rating" value="4" class="mr-2">
+              <span>4+ Stars</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="guest-rating" value="3" class="mr-2">
+              <span>3+ Stars</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Stay Duration Filter -->
+        <div class="mb-6 filter-section">
+          <h3 class="text-sm font-semibold mb-3">Stay Duration</h3>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" name="stayDuration" value="short term" class="mr-2">
+              <span>Short Term</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="stayDuration" value="long term/dorms" class="mr-2">
+              <span>Long Term / Dorms</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- More Amenities Filter -->
+        <div class="mb-6 filter-section">
+          <h3 class="text-sm font-semibold mb-3">More Amenities</h3>
+          <div class="space-y-2">
+            <label class="flex items-center">
+              <input type="checkbox" name="more-amenities" value="fitness center" class="mr-2">
+              <span>Fitness Center</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="more-amenities" value="fireplace" class="mr-2">
+              <span>Fireplace</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="more-amenities" value="pet friendly" class="mr-2">
+              <span>Pet Friendly</span>
+            </label>
+            <label class="flex items-center">
+              <input type="checkbox" name="more-amenities" value="restaurant" class="mr-2">
+              <span>Restaurant</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Lodge Listings -->
+      <main class="w-full md:w-3/4 lodge-main-content">
+        <!-- Sorting and count display -->
+        <div class="flex justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-md">
+          <div class="text-sm text-gray-600 lodge-count">
+            Showing 2 of 50 lodges
+          </div>
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-600">Sort by:</span>
+            <select id="sortBySelect" class="border rounded-lg px-3 py-2 text-sm">
+              <option value="Recommended">Recommended</option>
+              <option value="Price: Low to High">Price: Low to High</option>
+              <option value="Price: High to Low">Price: High to Low</option>
+              <option value="Top Rated">Top Rated</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Lodge cards grid container -->
+        <div class="lodge-container">
+          <!-- Static Lodge Card 1 (Ever Lodge) -->
+          <article class="lodge-card bg-white rounded-lg shadow-md overflow-hidden h-full">
+            <div class="relative w-full pb-[60%]">
+              <div class="promo-tag">
+                <span class="promo-tag-label">NIGHT PROMO</span>
+                <span class="promo-tag-price">₱580</span>
+              </div>
+              <img src="https://lms-app-2b903.web.app/components/6.jpg" alt="Ever Lodge" class="absolute inset-0 w-full h-full object-cover">
+            </div>
+            <div class="p-4">
+              <h2 class="text-xl font-semibold mb-2">Ever Lodge</h2>
+              <div class="location flex items-center text-gray-600 mb-2">
+                <i class="ri-map-pin-line mr-1"></i>
+                <span>Baguio City Center, Baguio City</span>
+              </div>
+              <div class="amenities flex flex-wrap gap-2 mb-4">
+                <span class="amenity-tag">Mountain View</span>
+                <span class="amenity-tag">WiFi</span>
+                <span class="amenity-tag">Fitness Center</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="rating flex items-center">
+                  <span class="text-yellow-400 mr-1">★</span>
+                  <span class="font-medium">4.9</span>
+                </div>
+                <div class="price text-lg font-bold text-green-600">
+                  ₱1,300
+                  <span class="text-sm font-normal text-gray-600">/night</span>
+                </div>
+              </div>
+            </div>
+          </article>
+          
+          <!-- Static Lodge Card 2 (Pine Haven) -->
+          <article class="lodge-card bg-white rounded-lg shadow-md overflow-hidden h-full">
+            <div class="relative w-full pb-[60%]">
+              <img src="https://lms-app-2b903.web.app/components/pinehaven.jpg" alt="Pine Haven Lodge" class="absolute inset-0 w-full h-full object-cover">
+            </div>
+            <div class="p-4">
+              <h2 class="text-xl font-semibold mb-2">Pine Haven Lodge</h2>
+              <div class="location flex items-center text-gray-600 mb-2">
+                <i class="ri-map-pin-line mr-1"></i>
+                <span>Camp John Hay, Baguio City</span>
+              </div>
+              <div class="amenities flex flex-wrap gap-2 mb-4">
+                <span class="amenity-tag">Mountain View</span>
+                <span class="amenity-tag">Fireplace</span>
+                <span class="amenity-tag">WiFi</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="rating flex items-center">
+                  <span class="text-yellow-400 mr-1">★</span>
+                  <span class="font-medium">4.8</span>
+                </div>
+                <div class="price text-lg font-bold">
+                  ₱6,500
+                  <span class="text-sm font-normal text-gray-600">/night</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- User Drawer Component -->
+  <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out z-[200000]" style="z-index: 200000 !important;">
+    <div class="drawer-content p-6">
+      <!-- Content will be dynamically inserted here by userDrawer.js -->
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold">User Profile</h3>
+        <button id="closeDrawer" class="text-gray-500 hover:text-gray-700">
+          <i class="ri-close-line text-2xl"></i>
+        </button>
+      </div>
+      <div class="flex items-center justify-center py-8">
+        <div class="spinner-border animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- User Drawer Overlay -->
+  <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[199999]" style="z-index: 199999 !important;"></div>
+
+  <!-- Map View Container -->
+  <div id="mapView" class="hidden">
+    <button id="closeMap">
+      <i class="ri-close-line text-xl"></i>
+    </button>
+    <div id="map"></div>
+  </div>
+
+  <footer class="bg-gray-900 text-white py-12 mt-12">
+    <div class="container mx-auto px-6 text-center">
+      <div class="mb-8">
+        <h3 class="text-3xl font-bold text-blue-500 mb-4">LodgeEase</h3>
+        <p class="text-gray-300">Aspiras palispis highway, Baguio City, Benguet, 2600 Philippines</p>
+        <p class="text-gray-300">Contact: +(63) 9129 912 6584 | lodgeease.baguio@email.com</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Temporary Debug Script -->
+  <script src="debug-dropdown.js"></script>
+</body>
+</html>

@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Hotel Client Dashboard5</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script type="module" src="lodge5.js"></script>
+        <script type="module" src="../components/messagePopup.js"></script>
+        <script type="module" src="../components/userDrawer.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="../Homepage/styles.css">
+        <link rel="stylesheet" href="lodge-header-fix.css">
+    </head>
+
+<body class="text-gray-800">
+  <header class="main-header">
+    <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+        <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="flex items-center space-x-4">
+        <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+          <i class="ri-home-line"></i>
+          <span>Home</span>
+        </a>
+        <button id="loginButton" class="nav-button">
+          <i class="ri-login-box-line"></i>
+          <span>Log in</span>
+        </button>
+        <button id="userIconBtn" class="menu-button">
+          <i class="ri-menu-line"></i>
+          <i class="ri-user-line"></i>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Remove the drawer overlay -->
+  <!-- 
+  <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
+   -->
+
+  <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full flex flex-col">
+      <div class="flex justify-end p-4 border-b">
+          <button id="closeDrawer" class="text-gray-600 hover:text-gray-900">
+              <i class="ri-close-line text-2xl"></i>
+          </button>
+      </div>
+      <div class="drawer-content flex-1 overflow-y-auto">
+          <!-- Content will be dynamically inserted by JavaScript -->
+      </div>
+  </div>
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-4 pt-24">
+        <!-- Lodge Details -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <!-- Image Gallery -->
+            <div class="relative h-96">
+                <img src="../components/SuperApartmentRoom6.jpg" alt="City Lights Inn" class="w-full h-full object-cover">
+                <button class="absolute top-4 right-4 text-gray-500 hover:text-red-500">
+                    <i class="ri-heart-line text-2xl"></i>
+                </button>
+            </div>
+
+            <!-- Lodge Information -->
+            <div class="p-6">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900">Super Apartment- Room 6</h1>
+                        <p class="text-gray-600 mt-2">Bonifacio Street, Baguio City</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-green-600">₱6,000/month</p>
+                        <div class="flex items-center mt-1">
+                            <i class="ri-star-fill text-yellow-400"></i>
+                            <span class="ml-1 text-gray-600">4.3 (38 reviews)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amenities -->
+                <div class="mt-6">
+                    <h2 class="text-xl font-semibold mb-4">Amenities</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-building-line text-blue-600"></i>
+                            <span>City View</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-wifi-line text-blue-600"></i>
+                            <span>WiFi</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-restaurant-line text-blue-600"></i>
+                            <span>Near Eatery</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="ri-home-4-line text-blue-600"></i>
+                            <span>Long-term</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mt-6">
+                    <h2 class="text-xl font-semibold mb-4">About this place</h2>
+                    <p class="text-gray-600">
+                        Located in Upper Bonifacion Street, Baguio City, Super Apartment offers affordable rooms with comfort
+                        and Security. Enjoy convenient access to the market. Perfect for students or working adults seeking a central location 
+                        near the Jeepney stop.
+                    </p>
+                </div>
+
+                <div class="mt-8">
+                    <h2 class="text-xl font-semibold mb-4">Long-Term Stay Options</h2>
+                    <div class="bg-gray-50 p-6 rounded-lg">
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold mb-2">Rental Conditions</h3>
+                            <ul class="text-gray-600 space-y-2 pl-4">
+                                <li class="flex items-center">
+                                    <i class="ri-check-line text-green-600 mr-2"></i>
+                                    Minimum stay: 3 months
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="ri-check-line text-green-600 mr-2"></i>
+                                    Security deposit: One month's rent
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="ri-check-line text-green-600 mr-2"></i>
+                                    Utilities not included (estimated ₱2,000-3,000/month)
+                                </li>
+                                <li class="flex items-center">
+                                    <i class="ri-check-line text-green-600 mr-2"></i>
+                                    Advanced payment: First and last month's rent required
+                                </li>
+                            </ul>
+                        </div>
+                
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Preferred Move-in Date</label>
+                                <input type="date" id="moveInDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Lease Duration</label>
+                                <select id="leaseDuration" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="3">3 Months</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="12">1 Year</option>
+                                    <option value="24">2 Years</option>
+                                </select>
+                            </div>
+                        </div>
+                
+                        <div class="grid grid-cols-1 gap-4 mb-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Number of Occupants</label>
+                                <select id="occupantsCount" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="1">1 Person</option>
+                                    <option value="2">2 Persons (+₱1,000/month)</option>
+                                    <option value="3">3 Persons (+₱2,000/month)</option>
+                                </select>
+                            </div>
+                        </div>
+                
+                        <div class="bg-white p-4 rounded-lg shadow-md mb-4">
+                            <h3 class="text-lg font-semibold mb-2">Cost Breakdown</h3>
+                            <div id="costBreakdown" class="text-gray-700">
+                                <div class="flex justify-between">
+                                    <span>Base Rent</span>
+                                    <span>₱6,000/month</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Additional Occupant Fee</span>
+                                    <span id="occupantFee">₱0/month</span>
+                                </div>
+                                <hr class="my-2 border-gray-200">
+                                <div class="flex justify-between font-bold">
+                                    <span>Total Monthly Rent</span>
+                                    <span id="totalMonthlyRent">₱6,000</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Security Deposit</span>
+                                    <span>₱6,000</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>First & Last Month's Rent</span>
+                                    <span id="firstLastMonthRent">₱12,000</span>
+                                </div>
+                                <hr class="my-2 border-gray-200">
+                                <div class="flex justify-between text-green-600 font-bold">
+                                    <span>Total Initial Payment</span>
+                                    <span id="totalInitialPayment">₱24,000</span>
+                                </div>
+                            </div>
+                        </div>
+                
+                        <button onclick="proceedToApplication()" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition">
+                            Proceed with Application
+                        </button>
+                    </div>
+                </div>
+                <!-- Reviews Container -->
+<div id="reviews-section" class="mt-8">
+    <!-- Ratings Overview -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+        <div class="flex items-center space-x-6">
+            <div class="text-center flex-shrink-0">
+                <p class="text-5xl font-bold text-blue-600">5.0</p>
+                <p class="text-gray-500 text-sm uppercase tracking-wider mt-2">Overall Rating</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm w-full">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Cleanliness</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Accuracy</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-mdium">Check-in</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★☆</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Communication</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★☆</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Location</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Value</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Posted Reviews List -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+        <h3 class="text-2xl font-bold mb-6">Reviews</h3>
+        <div id="user-reviews-list" class="space-y-6">
+            <!-- Loading indicator -->
+            <div id="reviews-loading" class="text-center py-4">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                <p class="text-gray-500 mt-2">Loading reviews...</p>
+            </div>
+        </div>
+        <!-- No reviews message -->
+        <div id="no-reviews" class="hidden text-center py-8 text-gray-500">
+            <i class="fas fa-comment-slash text-4xl mb-3"></i>
+            <p>No reviews yet. Be the first to leave a review!</p>
+        </div>
+    </div>
+
+    <!-- Review Form Section -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8 mt-8">
+      <h3 class="text-2xl font-bold mb-6">Leave a Review</h3>
+      <form id="review-form" class="space-y-6">
+        <!-- Star Rating -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Rating</label>
+          <div class="flex space-x-2" id="star-rating">
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="1"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="2"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="3"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="4"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="5"></i>
+          </div>
+        </div>
+
+        <!-- Review Text -->
+        <div class="mb-4">
+          <label for="review-text" class="block text-gray-700 text-sm font-bold mb-2">Your Review</label>
+          <textarea
+            id="review-text"
+            class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+            rows="4"
+            placeholder="Share your experience..."
+            required
+          ></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+          <button
+            type="submit"
+            class="bg-blue-500 text-white px-8 py-2 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+</div>
+                
+                
+            </div>
+        </div>
+    </div>
+
+    <script>   
+        function updateCostBreakdown() {
+            const leaseDuration = document.getElementById('leaseDuration').value;
+            const occupantsCount = document.getElementById('occupantsCount').value;
+            
+            const baseRent = 6000;
+            let occupantFee = 0;
+            
+            if (occupantsCount === '2') {
+                occupantFee = 1000;
+            } else if (occupantsCount === '3') {
+                occupantFee = 2000;
+            }
+            
+            const totalMonthlyRent = baseRent + occupantFee;
+            const securityDeposit = baseRent;
+            const firstLastMonthRent = totalMonthlyRent * 2;
+            const totalInitialPayment = totalMonthlyRent + securityDeposit + firstLastMonthRent;
+            
+            document.getElementById('occupantFee').textContent = `₱${occupantFee}/month`;
+            document.getElementById('totalMonthlyRent').textContent = `₱${totalMonthlyRent}`;
+            document.getElementById('firstLastMonthRent').textContent = `₱${firstLastMonthRent}`;
+            document.getElementById('totalInitialPayment').textContent = `₱${totalInitialPayment.toLocaleString()}`;
+        }
+        
+        // Update the proceedToApplication function
+        function proceedToApplication() {
+            const moveInDate = document.getElementById('moveInDate').value;
+            const leaseDuration = document.getElementById('leaseDuration').value;
+            const occupantsCount = document.getElementById('occupantsCount').value;
+            
+            if (!moveInDate) {
+                alert('Please select a move-in date');
+                return;
+            }
+            
+            const applicationDetails = {
+                moveInDate: moveInDate,
+                leaseDuration: leaseDuration + ' months',
+                occupants: occupantsCount,
+                monthlyRent: document.getElementById('totalMonthlyRent').textContent,
+                totalInitialPayment: document.getElementById('totalInitialPayment').textContent
+            };
+            
+            localStorage.setItem('rentalApplication', JSON.stringify(applicationDetails));
+            // Update the path to point to the correct location
+            window.location.href = '../paymentProcess/applicationLongTerm.html';
+        }
+        
+        // Initialize and update cost breakdown
+        document.getElementById('leaseDuration').addEventListener('change', updateCostBreakdown);
+        document.getElementById('occupantsCount').addEventListener('change', updateCostBreakdown);
+        
+        // Initial calculation
+        updateCostBreakdown();
+    </script>
+    <script type="module">
+        import { initializeUserDrawer } from '../components/userDrawer.js';
+        import { auth, db } from '../../AdminSide/firebase.js';
+      
+        // Initialize user drawer
+        initializeUserDrawer(auth, db);
+      
+        // Add event listener to reserve button
+        document.addEventListener('DOMContentLoaded', () => {
+            const reserveBtn = document.getElementById('reserve-btn');
+            if (reserveBtn) {
+                reserveBtn.addEventListener('click', handleReserveClick);
+            } else {
+                console.error('Reserve button not found');
+            }
+        });
+      
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginButton = document.getElementById('loginButton');
+            auth.onAuthStateChanged((user) => {
+                if (loginButton) {
+                    if (user) {
+                        loginButton.style.display = 'none';
+                    } else {
+                        loginButton.style.display = 'flex';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

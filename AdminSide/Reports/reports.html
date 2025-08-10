@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Lodge Ease</title>
+    
+    <!-- Immediate style to hide problematic buttons -->
+    <style>
+        /* Hide problematic buttons immediately */
+        body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay),
+        body > div > a,
+        body > div > button {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        
+        /* Style consistency for all three buttons */
+        .btn-toggle-owner, .btn-toggle-booking {
+            background-color: #2c3e50 !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            border-radius: 4px !important;
+            font-weight: 500 !important;
+            font-size: 14px !important;
+            transition: all 0.3s ease !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            min-width: 140px !important;
+            justify-content: center !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            border: none !important;
+            cursor: pointer !important;
+        }
+        
+        /* Make all buttons in the top-right section the same height */
+        .view-toggle button, 
+        .view-toggle .fixed-excel-btn, 
+        .view-toggle .fixed-import-btn {
+            height: 36px !important;
+        }
+        
+        /* Consistent hover states */
+        .btn-toggle-owner:hover, .btn-toggle-booking:hover {
+            background-color: #34495e !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+        }
+        
+        /* Better button layout */
+        .view-toggle {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            flex-wrap: nowrap !important;
+        }
+        
+        /* Group the buttons visually */
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+    
+    <!-- Load Firebase and auth first -->
+    <script type="module" src="../firebase.js"></script>
+    <!-- Wait for Firebase to load before checking auth -->
+    <script type="module" src="../js/auth-check.js" defer></script>
+    <!-- Other resources -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script type="module" src="/LodgeEase/LodgeEase-Latest/AdminSide/Dashboard/transitions.js"></script>
+    <link rel="stylesheet" href="/LodgeEase/LodgeEase-Latest/AdminSide/Dashboard/transitionStyle.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Basic styles for the initial loading overlay */
+        #initial-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        #initial-loading-overlay.hide {
+            opacity: 0;
+        }
+        /* Ensure no animations on the container */
+        .loading-spinner-container {
+            animation: none !important;
+            transform: none !important;
+        }
+        /* All text elements should not rotate */
+        .loading-spinner-container p {
+            animation: none !important;
+            transform: none !important;
+        }
+        
+        /* Custom styles for fixed buttons */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .fixed-excel-btn {
+            background-color: #4285f4;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-width: 140px;
+            justify-content: center;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .fixed-import-btn {
+            background-color: #34a853;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            min-width: 140px;
+            justify-content: center;
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .fixed-import-hint {
+            position: absolute;
+            bottom: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            color: #6b7280;
+            white-space: nowrap;
+            background-color: #f9f9f9;
+            padding: 1px 6px;
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+    </style>
+
+    <!-- Add PageLogger initialization -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { PageLogger } from '../js/pageLogger.js';
+        import { Sidebar } from '../components/sidebar.js'; // Import Sidebar
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js'; // Import settings loader
+        
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Reports page.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Reports page:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        // Function to remove problematic buttons
+        function cleanupDOM() {
+            // Find and remove any standalone buttons outside the app
+            const topLevelElements = document.querySelectorAll('body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay):not(#standalone-buttons-container)');
+            topLevelElements.forEach(el => {
+                if (el.querySelector('button') || el.querySelector('a')) {
+                    console.log('Removing problematic element:', el);
+                    el.parentNode.removeChild(el);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Clean up DOM immediately
+            cleanupDOM();
+            
+            // Insert sidebar HTML
+            const appElement = document.querySelector('.app');
+            if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+            } else {
+                console.error('App element .app not found for sidebar injection');
+                return; // Stop if container not found
+            }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+            
+            // Setup our custom buttons
+            setupCustomButtons();
+            
+            // Setup a continuous cleanup monitor to ensure no external scripts
+            // re-add the problematic buttons
+            setInterval(cleanupDOM, 1000);
+        });
+        
+        function setupCustomButtons() {
+            // Set up export button
+            const exportBtn = document.getElementById('fixed-export-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    // Find the Vue instance's export button and click it
+                    const vueExportBtn = document.querySelector('.btn-export');
+                    if (vueExportBtn) {
+                        vueExportBtn.click();
+                    } else {
+                        console.error('Could not find Vue export button to trigger');
+                    }
+                });
+            }
+            
+            // Set up import button
+            const importBtn = document.getElementById('fixed-import-btn');
+            const importInput = document.getElementById('fixed-import-input');
+            if (importBtn && importInput) {
+                importBtn.addEventListener('click', () => {
+                    importInput.click();
+                });
+                
+                importInput.addEventListener('change', (event) => {
+                    // Find the Vue instance's import input and copy files to it
+                    const vueImportInput = document.querySelector('input[type="file"][accept=".csv,.xlsx"]');
+                    if (vueImportInput) {
+                        // Create a new FileList with the selected files
+                        const dataTransfer = new DataTransfer();
+                        Array.from(event.target.files).forEach(file => {
+                            dataTransfer.items.add(file);
+                        });
+                        vueImportInput.files = dataTransfer.files;
+                        
+                        // Trigger change event on the Vue input
+                        const changeEvent = new Event('change', { bubbles: true });
+                        vueImportInput.dispatchEvent(changeEvent);
+                    } else {
+                        console.error('Could not find Vue import input to trigger');
+                    }
+                });
+            }
+        }
+    </script>
+    
+    <!-- Script to ensure tooltips are displayed properly -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Make sure tooltips work on dynamically added elements
+            setTimeout(function() {
+                const tooltipButtons = document.querySelectorAll('.tooltip');
+                tooltipButtons.forEach(button => {
+                    // Ensure tooltip attributes are properly set
+                    if (!button.hasAttribute('data-tooltip') && button.dataset.tooltipText) {
+                        button.setAttribute('data-tooltip', button.dataset.tooltipText);
+                    }
+                    
+                    // Make sure the button has proper positioning
+                    if (window.getComputedStyle(button).position === 'static') {
+                        button.style.position = 'relative';
+                    }
+                    
+                    // Add hover event for debugging
+                    button.addEventListener('mouseenter', function() {
+                        console.log('Hovering over tooltip element:', this.textContent.trim(), 'Tooltip text:', this.getAttribute('data-tooltip'));
+                    });
+                });
+                
+                console.log('Tooltip initialization complete. Found tooltips:', tooltipButtons.length);
+            }, 1000);
+        });
+    </script>
+</head>
+<body>
+    <!-- Initial loading overlay -->
+    <div id="initial-loading-overlay">
+        <div class="loading-spinner-container">
+            <div class="icon-container">
+                <i class="fa fa-circle-notch fa-spin"></i>
+            </div>
+            <p>Loading reports...</p>
+        </div>
+    </div>
+    
+    <!-- Container for standalone buttons that might be outside Vue control -->
+    <div id="standalone-buttons-container" class="button-group-container"></div>
+    
+    <!-- Sidebar will be injected here by sidebar.js -->
+    <div class="app">
+        <!-- Common sidebar template removed -->
+        <!-- <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../images/LodgeEaseLogo.png" alt="Lodge Ease Logo" class="logo">
+                <h2>Lodge Ease</h2>
+            </div>
+            <ul>
+                <li><a href="../Dashboard/Dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="../Room Management/room_management.html"><i class="fas fa-bed"></i> Room Management</a></li>
+                <li><a href="../Requests/booking_requests.html"><i class="fas fa-clock"></i> Booking Requests</a></li>
+                <li><a href="../Billing/billing.html"><i class="fas fa-money-bill-wave"></i> Billing</a></li>
+                <li><a href="../Reports/reports.html"class="active"><i class="fas fa-chart-line"></i> Reports</a></li>
+                <li><a href="../BusinessAnalytics/business_analytics.html"><i class="fas fa-chart-pie"></i> Business Analytics</a></li>
+                <li><a href="../ActivityLog/activity_log.html"><i class="fas fa-history"></i> Activity Log</a></li>
+                <li><a href="../Settings/settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../LongTerm/longterm_management.html"><i class="fas fa-home"></i> Long-term Stays</a></li>
+                <li><a href="../AInalysis/AInalysis.html"><i class="fas fa-robot"></i> ChatBot</a></li>
+            </ul>
+            <div class="auth-buttons">
+                <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside> -->
+
+        <main class="main-content">
+            <header class="page-header">
+                <div class="header-main">
+                    <h1>{{ currentView === 'bookings' ? 'Booking Reports' : 'Owner Reports' }}</h1>
+                    <div class="view-toggle">
+                        <div 
+                            id="fixed-export-btn" 
+                            class="fixed-excel-btn tooltip-alt" 
+                            v-if="currentView === 'bookings'"
+                            onclick="document.querySelector('.app').__vue__.exportToExcel()"
+                        >
+                            <i class="fas fa-download"></i> <span>Export to Excel</span>
+                            <span class="tooltip-text">Export booking data to Excel</span>
+                        </div>
+                        <div class="button-group">
+                            <div 
+                                class="fixed-import-btn tooltip-alt" 
+                                id="fixed-import-btn" 
+                                v-if="currentView === 'bookings'"
+                                onclick="document.getElementById('fixed-import-input').click()"
+                            >
+                                <i class="fas fa-upload"></i> <span>Import Data</span>
+                                <input type="file" id="fixed-import-input" accept=".csv,.xlsx" style="display: none;" onchange="document.querySelector('.app').__vue__.importData(event)">
+                                <span class="tooltip-text">Import data from CSV/XLSX files</span>
+                            </div>
+                            <div 
+                                class="btn-toggle-owner tooltip-alt"
+                                onclick="document.querySelector('.app').__vue__.toggleView()"
+                            >
+                                <i :class="currentView === 'bookings' ? 'fas fa-user-lock' : 'fas fa-clipboard-list'"></i>
+                                <span>{{ currentView === 'bookings' ? 'Switch to Owner Reports' : 'Switch to Booking Reports' }}</span>
+                                <span class="tooltip-text">View owner financial reports</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action buttons for reports - now hidden by CSS -->
+                <div class="actions-wrapper" v-if="currentView === 'bookings'">
+                    <div class="actions">
+                        <div class="action-buttons">
+                            <button class="btn btn-export" @click="exportToExcel">
+                                <i class="fas fa-download"></i> Export to Excel
+                            </button>
+                            <div class="import-container" title="Upload CSV or XLSX files with booking data">
+                                <label class="btn btn-import">
+                                    <i class="fas fa-upload"></i> Import Data
+                                    <input type="file" @change="importData" accept=".csv,.xlsx" style="display: none;">
+                                </label>
+                                <span class="import-hint">Accepts CSV or XLSX files</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Booking Reports Section -->
+            <section class="table-section" v-if="currentView === 'bookings'">
+                <!-- Search and Count Controls -->
+                <div class="reports-controls">
+                    <div class="search-controls">
+                        <div class="search-input-group">
+                            <i class="fas fa-search search-icon"></i>
+                            <input 
+                                type="text" 
+                                v-model="bookingSearchQuery" 
+                                placeholder="Search bookings by guest name, room type, status..." 
+                                class="search-input"
+                                @input="filterBookings"
+                            >
+                            <button 
+                                v-if="bookingSearchQuery" 
+                                @click="clearBookingSearch" 
+                                class="clear-search-btn"
+                                title="Clear search"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="count-indicator">
+                        <span class="count-badge">
+                            <i class="fas fa-list"></i>
+                            {{ filteredBookings.length }} of {{ bookings.length }} bookings
+                            <span v-if="bookingSearchQuery" class="search-results-text">
+                                (filtered)
+                            </span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="bookings-table">
+                        <thead>
+                            <tr>
+                                <th class="number-column">#</th>
+                                <th>Booking ID</th>
+                                <th>Guest Name</th>
+                                <th>Check In</th>
+                                <th>Check Out</th>
+                                <th>Room Type</th>
+                                <th>Room Number</th>
+                                <th>Total Price</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(booking, index) in paginatedFilteredBookings" :key="booking.id">
+                                <td class="number-cell">{{ getBookingRowNumber(index) }}</td>
+                                <td>{{booking.id}}</td>
+                                <td>{{booking.guestName || 'N/A'}}</td>
+                                <td>{{formatDate(booking.checkIn)}}</td>
+                                <td>{{formatDate(booking.checkOut)}}</td>
+                                <td>{{booking.propertyDetails?.roomType || 'N/A'}}</td>
+                                <td>{{booking.propertyDetails?.roomNumber || 'N/A'}}</td>
+                                <td>₱{{booking.totalPrice || 0}}</td>
+                                <td>
+                                    <span :class="'status-badge ' + booking.status">
+                                        {{booking.status}}
+                                    </span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls for Bookings -->
+                <div class="pagination-controls" v-if="totalBookingPages > 1">
+                    <button class="btn btn-sm" @click="prevBookingPage" :disabled="currentBookingPage === 1">
+                        <i class="fas fa-chevron-left"></i> Prev
+                    </button>
+                    <span class="page-info">Page {{ currentBookingPage }} of {{ totalBookingPages }}</span>
+                    <button class="btn btn-sm" @click="nextBookingPage" :disabled="currentBookingPage === totalBookingPages">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Owner Reports Section -->
+            <section class="owner-reports-section" v-if="currentView === 'owner'">
+                <div class="section-header">
+                    <h2>Owner Reports</h2>
+                    <button class="btn btn-export" v-if="!ownerReportsVisible" @click="showOwnerPinModal">
+                        <i class="fas fa-lock"></i> Access Owner Reports
+                    </button>
+                </div>
+                
+                <!-- Owner Reports Content (Hidden by default) -->
+                <div v-if="ownerReportsVisible" class="owner-reports-content">
+                    <div class="owner-reports-tabs">
+                        <button @click="activeTab = 'am'" :class="{ active: activeTab === 'am' }">AM Reports</button>
+                        <button @click="activeTab = 'pm'" :class="{ active: activeTab === 'pm' }">PM Reports</button>
+                    </div>
+                    
+                    <!-- Add Date Filter and Pagination Controls -->
+                    <div class="owner-reports-filters">
+                        <div class="date-filter">
+                            <label for="dateFilter">Select Report Date:</label>
+                            <input type="date" id="dateFilter" v-model="dateFilter" @change="applyDateFilter">
+                            <button class="btn btn-secondary btn-sm" @click="clearDateFilter" v-if="dateFilter">
+                                <i class="fas fa-times"></i> Clear
+                            </button>
+                        </div>
+                        
+                        <div class="search-filter">
+                            <div class="search-input-group">
+                                <i class="fas fa-search search-icon"></i>
+                                <input 
+                                    type="text" 
+                                    v-model="ownerReportSearchQuery" 
+                                    placeholder="Search by frontdesk, day..." 
+                                    class="search-input"
+                                    @input="filterOwnerReports"
+                                >
+                                <button 
+                                    v-if="ownerReportSearchQuery" 
+                                    @click="clearOwnerReportSearch" 
+                                    class="clear-search-btn"
+                                    title="Clear search"
+                                >
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-instructions" v-if="!currentReportDate">
+                            <p><i class="fas fa-info-circle"></i> Select a date above to create or view reports for that specific day.</p>
+                        </div>
+                        
+                        <div class="report-date-display" v-if="currentReportDate">
+                            <h3>Reports for: {{ new Date(currentReportDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</h3>
+                        </div>
+                        
+                        <div class="count-indicator">
+                            <span class="count-badge">
+                                <i class="fas fa-list"></i>
+                                {{ activeTab === 'am' ? filteredAmReports.length : filteredPmReports.length }} 
+                                of 
+                                {{ activeTab === 'am' ? amReports.length : pmReports.length }} 
+                                {{ activeTab.toUpperCase() }} reports
+                                <span v-if="ownerReportSearchQuery" class="search-results-text">
+                                    (filtered)
+                                </span>
+                            </span>
+                        </div>
+                        
+                        <div class="pagination-controls" v-if="!currentReportDate">
+                            <button class="btn btn-sm" @click="prevPage" :disabled="currentPage === 1">
+                                <i class="fas fa-chevron-left"></i> Prev
+                            </button>
+                            <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+                            <button class="btn btn-sm" @click="nextPage" :disabled="currentPage === totalPages">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="owner-reports-actions">
+                        <button class="btn btn-action" @click="addOwnerReportRow(activeTab)" v-if="currentReportDate">
+                            <i class="fas fa-plus"></i> Add Row
+                        </button>
+                        <button class="btn btn-export" @click="saveOwnerReports">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                        <button class="btn btn-export" @click="exportOwnerReportsToExcel">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                    
+                    <!-- AM Reports Table -->
+                    <div v-if="activeTab === 'am'" class="excel-table-container">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th class="number-column">#</th>
+                                    <th>Day</th>
+                                    <th>Frontdesk</th>
+                                    <th>Number of Customers</th>
+                                    <th>Cash</th>
+                                    <th>GCash</th>
+                                    <th>Cash Out</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(row, index) in paginatedAmReports" :key="index">
+                                    <td class="number-cell">{{ getOwnerReportRowNumber('am', index) }}</td>
+                                    <td><input type="text" v-model="row.day"></td>
+                                    <td><input type="text" v-model="row.frontdesk"></td>
+                                    <td><input type="number" v-model="row.customers"></td>
+                                    <td><input type="number" v-model="row.cash"></td>
+                                    <td><input type="number" v-model="row.gcash"></td>
+                                    <td><input type="number" v-model="row.cashOut"></td>
+                                    <td>
+                                        <button class="btn-icon" @click="deleteOwnerReportRow('am', getOriginalIndex('am', index))">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- PM Reports Table -->
+                    <div v-if="activeTab === 'pm'" class="excel-table-container">
+                        <table class="excel-table">
+                            <thead>
+                                <tr>
+                                    <th class="number-column">#</th>
+                                    <th>Day</th>
+                                    <th>Frontdesk</th>
+                                    <th>Number of Customers</th>
+                                    <th>Cash</th>
+                                    <th>GCash</th>
+                                    <th>Cash Out</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(row, index) in paginatedPmReports" :key="index">
+                                    <td class="number-cell">{{ getOwnerReportRowNumber('pm', index) }}</td>
+                                    <td><input type="text" v-model="row.day"></td>
+                                    <td><input type="text" v-model="row.frontdesk"></td>
+                                    <td><input type="number" v-model="row.customers"></td>
+                                    <td><input type="number" v-model="row.cash"></td>
+                                    <td><input type="number" v-model="row.gcash"></td>
+                                    <td><input type="number" v-model="row.cashOut"></td>
+                                    <td>
+                                        <button class="btn-icon" @click="deleteOwnerReportRow('pm', getOriginalIndex('pm', index))">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Debug controls - only visible in development -->
+            <div class="debug-panel" style="margin: 15px 0; padding: 10px; border: 1px dashed #ccc; background: #f9f9f9; display: none;">
+                <h4 style="margin-top: 0;">Debug Controls</h4>
+                <button onclick="document.querySelector('.app').__vue__.initTooltips(); console.log('Manual tooltip initialization triggered');" style="padding: 5px 10px; margin-right: 10px;">
+                    Reinitialize Tooltips
+                </button>
+                <button onclick="document.querySelector('.debug-panel').style.display = 'none';" style="padding: 5px 10px;">
+                    Hide Debug Panel
+                </button>
+            </div>
+        </main>
+
+        <!-- Owner PIN Modal -->
+        <div class="modal" v-if="showPinModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Owner Authentication</h3>
+                    <button class="close-btn" @click="showPinModal = false">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Please enter owner PIN to access reports:</p>
+                    <input type="password" v-model="ownerPin" placeholder="Enter PIN" class="pin-input">
+                    <div class="error-message" v-if="pinError">{{ pinError }}</div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @click="showPinModal = false">Cancel</button>
+                    <button class="btn btn-primary" @click="verifyOwnerPin">Verify</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="loading" class="loading">
+            <div class="loading-spinner-container">
+                <div class="icon-container">
+                    <i class="fa fa-circle-notch fa-spin"></i>
+                </div>
+                <p>Processing data...</p>
+            </div>
+        </div>
+    </div>
+    <!-- Load app script last -->
+    <script type="module" src="reports.js" defer></script>
+    
+    <!-- Final cleanup script -->
+    <script>
+        // One last cleanup after everything has loaded
+        window.addEventListener('load', function() {
+            // Find any buttons that match our target pattern
+            const problematicElements = document.querySelectorAll(
+                'body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay):not(#standalone-buttons-container)'
+            );
+            
+            problematicElements.forEach(el => {
+                // Check if this element contains a button or link
+                if (el.querySelector('button') || el.querySelector('a')) {
+                    console.log('Final cleanup - removing element:', el);
+                    el.style.display = 'none';
+                    // Try to completely remove it if possible
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
+                }
+            });
+            
+            // Show debug panel if in development (moved from inline script)
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                setTimeout(function() {
+                    const debugPanel = document.querySelector('.debug-panel');
+                    if (debugPanel) debugPanel.style.display = 'block';
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

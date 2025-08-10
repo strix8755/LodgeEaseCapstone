@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Lodge Ease</title>
+    <meta name="description" content="AI Assistant for Lodge Ease hotel management system">
+    
+    <!-- Add Vue.js before other scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    
+    <!-- Firebase scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-auth-compat.js"></script>
+    
+    <!-- Update script initialization -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { PageLogger } from '../js/pageLogger.js';
+        
+        window.addEventListener('load', async () => {
+            try {
+                await initializeFirebase();
+                console.log('Firebase initialized successfully');
+                // PageLogger will handle navigation logging through auth state change
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+            }
+        });
+    </script>
+
+    <!-- Keep other module scripts, remove pageLogger.js direct import -->
+    <script type="module" src="../firebase.js"></script>
+    <script type="module" src="auth-check.js"></script>
+    <script type="module" src="suggestionService.js"></script>
+    <script type="module" src="occupancyPredictor.js"></script>
+    <script type="module" src="prediction/PredictionFormatter.js"></script>
+    <script type="module" src="AInalysis.js"></script>
+    <script type="module" src="../Dashboard/transitions.js"></script>
+    <!-- <script src="../../ClientSide/Lodge/lodge13.js"></script> -->
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="../Dashboard/transitionStyle.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="loading.css">
+    <link rel="stylesheet" href="chat-suggestions.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <!-- Sidebar will be injected here by sidebar.js -->
+    <div id="app" v-cloak>
+        <!-- Error banner -->
+        <div v-if="connectionError" class="error-banner">
+            {{ connectionError }}
+            <button @click="initializeApp" class="retry-button">
+                <i class="fas fa-sync"></i> Retry
+            </button>
+        </div>
+        
+        <!-- Loading overlay -->
+        <div v-if="loading.app" class="loading-overlay">
+            <div class="loading-spinner">
+                <i class="fas fa-circle-notch fa-spin"></i>
+                <p>Connecting to Lodge Ease...</p>
+            </div>
+        </div>
+
+        <main class="main-content" role="main">
+            <div class="page-header">
+                <h1>AI Assistant
+                    <p style="font-size: 0.4em; color: gray;">*AI Assistant may make mistakes, double check responses</p>
+                </h1>
+                <div class="header-buttons">
+                    <button @click="startNewChat" class="btn">
+                        <i class="fas fa-plus"></i> New Conversation
+                    </button>
+                    <button @click="showChatHistory" class="btn">
+                        <i class="fas fa-history"></i> Chat History
+                    </button>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chatContainer">
+                <!-- Messages will be inserted here -->
+            </div>
+
+            <div class="chat-input-container">
+                <input 
+                    type="text" 
+                    class="chat-input" 
+                    id="chatInput" 
+                    aria-label="Chat input"
+                    placeholder="Ask about hotel forecasts..."
+                    @keyup.enter="sendMessage"
+                    v-model="currentMessage"
+                    :disabled="loading.sending"
+                >
+                <button 
+                    class="primary-button" 
+                    @click="sendMessage"
+                    :disabled="loading.sending || !currentMessage.trim()"
+                >
+                    <i :class="['fas', loading.sending ? 'fa-spinner fa-spin' : 'fa-paper-plane']"></i>
+                    {{ loading.sending ? 'Sending...' : 'Send' }}
+                </button>
+            </div>
+
+            <!-- Chat History Modal -->
+            <div v-if="showingChatHistory" class="chat-history-modal">
+                <div class="chat-history-content">
+                    <div class="chat-history-header">
+                        <h2>Chat History</h2>
+                        <button class="chat-history-close" @click="closeChatHistory">&times;</button>
+                    </div>
+                    <div v-if="chatHistory.length > 0">
+                        <ul class="chat-history-list">
+                            <li v-for="chat in chatHistory" 
+                                :key="chat.id" 
+                                class="chat-history-item"
+                                @click="loadChatHistory(chat.id)">
+                                <div class="chat-history-item-header">
+                                    <strong>{{ formatChatTitle(chat) }}</strong>
+                                    <span class="chat-history-date">{{ formatDate(chat.timestamp) }}</span>
+                                </div>
+                                <div class="chat-history-preview">{{ getFirstMessage(chat.messages) }}</div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div v-else class="chat-history-empty">
+                        <p>No chat history available yet.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Sidebar and Settings Loader -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { Sidebar } from '../components/sidebar.js';
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js';
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for AInalysis page.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for AInalysis page:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML
+             const appElement = document.querySelector('#app'); // Target the main app div
+             if (appElement) {
+                // Insert sidebar before the #app div
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+             } else {
+                console.error('#app element not found for sidebar injection');
+                return; // Stop if container not found
+             }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+</body>
+</html>

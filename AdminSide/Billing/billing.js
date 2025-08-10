@@ -1,0 +1,1451 @@
+import { 
+    auth, 
+    db, 
+    fetchBillingData,
+    addBillingRecord,
+    updateBillingRecord,
+    deleteBillingRecord,
+    updateBookingBilling,
+    collection, 
+    addDoc,
+    doc,
+    deleteDoc,
+    updateDoc,
+    Timestamp,
+    getDocs,
+    query,
+    orderBy,
+    where,
+    getDoc,
+    deleteBookingRecord,
+    checkAdminAuth,
+    markBookingHiddenInBilling
+} from '../firebase.js';
+import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { PageLogger } from '../js/pageLogger.js';
+// Import updated rate calculation module
+import { 
+    calculateNights, 
+    calculateHours,
+    isNightPromoEligible, 
+    getHourlyRate,
+    calculateBookingCosts 
+} from '../js/rateCalculation.js';
+
+// Add activity logging function
+async function logBillingActivity(actionType, details) {
+    try {
+        const user = auth().currentUser;
+        if (!user) return;
+
+        await addDoc(collection(db(), 'activityLogs'), {
+            userId: user.uid,
+            userName: user.email,
+            actionType,
+            details,
+            timestamp: Timestamp.now(),
+            userRole: 'admin',
+            module: 'Billing'
+        });
+    } catch (error) {
+        console.error('Error logging billing activity:', error);
+    }
+}
+
+// Function to fetch booking data by ID
+async function fetchBookingById(bookingId) {
+    try {
+        const bookingDocRef = doc(db(), 'everlodgebookings', bookingId);
+        const bookingDoc = await getDoc(bookingDocRef);
+        
+        if (bookingDoc.exists()) {
+            return {
+                id: bookingDoc.id,
+                ...bookingDoc.data()
+            };
+        } else {
+            console.log(`No booking found with ID: ${bookingId}`);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error fetching booking:', error);
+        throw error;
+    }
+}
+
+// Function to update booking in Room Management
+async function updateBookingInRoomManagement(bookingId, updateData) {
+    try {
+        if (!bookingId) throw new Error('No booking ID provided');
+        
+        // Get the current booking data
+        const bookingRef = doc(db(), 'everlodgebookings', bookingId);
+        const bookingDoc = await getDoc(bookingRef);
+        
+        if (!bookingDoc.exists()) {
+            throw new Error(`Booking with ID ${bookingId} not found`);
+        }
+        
+        // Update the booking with new data
+        await updateDoc(bookingRef, updateData);
+        
+        return true;
+    } catch (error) {
+        console.error('Error updating booking in Room Management:', error);
+        throw error;
+    }
+}
+
+new Vue({
+    el: '#app',
+    data() {
+        return {
+            isAuthenticated: false,
+            loading: true,
+            showModal: false,
+            isSubmitting: false,
+            isUpdating: false,
+            searchQuery: '',
+            newBill: {
+                customerName: '',
+                date: '',
+                checkInTime: '12:00',
+                checkOut: '',
+                checkOutTime: '11:00',
+                roomNumber: '',
+                roomType: '',
+                baseCost: 0,
+                expenses: [],
+                bookingType: 'standard', // Added: standard, night-promo, or hourly
+                duration: 3, // Added: for hourly bookings
+                hourlyPrice: 0 // <-- Add this line
+            },
+            bills: [],
+            filteredBills: [], 
+            showViewModal: false,
+            editingBill: null,
+            currentBillId: null,
+            startDate: '',
+            endDate: '',
+            originalBills: [], 
+            currentPage: 1,
+            itemsPerPage: 10,
+            currentDate: new Date(),
+            view: 'all',
+            isEditMode: false,
+            
+            // Constants for billing calculations
+            REMOTE_BOOKING_FEE: 50, // PHP
+            TV_REMOTE_FEE: 50, // PHP
+        }
+    },
+    computed: {
+        calculateTotal() {
+            let total = 0;
+            
+            // Add base cost
+            total += parseFloat(this.newBill.baseCost) || 0;
+            
+            // Add expenses
+            if (this.newBill.expenses) {
+                total += this.newBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+            }
+            
+            return total.toFixed(2);
+        },
+        calculateEditTotal() {
+            if (!this.editingBill) return '0.00';
+            
+            let total = 0;
+            
+            // Add base cost
+            total += parseFloat(this.editingBill.baseCost) || 0;
+            
+            // Add expenses
+            if (this.editingBill.expenses) {
+                total += this.editingBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+            }
+            
+            return total.toFixed(2);
+        },
+        searchedBills() {
+            if (!this.searchQuery.trim()) {
+                return this.bills;
+            }
+            
+            const query = this.searchQuery.toLowerCase().trim();
+            return this.bills.filter(bill => {
+                return (
+                    (bill.customerName && bill.customerName.toLowerCase().includes(query)) ||
+                    (bill.roomNumber && bill.roomNumber.toLowerCase().includes(query)) ||
+                    (bill.roomType && bill.roomType.toLowerCase().includes(query)) ||
+                    (bill.status && bill.status.toLowerCase().includes(query)) ||
+                    (bill.totalAmount && bill.totalAmount.toString().includes(query))
+                );
+            });
+        },
+        finalFilteredBills() {
+            let bills = this.searchedBills;
+            
+            // Apply date range filter if both startDate and endDate are set
+            if (this.startDate && this.endDate) {
+                bills = this.filteredBills.length > 0 ? this.filteredBills : bills;
+            } else {
+                // If no date range filter is active, use the single-day filter
+                bills = this.filteredBillsByDate.filter(bill => {
+                    // Apply search filter to the day-filtered bills
+                    if (!this.searchQuery.trim()) {
+                        return true;
+                    }
+                    
+                    const query = this.searchQuery.toLowerCase().trim();
+                    return (
+                        (bill.customerName && bill.customerName.toLowerCase().includes(query)) ||
+                        (bill.roomNumber && bill.roomNumber.toLowerCase().includes(query)) ||
+                        (bill.roomType && bill.roomType.toLowerCase().includes(query)) ||
+                        (bill.status && bill.status.toLowerCase().includes(query)) ||
+                        (bill.totalAmount && bill.totalAmount.toString().includes(query))
+                    );
+                });
+            }
+            
+            return bills;
+        },
+        paginatedBills() {
+            const start = (this.currentPage - 1) * this.itemsPerPage;
+            const end = start + this.itemsPerPage;
+            return this.finalFilteredBills.slice(start, end);
+        },
+        totalPages() {
+            return Math.ceil(this.finalFilteredBills.length / this.itemsPerPage);
+        },
+        showNoDataMessage() {
+            return this.finalFilteredBills.length === 0 && ((this.startDate && this.endDate) || this.searchQuery.trim());
+        },
+        formattedCurrentDate() {
+            return this.formatDisplayDate(this.currentDate);
+        },
+        filteredBillsByDate() {
+            // Get current date for filtering with time set to start of day
+            const today = new Date(this.currentDate);
+            today.setHours(0, 0, 0, 0);
+            
+            // Get end of day for the current date
+            const endOfDay = new Date(this.currentDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            
+            console.log(`Filtering bills by current date: ${this.currentDate.toLocaleDateString()}`);
+            
+            return this.bills.filter(bill => {
+                // Skip bills without date info
+                if (!bill.date) return false;
+                
+                // Convert bill date to Date object if it's not already
+                const billDate = bill.date instanceof Date ? bill.date : new Date(bill.date);
+                
+                // Check if bill date is within the current day or check-out date is within current day
+                // Or if the stay spans over the current day (checked in before and checking out after)
+                if (bill.checkOut) {
+                    const checkOutDate = bill.checkOut instanceof Date ? bill.checkOut : new Date(bill.checkOut);
+                    
+                    return (
+                        // Check-in is on the selected day
+                        (billDate >= today && billDate <= endOfDay) ||
+                        // Check-out is on the selected day
+                        (checkOutDate >= today && checkOutDate <= endOfDay) ||
+                        // Stay spans over the selected day
+                        (billDate < today && checkOutDate > today)
+                    );
+                } else {
+                    // If no check-out date, just check if bill date is on the current day
+                    return billDate >= today && billDate <= endOfDay;
+                }
+            });
+        },
+        calculateBaseCost() {
+            let baseCost = 0;
+            
+            // Check if dates are provided
+            if (!this.newBill.date) return 0;
+            
+            // Get check-in date/time
+            const checkInDateTime = new Date(this.newBill.date);
+            const [checkInHours, checkInMinutes] = this.newBill.checkInTime.split(':').map(Number);
+            checkInDateTime.setHours(checkInHours, checkInMinutes, 0);
+            
+            // Calculate checkout date/time
+            let checkOutDateTime = null;
+            
+            if (this.newBill.checkOut) {
+                checkOutDateTime = new Date(this.newBill.checkOut);
+                const [checkOutHours, checkOutMinutes] = this.newBill.checkOutTime.split(':').map(Number);
+                checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
+            } else if (this.newBill.bookingType === 'hourly') {
+                // For hourly bookings without checkout, use duration
+                checkOutDateTime = new Date(checkInDateTime);
+                checkOutDateTime.setHours(checkOutDateTime.getHours() + parseInt(this.newBill.duration));
+            } else {
+                // Default to 3 hour stay
+                checkOutDateTime = new Date(checkInDateTime);
+                checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
+            }
+            
+            // Calculate nights and hours
+            const nights = calculateNights(checkInDateTime, checkOutDateTime);
+            const hours = this.newBill.bookingType === 'hourly' ? parseInt(this.newBill.duration) : calculateHours(checkInDateTime, checkOutDateTime);
+
+            // If hourly, use manual price
+            if (this.newBill.bookingType === 'hourly') {
+                baseCost = parseFloat(this.newBill.hourlyPrice) || 0;
+                return baseCost;
+            }
+
+            // Get calculated costs
+            const bookingCosts = calculateBookingCosts(
+                nights,
+                this.newBill.bookingType,
+                Boolean(this.newBill.checkOut), // Has checkout
+                this.newBill.hasTvRemote,
+                hours
+            );
+            
+            // Return the calculated subtotal
+            return bookingCosts.subtotal;
+        }
+    },
+    watch: {
+        // Reset to first page when search query changes
+        searchQuery() {
+            this.currentPage = 1;
+        }
+    },
+    methods: {
+        // async handleLogout() {
+        //     try {
+        //         await signOut(auth);
+        //         window.location.href = '../Login/index.html';
+        //     } catch (error) {
+        //         console.error('Error signing out:', error);
+        //         alert('Error signing out. Please try again.');
+        //     }
+        // },
+
+        checkAuthState() {
+            const currentAuth = auth();
+            onAuthStateChanged(currentAuth, async (user) => {
+                this.isAuthenticated = !!user;
+                if (!user) {
+                    window.location.href = '../Login/index.html';
+                }
+                this.loading = false;
+            });
+        },
+
+        async processPayment() {
+            try {
+                // ...existing payment processing logic...
+                await logBillingActivity('billing_payment', `Processed payment for ${this.customerName}`);
+            } catch (error) {
+                console.error('Error processing payment:', error);
+                await logBillingActivity('billing_error', `Payment processing failed: ${error.message}`);
+            }
+        },
+
+        async addCharge() {
+            try {
+                // ...existing charge addition logic...
+                await logBillingActivity('billing_charge', `Added charge of ${amount} for ${description}`);
+            } catch (error) {
+                console.error('Error adding charge:', error);
+                await logBillingActivity('billing_error', `Failed to add charge: ${error.message}`);
+            }
+        },
+
+        async applyDiscount() {
+            try {
+                // ...existing discount logic...
+                await logBillingActivity('billing_discount', `Applied ${discount}% discount`);
+            } catch (error) {
+                console.error('Error applying discount:', error);
+                await logBillingActivity('billing_error', `Failed to apply discount: ${error.message}`);
+            }
+        },
+
+        // Check if a bill can be edited (only bills from today or future dates can be edited)
+        canEditBill(bill) {
+            console.log('Checking if bill can be edited:', bill);
+            
+            // Use check-in date for comparison
+            if (!bill.date) {
+                console.log('No check-in date found - allowing edit');
+                return true;
+            }
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Start of today
+            
+            // Convert bill check-in date to Date object and normalize time
+            let billDate;
+            if (bill.date.toDate) {
+                // Firestore timestamp
+                billDate = bill.date.toDate();
+            } else if (bill.date instanceof Date) {
+                billDate = new Date(bill.date);
+            } else {
+                // String date
+                billDate = new Date(bill.date);
+            }
+            billDate.setHours(0, 0, 0, 0); // Start of bill date
+            
+            console.log('Today:', today);
+            console.log('Bill check-in date:', billDate);
+            
+            // Check if bill date is older than today
+            const isOlderThanToday = billDate.getTime() < today.getTime();
+            
+            console.log('Is bill older than today?', isOlderThanToday);
+            
+            const canEdit = !isOlderThanToday; // Can edit only if NOT older than today
+            console.log('Can edit this bill?', canEdit);
+            
+            // Return false if bill is from any date before today (cannot edit)
+            return canEdit;
+        },
+
+        openModal() {
+            console.log('Opening modal');
+            this.showModal = true;
+        },
+        closeModal() {
+            this.showModal = false;
+        },
+        resetNewBill() {
+            this.newBill = {
+                customerName: '',
+                date: '',
+                checkInTime: '12:00',
+                checkOut: '',
+                checkOutTime: '11:00',
+                roomNumber: '',
+                roomType: '',
+                baseCost: 0,
+                expenses: [],
+                bookingType: 'standard',
+                duration: 3,
+                hasTvRemote: false,
+                hourlyPrice: 0 // <-- Add this line
+            };
+        },
+        addExpense() {
+            this.newBill.expenses.push({ description: '', amount: 0 });
+        },
+        removeExpense(index) {
+            this.newBill.expenses.splice(index, 1);
+        },
+        async loadBills() {
+            try {
+                this.loading = true;
+                console.log("Loading bills from Firebase...");
+                
+                // Reset cached data to force a fresh load
+                this.bills = [];
+                this.filteredBills = [];
+                
+                // Fetch bill data from Firebase
+                const billsData = await fetchBillingData();
+                console.log("Bills data received:", billsData.length, "records");
+                
+                // Process each bill to ensure proper format for display
+                this.bills = billsData.map(bill => {
+                    // Ensure expenses array exists
+                    if (!bill.expenses) {
+                        bill.expenses = [];
+                    }
+                    
+                    // Convert dates for proper display
+                    if (bill.date) {
+                        if (typeof bill.date === 'object' && bill.date.seconds) {
+                            // Firestore Timestamp object
+                            bill.date = new Date(bill.date.seconds * 1000);
+                        } else if (!(bill.date instanceof Date)) {
+                            // Date string
+                            bill.date = new Date(bill.date);
+                        }
+                    }
+                    
+                    if (bill.checkOut) {
+                        if (typeof bill.checkOut === 'object' && bill.checkOut.seconds) {
+                            // Firestore Timestamp object
+                            bill.checkOut = new Date(bill.checkOut.seconds * 1000);
+                        } else if (!(bill.checkOut instanceof Date)) {
+                            // Date string
+                            bill.checkOut = new Date(bill.checkOut);
+                        }
+                    }
+                    
+                    // Calculate stay duration for display
+                    if (bill.date && bill.checkOut) {
+                        const checkIn = new Date(bill.date);
+                        const checkOut = new Date(bill.checkOut);
+                        
+                        // Calculate total hours first
+                        const totalHours = Math.ceil(Math.abs(checkOut - checkIn) / (1000 * 60 * 60));
+                        
+                        // Calculate nights (whole days)
+                        const nights = Math.floor(totalHours / 24);
+                        
+                        // Calculate remaining hours after subtracting full nights
+                        const remainingHours = totalHours % 24;
+                        
+                        console.log(`Duration calculation for ${bill.customerName}: totalHours=${totalHours}, nights=${nights}, remainingHours=${remainingHours}`);
+                        
+                        if (nights === 0) {
+                            // For same-day bookings (hourly), show hours only
+                            bill.duration = `${totalHours} hour${totalHours !== 1 ? 's' : ''}`;
+                        } else if (remainingHours === 0) {
+                            // For exact night stays with no extra hours
+                            bill.duration = `${nights} night${nights !== 1 ? 's' : ''}`;
+                        } else {
+                            // For stays with both nights and extra hours
+                            bill.duration = `${nights} night${nights !== 1 ? 's' : ''} ${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`;
+                        }
+                    } else {
+                        bill.duration = 'N/A';
+                    }
+                    
+                    return bill;
+                });
+                
+                console.log("Processed bills:", this.bills);
+                
+                // Store original copy for filtering
+                this.originalBills = [...this.bills];
+                
+                // Set loading to false
+                this.loading = false;
+            } catch (error) {
+                console.error("Error loading bills:", error);
+                alert("Failed to load billing data. Please try again.");
+                this.loading = false;
+            }
+        },
+        sortBills() {
+            if (!this.sortDate) {
+                this.bills = [...this.originalBills]; 
+                return;
+            }
+
+            const selectedDate = new Date(this.sortDate);
+            selectedDate.setHours(0, 0, 0, 0); 
+            
+            this.bills.sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                
+                // Find the difference from the selected date
+                const diffA = Math.abs(dateA - selectedDate);
+                const diffB = Math.abs(dateB - selectedDate);
+                
+                return diffA - diffB; 
+            });
+        },
+
+        filterByDateRange() {
+            if (!this.startDate || !this.endDate) {
+                alert('Please select both start and end dates.');
+                return;
+            }
+
+            // Validate that end date is not before start date
+            if (new Date(this.endDate) < new Date(this.startDate)) {
+                alert('End date cannot be earlier than start date.');
+                return;
+            }
+
+            // Create date objects with time boundaries
+            const startDate = new Date(this.startDate);
+            startDate.setHours(0, 0, 0, 0);
+            
+            const endDate = new Date(this.endDate);
+            endDate.setHours(23, 59, 59, 999);
+
+            console.log(`Filtering by date range: ${this.startDate} to ${this.endDate}`);
+            console.log(`Bills to filter: ${this.bills.length}`);
+
+            this.filteredBills = this.bills.filter(bill => {
+                // Skip bills without date info
+                if (!bill.date) return false;
+                
+                // Convert bill dates to Date objects
+                const billDate = bill.date instanceof Date ? bill.date : new Date(bill.date);
+                
+                // Check if any part of the stay overlaps with the selected date range
+                if (bill.checkOut) {
+                    const checkOutDate = bill.checkOut instanceof Date ? bill.checkOut : new Date(bill.checkOut);
+                    
+                    return (
+                        // Check-in is within the date range
+                        (billDate >= startDate && billDate <= endDate) ||
+                        // Check-out is within the date range
+                        (checkOutDate >= startDate && checkOutDate <= endDate) ||
+                        // Stay spans over the date range (checked in before and checking out after)
+                        (billDate < startDate && checkOutDate > endDate) ||
+                        // Stay overlaps with the start of the range
+                        (billDate < startDate && checkOutDate >= startDate && checkOutDate <= endDate) ||
+                        // Stay overlaps with the end of the range
+                        (billDate >= startDate && billDate <= endDate && checkOutDate > endDate)
+                    );
+                } else {
+                    // If no check-out date, just check if bill date is within the range
+                    return billDate >= startDate && billDate <= endDate;
+                }
+            });
+
+            console.log(`Filtered bills: ${this.filteredBills.length} results found for date range ${this.startDate} to ${this.endDate}`);
+
+            // Reset to first page when filtering
+            this.currentPage = 1;
+        },
+
+        resetFilter() {
+            // Clear the date range filter
+            this.startDate = '';
+            this.endDate = '';
+            this.filteredBills = [];
+            this.currentPage = 1;
+            
+            // Clear the search query
+            this.searchQuery = '';
+        },
+
+        formatDate(date) {
+            if (!date) return 'N/A';
+            
+            try {
+                // Convert to Date object if not already
+                const dateObj = date instanceof Date ? date : new Date(date);
+                
+                // Check if date is valid
+                if (isNaN(dateObj.getTime())) return 'Invalid date';
+                
+                // Format date with time
+                return dateObj.toLocaleString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                console.error('Error formatting date:', error);
+                return 'Error';
+            }
+        },
+        viewBill(bill) {
+            // Deep copy to avoid modifying the original
+            this.editingBill = JSON.parse(JSON.stringify(bill));
+            
+            // Ensure expenses array exists
+            if (!this.editingBill.expenses) {
+                this.editingBill.expenses = [];
+            }
+            
+            // Format date and time for proper display in form inputs
+            if (bill.date) {
+                const checkInDate = bill.date instanceof Date ? bill.date : new Date(bill.date);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.date = checkInDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkInDate.getHours().toString().padStart(2, '0');
+                const minutes = checkInDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkInTime = `${hours}:${minutes}`;
+            }
+            
+            if (bill.checkOut) {
+                const checkOutDate = bill.checkOut instanceof Date ? bill.checkOut : new Date(bill.checkOut);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.checkOut = checkOutDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkOutDate.getHours().toString().padStart(2, '0');
+                const minutes = checkOutDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkOutTime = `${hours}:${minutes}`;
+            }
+            
+            // Set current ID
+            this.currentBillId = bill.id || (bill.source === 'bookings' ? bill.bookingId : null);
+            console.log('View bill - Using ID:', this.currentBillId);
+            this.showViewModal = true;
+            this.isEditMode = false;
+        },
+        
+        openEditModal(bill) {
+            console.log('Opening edit modal for bill:', bill);
+            
+            // Check if bill can be edited (only bills from today or future dates can be edited)
+            if (!this.canEditBill(bill)) {
+                alert('This bill cannot be edited because it is from a date older than today. You can only edit bills from today or future dates.');
+                return;
+            }
+            
+            // Create a deep copy of the bill
+            this.editingBill = {
+                ...bill,
+                expenses: bill.expenses ? [...bill.expenses] : [],
+                bookingType: bill.bookingType || 'standard',
+                duration: bill.duration || 3,
+                hasTvRemote: bill.hasTvRemote || false,
+                hourlyPrice: bill.hourlyPrice || 0 // <-- Add this line
+            };
+            
+            // Format date and time for proper display in form inputs
+            if (bill.date) {
+                const checkInDate = bill.date instanceof Date ? bill.date : new Date(bill.date);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.date = checkInDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkInDate.getHours().toString().padStart(2, '0');
+                const minutes = checkInDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkInTime = `${hours}:${minutes}`;
+            }
+            
+            if (bill.checkOut) {
+                const checkOutDate = bill.checkOut instanceof Date ? bill.checkOut : new Date(bill.checkOut);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.checkOut = checkOutDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkOutDate.getHours().toString().padStart(2, '0');
+                const minutes = checkOutDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkOutTime = `${hours}:${minutes}`;
+            }
+            
+            // Set bill ID, checking for bookingId if it's from the bookings source
+            this.currentBillId = bill.id || (bill.source === 'bookings' ? bill.bookingId : null);
+            console.log('Edit modal - Using ID:', this.currentBillId);
+            
+            this.isEditMode = true;
+            this.showViewModal = true;
+        },
+        
+        editBill(bill) {
+            console.log('Edit bill function called', bill);
+            // Deep copy to avoid modifying the original
+            this.editingBill = JSON.parse(JSON.stringify(bill));
+            
+            // Ensure expenses array exists
+            if (!this.editingBill.expenses) {
+                this.editingBill.expenses = [];
+            }
+            
+            // Format date and time for proper display in form inputs
+            if (bill.date) {
+                const checkInDate = bill.date instanceof Date ? bill.date : new Date(bill.date);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.date = checkInDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkInDate.getHours().toString().padStart(2, '0');
+                const minutes = checkInDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkInTime = `${hours}:${minutes}`;
+            }
+            
+            if (bill.checkOut) {
+                const checkOutDate = bill.checkOut instanceof Date ? bill.checkOut : new Date(bill.checkOut);
+                
+                // Format date as YYYY-MM-DD for the date input
+                this.editingBill.checkOut = checkOutDate.toISOString().split('T')[0];
+                
+                // Format time as HH:MM for the time input
+                const hours = checkOutDate.getHours().toString().padStart(2, '0');
+                const minutes = checkOutDate.getMinutes().toString().padStart(2, '0');
+                this.editingBill.checkOutTime = `${hours}:${minutes}`;
+            }
+            
+            // Set current ID and source - check both id and bookingId
+            this.currentBillId = bill.id || (bill.source === 'bookings' ? bill.bookingId : null);
+            console.log('Edit bill - Using ID:', this.currentBillId);
+            
+            this.showViewModal = true;
+            this.isEditMode = true;
+            console.log('Edit mode enabled:', this.isEditMode);
+        },
+        
+        closeViewModal() {
+            this.showViewModal = false;
+            this.editingBill = null;
+            this.currentBillId = null;
+            this.isEditMode = false;
+        },
+        addEditExpense() {
+            if (!this.editingBill.expenses) this.editingBill.expenses = [];
+            this.editingBill.expenses.push({ description: '', amount: '' });
+        },
+        removeEditExpense(index) {
+            this.editingBill.expenses.splice(index, 1);
+        },
+        async updateBill() {
+            try {
+                if (!this.editingBill) return;
+                this.isUpdating = true;
+                this.loading = true;
+                
+                // Get bill ID with fallbacks
+                let billId = this.currentBillId;
+                
+                // If currentBillId is not set, try to get it from the editingBill
+                if (!billId && this.editingBill) {
+                    billId = this.editingBill.id || 
+                            (this.editingBill.source === 'bookings' ? this.editingBill.bookingId : null);
+                    console.log('Fallback to editingBill ID:', billId);
+                }
+                
+                // Check if we have a valid bill ID before attempting to update
+                if (!billId) {
+                    console.error('Cannot update bill: No valid bill ID found');
+                    alert('Cannot update bill: No valid bill ID found');
+                    this.loading = false;
+                    this.isUpdating = false;
+                    return;
+                }
+                
+                // Format check-in date with time
+                const checkInDateTime = new Date(this.editingBill.date);
+                const [checkInHours, checkInMinutes] = this.editingBill.checkInTime.split(':').map(Number);
+                checkInDateTime.setHours(checkInHours, checkInMinutes, 0);
+                
+                // Format check-out date with time if provided
+                let checkOutDateTime = null;
+                if (this.editingBill.checkOut) {
+                    checkOutDateTime = new Date(this.editingBill.checkOut);
+                    const [checkOutHours, checkOutMinutes] = this.editingBill.checkOutTime.split(':').map(Number);
+                    checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
+
+                    // --- Validation: Check-out cannot be before check-in ---
+                    if (checkOutDateTime < checkInDateTime) {
+                        alert('Check-out date/time cannot be earlier than check-in date/time.');
+                        this.loading = false;
+                        this.isUpdating = false;
+                        return;
+                    }
+                } else if (this.editingBill.bookingType === 'hourly') {
+                    // For hourly bookings without checkout, calculate based on duration
+                    checkOutDateTime = new Date(checkInDateTime);
+                    checkOutDateTime.setHours(checkOutDateTime.getHours() + parseInt(this.editingBill.duration || 3));
+                } else {
+                    // Default to 3 hour stay
+                    checkOutDateTime = new Date(checkInDateTime);
+                    checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
+                }
+                
+                // Calculate nights and hours
+                const nights = calculateNights(checkInDateTime, checkOutDateTime);
+                const hours = this.editingBill.bookingType === 'hourly' ? 
+                    parseInt(this.editingBill.duration) : 
+                    calculateHours(checkInDateTime, checkOutDateTime);
+                
+                // Get calculated costs with updated parameters
+                const bookingCosts = calculateBookingCosts(
+                    nights,
+                    this.editingBill.bookingType,
+                    Boolean(this.editingBill.checkOut),
+                    this.editingBill.hasTvRemote,
+                    hours
+                );
+                
+                // Prepare the update data - retain original values for certain fields
+                const updateData = {
+                    customerName: this.editingBill.customerName,
+                    date: Timestamp.fromDate(checkInDateTime),
+                    checkInTime: this.editingBill.checkInTime,
+                    checkOut: this.editingBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
+                    checkOutTime: this.editingBill.checkOutTime,
+                    roomNumber: this.editingBill.roomNumber,
+                    roomType: "Standard", // Always set to Standard
+                    
+                    // Retain the original values for these fields
+                    baseCost: this.editingBill.baseCost,
+                    
+                    // Retain original booking type
+                    bookingType: this.editingBill.bookingType,
+                    duration: this.editingBill.bookingType === 'hourly' ? parseInt(this.editingBill.duration) : null,
+                    hasTvRemote: this.editingBill.hasTvRemote,
+                    tvRemoteFee: this.editingBill.hasTvRemote ? this.TV_REMOTE_FEE : 0,
+                    hourlyPrice: this.editingBill.bookingType === 'hourly' ? parseFloat(this.editingBill.hourlyPrice) || 0 : undefined,
+                    
+                    expenses: this.editingBill.expenses || [],
+                    status: this.editingBill.status,
+                    paymentStatus: this.editingBill.paymentStatus,
+                    updatedAt: Timestamp.now()
+                };
+                
+                // Clean up any undefined values to prevent Firebase errors
+                // Firebase doesn't allow undefined values, but accepts null
+                Object.keys(updateData).forEach(key => {
+                    if (typeof updateData[key] === 'undefined') {
+                        console.log(`Found undefined value for field: ${key}. Setting to null or removing.`);
+                        // If the value is undefined, either delete it or set to null based on field
+                        if (key === 'paymentStatus' || key === 'bookingId' || key === 'duration') {
+                            delete updateData[key];
+                        } else {
+                            updateData[key] = null;
+                        }
+                    }
+                });
+                
+                // If paymentStatus is undefined, remove it from the update object
+                if (typeof updateData.paymentStatus === 'undefined') {
+                    console.log('Extra check: paymentStatus is undefined, removing from update data');
+                    delete updateData.paymentStatus;
+                }
+                
+                // Double-check for any remaining undefined values
+                const hasUndefined = Object.entries(updateData).some(([key, value]) => typeof value === 'undefined');
+                if (hasUndefined) {
+                    console.warn('Warning: There are still undefined values in the update data after cleanup');
+                }
+                
+                // If this was from a booking, preserve the booking ID reference
+                if (this.editingBill.bookingId) {
+                    updateData.bookingId = this.editingBill.bookingId;
+                }
+                
+                // Calculate total amount including expenses
+                let totalAmount = parseFloat(this.editingBill.baseCost);
+                if (this.editingBill.expenses && this.editingBill.expenses.length > 0) {
+                    totalAmount += this.editingBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+                }
+                updateData.totalAmount = totalAmount;
+                
+                console.log('Updating bill data:', updateData);
+
+                // Check if the bill exists in the billing system
+                const billDocRef = doc(db(), 'everlodgebilling', billId);
+                const billDocSnap = await getDoc(billDocRef);
+                
+                // If bill doesn't exist in everlodgebilling but is from a booking, create a new billing record
+                if (!billDocSnap.exists() && this.editingBill.source === 'bookings') {
+                    console.log('Bill does not exist in billing records. Creating a new billing record from booking.');
+                    
+                    // If we have a bookingId, make sure it's included in the data
+                    if (this.editingBill.bookingId) {
+                        updateData.bookingId = this.editingBill.bookingId;
+                    } else if (this.editingBill.id && this.editingBill.source === 'bookings') {
+                        // If no explicit bookingId but we know this came from bookings, use the id
+                        updateData.bookingId = this.editingBill.id;
+                    }
+                    
+                    // Add created timestamp
+                    updateData.createdAt = Timestamp.now();
+                    
+                    // Create new billing record
+                    const newBillRecord = await addBillingRecord(updateData);
+                    
+                    // Update current bill ID to the new billing record ID
+                    this.currentBillId = newBillRecord.id;
+                    
+                    console.log('Created new billing record:', newBillRecord);
+                    
+                    // Log activity
+                    await logBillingActivity(
+                        'bill_created_from_booking',
+                        `Created billing record for ${this.editingBill.customerName}, Room ${this.editingBill.roomNumber} from booking`
+                    );
+                    
+                    // Update local data
+                    this.editingBill.id = newBillRecord.id;
+                    this.editingBill.source = 'everlodgebilling';
+                } else if (!billDocSnap.exists()) {
+                    // If bill doesn't exist and it's not from a booking, show error
+                    alert('Cannot update: This bill does not exist in the billing records.');
+                    this.loading = false;
+                    this.isUpdating = false;
+                    return;
+                } else {
+                    // Bill exists, update it
+                    await updateBillingRecord(billId, updateData);
+                    
+                    // If this record is linked to a booking, update the booking as well
+                    if (this.editingBill.bookingId) {
+                        try {
+                            const bookingUpdateData = {
+                                guestName: this.editingBill.customerName,
+                                checkIn: Timestamp.fromDate(checkInDateTime),
+                                checkOut: this.editingBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
+                                subtotal: parseFloat(this.editingBill.baseCost),
+                                totalPrice: totalAmount,
+                                bookingType: this.editingBill.bookingType,
+                                duration: this.editingBill.bookingType === 'hourly' ? parseInt(this.editingBill.duration) : null,
+                                hasTvRemote: this.editingBill.hasTvRemote,
+                                hourlyPrice: this.editingBill.bookingType === 'hourly' ? parseFloat(this.editingBill.hourlyPrice) || 0 : undefined,
+                                updatedAt: Timestamp.now()
+                            };
+                            
+                            // Update the corresponding booking
+                            await updateBookingInRoomManagement(this.editingBill.bookingId, bookingUpdateData);
+                            console.log(`Updated corresponding booking ${this.editingBill.bookingId}`);
+                        } catch (bookingError) {
+                            console.error('Error updating booking:', bookingError);
+                            // Continue with bill update even if booking update fails
+                        }
+                    }
+                    
+                    // Log the activity
+                    await logBillingActivity(
+                        'bill_updated',
+                        `Updated billing record for ${this.editingBill.customerName}, Room ${this.editingBill.roomNumber}`
+                    );
+                }
+                
+                // Close the modal
+                this.showModal = false;
+                this.isEditMode = false;
+                this.showViewModal = false;
+                
+                // Use forceRefresh to ensure filters and pagination are preserved
+                console.log("Forcing refresh after bill update");
+                this.forceRefresh();
+                
+                alert('Bill updated successfully!');
+                
+            } catch (error) {
+                console.error('Error updating bill:', error);
+                alert('Failed to update bill: ' + error.message);
+            } finally {
+                this.loading = false;
+                this.isUpdating = false;
+            }
+        },
+
+        forceRefresh() {
+            // Store current filter state before refreshing 
+            const currentPage = this.currentPage;
+            const currentStartDate = this.startDate;
+            const currentEndDate = this.endDate;
+            
+            // Load fresh data
+            this.loadBills().then(() => {
+                // Determine if we need to reapply filters
+                if (currentStartDate && currentEndDate) {
+                    console.log(`Reapplying filters after refresh: startDate=${currentStartDate}, endDate=${currentEndDate}`);
+                    
+                    // Re-apply the date range filter
+                    this.startDate = currentStartDate;
+                    this.endDate = currentEndDate;
+                    this.filterByDateRange();
+                    console.log(`Date range filter reapplied with ${this.filteredBills.length} results`);
+                }
+                
+                // After filtering is complete, restore page or go to a valid page
+                Vue.nextTick(() => {
+                    if (this.totalPages > 0 && currentPage > this.totalPages) {
+                        this.currentPage = this.totalPages;
+                    } else if (this.totalPages > 0) {
+                        this.currentPage = Math.min(currentPage, this.totalPages);
+                    } else {
+                        this.currentPage = 1;
+                    }
+                    
+                    // Clear the force refreshing flag
+                    this._isForceRefreshing = false;
+                });
+            });
+        },
+
+        async deleteBill(bill) {
+            try {
+                console.log("Attempting to delete bill:", bill);
+                
+                // Check if this is a valid bill
+                if (!bill) {
+                    alert('Invalid bill selected');
+                    return;
+                }
+                
+                // Confirm before deleting
+                if (!confirm(`Are you sure you want to delete the bill for ${bill.customerName}?`)) {
+                    return;
+                }
+                
+                this.loading = true;
+                
+                // Handle deletion based on the source of the bill
+                if (bill.source === 'bookings') {
+                    // For bills from the bookings collection
+                    if (!bill.id && !bill.bookingId) {
+                        console.error("Cannot delete bill - no valid ID found");
+                        alert("Cannot delete this bill - no valid ID found");
+                        this.loading = false;
+                        return;
+                    }
+                    
+                    // Use bookingId if bill.id is null (meaning this is a booking displayed in billing but not yet saved as a dedicated bill)
+                    const bookingId = bill.id || bill.bookingId;
+                    console.log("Using booking ID for deletion:", bookingId);
+                    
+                    // For booking-based bills, we need to check if the actual booking should be deleted
+                    if (confirm('This is a booking charge. Do you want to delete the entire booking record as well?')) {
+                        console.log("Deleting booking record with ID:", bookingId);
+                        // Delete the booking from everlodgebookings
+                        await deleteBookingRecord(bookingId);
+                        console.log("Booking record deleted successfully");
+                    } else {
+                        // User chose not to delete the actual booking but hide it from billing view
+                        console.log("Marking booking as hidden from billing view, ID:", bookingId);
+                        // Create or update a flag in a separate collection to hide this booking
+                        await markBookingHiddenInBilling(bookingId);
+                        console.log("Booking marked as hidden");
+                        alert('The booking record was preserved but hidden from billing view.');
+                    }
+                } else {
+                    // Delete regular billing record from everlodgebilling
+                    if (!bill.id) {
+                        console.error("Cannot delete custom bill - no valid ID found");
+                        alert("Cannot delete this bill - no valid ID found");
+                        this.loading = false;
+                        return;
+                    }
+                    
+                    console.log("Deleting billing record with ID:", bill.id);
+                    await deleteBillingRecord(bill.id);
+                    console.log("Billing record deleted successfully");
+                }
+                
+                console.log("Forcing refresh after deletion");
+                // Use our special force refresh method to ensure UI is updated
+                this.forceRefresh();
+                
+                // Success message
+                this.loading = false;
+                alert('Bill deleted successfully');
+            } catch (error) {
+                this.loading = false;
+                console.error('Error deleting bill:', error);
+                alert('Error deleting bill: ' + error.message);
+            }
+        },
+
+        changePage(page) {
+            if (page >= 1 && page <= this.totalPages) {
+                this.currentPage = page;
+            }
+        },
+
+        // Date navigation methods
+        formatDisplayDate(date) {
+            if (!date) return '';
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString(undefined, options);
+        },
+        
+        goToPreviousDay() {
+            // Store current page location when navigating
+            const prevDay = new Date(this.currentDate);
+            prevDay.setDate(prevDay.getDate() - 1);
+            this.currentDate = prevDay;
+            
+            // Reset date range filters and use today's filtering
+            this.startDate = '';
+            this.endDate = '';
+            this.filteredBills = this.filteredBillsByDate;
+            
+            console.log(`Navigated to previous day: ${this.currentDate.toLocaleDateString()} with ${this.filteredBills.length} records`);
+            
+            // Always start at page 1 when navigating to a new day
+            this.currentPage = 1;
+        },
+        
+        goToNextDay() {
+            const nextDay = new Date(this.currentDate);
+            nextDay.setDate(nextDay.getDate() + 1);
+            this.currentDate = nextDay;
+            
+            // Reset date range filters and use today's filtering
+            this.startDate = '';
+            this.endDate = '';
+            this.filteredBills = this.filteredBillsByDate;
+            
+            console.log(`Navigated to next day: ${this.currentDate.toLocaleDateString()} with ${this.filteredBills.length} records`);
+            
+            // Always start at page 1 when navigating to a new day
+            this.currentPage = 1;
+        },
+        
+        goToToday() {
+            this.currentDate = new Date();
+            
+            // Reset date range filters when navigating to today view
+            this.startDate = '';
+            this.endDate = '';
+            this.filteredBills = this.filteredBillsByDate;
+            
+            console.log(`Navigated to today: ${this.currentDate.toLocaleDateString()} with ${this.filteredBills.length} records`);
+            
+            // Always start at page 1 when navigating to today
+            this.currentPage = 1;
+        },
+        
+        formatStatus(status) {
+            if (!status) return 'N/A';
+            
+            // Capitalize first letter of each word
+            return status.split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        },
+        
+        getStatusClass(status) {
+            if (!status) return 'status-na';
+            
+            status = status.toLowerCase();
+            
+            if (status === 'paid') return 'status-paid';
+            if (status === 'unpaid') return 'status-unpaid';
+            if (status === 'pending') return 'status-pending';
+            if (status === 'confirmed' || status === 'approved') return 'status-confirmed';
+            if (status === 'canceled' || status === 'cancelled') return 'status-canceled';
+            
+            return 'status-na';
+        },
+
+        calculateTotalAmount(booking) {
+            if (!booking) return 0;
+            
+            let subtotal = this.calculateSubtotal(booking);
+            let tvRemoteFee = booking.hasTvRemote ? this.TV_REMOTE_FEE : 0;
+            
+            return subtotal + tvRemoteFee;
+        },
+        
+        calculateServiceFee(booking) {
+            if (!booking) return 0;
+            
+            let subtotal = this.calculateSubtotal(booking);
+            return subtotal * this.SERVICE_FEE_PERCENTAGE;
+        },
+        
+        generateInvoiceDetail(booking) {
+            if (!booking) return null;
+            
+            let subtotal = this.calculateSubtotal(booking);
+            let tvRemoteFee = booking.hasTvRemote ? this.TV_REMOTE_FEE : 0;
+            let total = subtotal + tvRemoteFee;
+            
+            return {
+                invoiceId: this.generateInvoiceId(),
+                roomNumber: booking.roomNumber,
+                guestName: booking.guestName,
+                checkIn: booking.checkIn,
+                checkOut: booking.checkOut || this.calculateAutoCheckout(booking.checkIn),
+                stayDuration: this.calculateStayDuration(booking),
+                stayType: this.determineStayType(booking),
+                roomRate: this.calculateRoomRate(booking),
+                subtotal: subtotal,
+                tvRemoteFee: tvRemoteFee,
+                total: total,
+                paymentStatus: 'Pending',
+                dateCreated: new Date().toISOString(),
+                dateUpdated: new Date().toISOString()
+            };
+        },
+        
+        displayInvoice(invoice) {
+            if (!invoice) return;
+            
+            this.currentInvoice = invoice;
+            this.showInvoiceModal = true;
+            
+            // Prepare data for printing
+            this.prepareInvoicePrintData(invoice);
+        },
+        
+        prepareInvoicePrintData(invoice) {
+            this.invoicePrintData = {
+                invoiceId: invoice.invoiceId,
+                invoiceDate: this.formatDateTime(invoice.dateCreated),
+                guestName: invoice.guestName,
+                roomNumber: invoice.roomNumber,
+                checkIn: this.formatDateTime(invoice.checkIn),
+                checkOut: this.formatDateTime(invoice.checkOut),
+                stayDuration: invoice.stayDuration + ' ' + (invoice.stayType === 'hourly' ? 'hour(s)' : 'night(s)'),
+                stayType: this.capitalizeFirstLetter(invoice.stayType),
+                roomRate: this.formatCurrency(invoice.roomRate),
+                subtotal: this.formatCurrency(invoice.subtotal),
+                tvRemoteFee: invoice.tvRemoteFee > 0 ? this.formatCurrency(invoice.tvRemoteFee) : '₱0.00',
+                total: this.formatCurrency(invoice.total),
+                paymentStatus: invoice.paymentStatus
+            };
+        },
+        updateBookingTypeAndPricing() {
+            // Calculate the base cost based on the selected booking type
+            if (this.newBill.bookingType === 'hourly') {
+                this.newBill.baseCost = parseFloat(this.newBill.hourlyPrice) || 0;
+            } else {
+                this.newBill.baseCost = this.calculateBaseCost;
+            }
+        },
+        async submitBill() {
+            try {
+                this.isSubmitting = true;
+                this.loading = true;
+                // Prepare bill data
+                const checkInDateTime = new Date(this.newBill.date);
+                const [checkInHours, checkInMinutes] = this.newBill.checkInTime.split(':').map(Number);
+                checkInDateTime.setHours(checkInHours, checkInMinutes, 0);
+
+                let checkOutDateTime = null;
+                if (this.newBill.checkOut) {
+                    checkOutDateTime = new Date(this.newBill.checkOut);
+                    const [checkOutHours, checkOutMinutes] = this.newBill.checkOutTime.split(':').map(Number);
+                    checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
+
+                    // --- Validation: Check-out cannot be before check-in ---
+                    if (checkOutDateTime < checkInDateTime) {
+                        alert('Check-out date/time cannot be earlier than check-in date/time.');
+                        this.loading = false;
+                        this.isSubmitting = false;
+                        return;
+                    }
+                } else if (this.newBill.bookingType === 'hourly') {
+                    checkOutDateTime = new Date(checkInDateTime);
+                    checkOutDateTime.setHours(checkOutDateTime.getHours() + parseInt(this.newBill.duration || 3));
+                } else {
+                    checkOutDateTime = new Date(checkInDateTime);
+                    checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
+                }
+
+                const nights = calculateNights(checkInDateTime, checkOutDateTime);
+                const hours = this.newBill.bookingType === 'hourly'
+                    ? parseInt(this.newBill.duration)
+                    : calculateHours(checkInDateTime, checkOutDateTime);
+
+                // Calculate base cost
+                let baseCost = this.newBill.bookingType === 'hourly'
+                    ? parseFloat(this.newBill.hourlyPrice) || 0
+                    : this.calculateBaseCost;
+
+                // Calculate total amount
+                let totalAmount = parseFloat(baseCost);
+                if (this.newBill.expenses && this.newBill.expenses.length > 0) {
+                    totalAmount += this.newBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
+                }
+
+                // Prepare bill object
+                const billData = {
+                    customerName: this.newBill.customerName,
+                    date: Timestamp.fromDate(checkInDateTime),
+                    checkInTime: this.newBill.checkInTime,
+                    checkOut: this.newBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
+                    checkOutTime: this.newBill.checkOutTime,
+                    roomNumber: this.newBill.roomNumber,
+                    roomType: this.newBill.roomType,
+                    baseCost: baseCost,
+                    bookingType: this.newBill.bookingType,
+                    duration: this.newBill.bookingType === 'hourly' ? parseInt(this.newBill.duration) : null,
+                    hasTvRemote: this.newBill.hasTvRemote,
+                    hourlyPrice: this.newBill.bookingType === 'hourly' ? parseFloat(this.newBill.hourlyPrice) || 0 : undefined,
+                    expenses: this.newBill.expenses || [],
+                    status: 'pending',
+                    totalAmount: totalAmount,
+                    createdAt: Timestamp.now(),
+                    updatedAt: Timestamp.now()
+                };
+
+                // Remove undefined fields
+                Object.keys(billData).forEach(key => {
+                    if (typeof billData[key] === 'undefined') {
+                        delete billData[key];
+                    }
+                });
+
+                // Save to Firestore
+                await addBillingRecord(billData);
+
+                // Log activity
+                await logBillingActivity('bill_created', `Created new bill for ${this.newBill.customerName}, Room ${this.newBill.roomNumber}`);
+
+                // Reset form and close modal
+                this.resetNewBill();
+                this.showModal = false;
+                this.forceRefresh();
+
+                alert('Bill created successfully!');
+            } catch (error) {
+                console.error('Error creating bill:', error);
+                alert('Failed to create bill: ' + error.message);
+            } finally {
+                this.loading = false;
+                this.isSubmitting = false;
+            }
+        },
+        forceReload() {
+            // Clear any cached data in the UI
+            this.bills = [];
+            this.filteredBills = [];
+            this.originalBills = [];
+            
+            // Force browser to refresh cached JavaScript
+            console.log('Forcing page reload to refresh data...');
+            window.location.reload(true);
+        },
+    },
+    async mounted() {
+        try {
+            console.log('Billing component mounted');
+            
+            // Check authentication
+            this.checkAuthState();
+            
+            // Load bills data
+            await this.loadBills();
+
+            // Hide the initial loading overlay
+            const overlay = document.getElementById('initial-loading-overlay');
+            if (overlay) {
+                overlay.classList.add('hide');
+                // Remove the overlay from the DOM after the transition completes
+                setTimeout(() => overlay.style.display = 'none', 500); 
+            }
+            
+            // Initialize with today's date filter
+            this.filteredBills = this.filteredBillsByDate;
+            
+            console.log('Bills initialized with today\'s date filter');
+            
+            // Check if we need to force a reload for the duration fix
+            // Use localStorage to prevent infinite reload loop
+            if (!localStorage.getItem('durationFixApplied')) {
+                localStorage.setItem('durationFixApplied', 'true');
+                // Give a slight delay before reload to ensure the page loads first
+                setTimeout(() => this.forceReload(), 500);
+            }
+        } catch (error) {
+            console.error('Error during component initialization:', error);
+        }
+    }
+});
+
+// Initialize page logging through PageLogger
+onAuthStateChanged(auth(), (user) => {
+    if (user) {
+        PageLogger.logNavigation('Billing');
+    }
+});
+
+// Common billing operations
+function addChargeRow() {
+    // ...existing addChargeRow code...
+    logBillingActivity('billing_add_item', 'Added new charge row');
+}
+
+function calculateTotal() {
+    // ...existing calculateTotal code...
+    logBillingActivity('billing_calculate', 'Recalculated bill total');
+}

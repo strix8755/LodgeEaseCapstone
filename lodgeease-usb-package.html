@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeEase USB Package Design</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .package-side {
+            width: 300px;
+            height: 450px;
+            background: #ffffff;
+            border-radius: 15px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: visible;
+            border: 1px solid #e0e0e0;
+        }
+
+        /* FRONT SIDE STYLES */
+        .front-side {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #fff3e0 100%);
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: linear-gradient(45deg, #1976d2, #42a5f5);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            z-index: 10;
+        }
+
+        .capacity-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(45deg, #ffa726, #ffb74d);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(255, 167, 38, 0.4);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-top: 75px;
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+
+        .logo-container {
+            width: 120px;
+            height: 80px;
+            margin: 0 auto 15px;
+            position: relative;
+        }
+
+        .logo-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .brand-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1976d2;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .product-name {
+            font-size: 16px;
+            background: linear-gradient(45deg, #1976d2, #42a5f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+
+        .product-subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .main-feature {
+            background: linear-gradient(45deg, rgba(25, 118, 210, 0.1), rgba(255, 167, 38, 0.1));
+            margin: 15px 15px;
+            padding: 12px;
+            border-radius: 12px;
+            border-left: 4px solid #1976d2;
+            border-top: 2px solid #ffa726;
+        }
+
+        .main-feature-text {
+            font-size: 12px;
+            color: #1976d2;
+            font-weight: 600;
+            line-height: 1.3;
+            text-align: center;
+        }
+
+        .feature-highlight {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            margin: 10px 20px;
+            line-height: 1.3;
+        }
+
+        .keep-files-text {
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+            margin: 8px 20px 15px;
+            line-height: 1.3;
+        }
+
+        /* USB Cutout positioned like SanDisk */
+        .usb-cutout-area {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 80px;
+            text-align: center;
+        }
+
+        .cutout-window {
+            width: 160px;
+            height: 50px;
+            background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+            border: 3px solid #1976d2;
+            border-radius: 25px;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .usb-device-front {
+            width: 110px;
+            height: 28px;
+            background: linear-gradient(45deg, #1976d2, #42a5f5);
+            border-radius: 6px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.4);
+            transform: rotate(-8deg);
+        }
+
+        .usb-device-front::before {
+            content: '';
+            position: absolute;
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 15px;
+            height: 14px;
+            background: #424242;
+            border-radius: 2px;
+        }
+
+        .usb-device-front::after {
+            content: 'LodgeEase';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(8deg);
+            color: white;
+            font-size: 8px;
+            font-weight: bold;
+        }
+
+        .cutout-description {
+            font-size: 9px;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .speed-badge {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: linear-gradient(45deg, #ffa726, #ffb74d);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .brand-footer {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #1976d2, #42a5f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            z-index: 10;
+        }
+
+        /* BACK SIDE STYLES */
+        .back-side {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 50%, #fff3e0 100%);
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .back-header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #1976d2;
+            padding-bottom: 12px;
+            background: linear-gradient(45deg, rgba(25, 118, 210, 0.05), rgba(255, 167, 38, 0.05));
+            border-radius: 8px;
+            padding: 12px;
+        }
+
+        .back-logo {
+            width: 90px;
+            height: 60px;
+            margin: 0 auto 10px;
+            position: relative;
+        }
+
+        .back-title {
+            font-size: 14px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #1976d2, #42a5f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #1976d2, #ffa726);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 12px 0 6px 0;
+            text-transform: uppercase;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 2px;
+        }
+
+        .requirements-list {
+            font-size: 9px;
+            color: #666;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            padding-left: 15px;
+        }
+
+        .requirements-list li {
+            margin-bottom: 2px;
+        }
+
+        .requirements-list strong {
+            color: #1976d2;
+        }
+
+        .manual-section {
+            font-size: 9px;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .quick-start {
+            background: linear-gradient(45deg, rgba(25, 118, 210, 0.1), rgba(255, 167, 38, 0.1));
+            padding: 8px;
+            border-radius: 6px;
+            margin: 8px 0;
+            border-left: 3px solid #1976d2;
+            border-top: 2px solid #ffa726;
+        }
+
+        .support-info {
+            font-size: 8px;
+            color: #999;
+            text-align: center;
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 2px solid #1976d2;
+            background: linear-gradient(45deg, rgba(25, 118, 210, 0.05), rgba(255, 167, 38, 0.05));
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .barcode {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            width: 60px;
+            height: 30px;
+            background: repeating-linear-gradient(90deg, #1976d2 0px, #1976d2 1px, #fff 1px, #fff 3px);
+            border-radius: 3px;
+        }
+
+        .accent-decoration {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle, rgba(255, 167, 38, 0.15), transparent);
+            border-radius: 50%;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <!-- FRONT SIDE -->
+    <div class="package-side front-side">
+        <div class="accent-decoration"></div>
+        <div class="version-badge">V 1.0</div>
+        <div class="capacity-badge">4<br>GB</div>
+        
+        <div class="logo-section">
+            <div class="logo-container">
+                <!-- Actual LodgeEase Logo from Image -->
+                <svg class="logo-svg" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Blue curved background element (sky/water) -->
+                    <path d="M10,50 Q150,20 290,50 Q220,80 150,75 Q80,80 10,50" fill="#4285f4" opacity="0.8"/>
+                    
+                    <!-- Black curved outline -->
+                    <path d="M5,45 Q150,15 295,45 Q225,85 150,78 Q75,85 5,45" fill="none" stroke="#000" stroke-width="3"/>
+                    
+                    <!-- White inner curved line -->
+                    <path d="M15,55 Q150,25 285,55" fill="none" stroke="#fff" stroke-width="2"/>
+                    
+                    <!-- Yellow/Golden sun circle -->
+                    <circle cx="150" cy="70" r="40" fill="#ffc107" opacity="0.9"/>
+                    
+                    <!-- Three lodge houses with blue triangular roofs -->
+                    <!-- Left house -->
+                    <path d="M60,120 L90,90 L120,120 Z" fill="#4285f4" stroke="#000" stroke-width="2"/>
+                    <rect x="60" y="120" width="60" height="50" fill="#ffffff" stroke="#000" stroke-width="2"/>
+                    
+                    <!-- Center house (taller) -->
+                    <path d="M120,120 L150,80 L180,120 Z" fill="#4285f4" stroke="#000" stroke-width="2"/>
+                    <rect x="120" y="120" width="60" height="50" fill="#ffffff" stroke="#000" stroke-width="2"/>
+                    
+                    <!-- Right house -->
+                    <path d="M180,120 L210,90 L240,120 Z" fill="#4285f4" stroke="#000" stroke-width="2"/>
+                    <rect x="180" y="120" width="60" height="50" fill="#ffffff" stroke="#000" stroke-width="2"/>
+                    
+                    <!-- Windows on all houses -->
+                    <rect x="75" y="135" width="12" height="12" fill="#ccc"/>
+                    <rect x="93" y="135" width="12" height="12" fill="#ccc"/>
+                    <rect x="135" y="135" width="12" height="12" fill="#ccc"/>
+                    <rect x="153" y="135" width="12" height="12" fill="#ccc"/>
+                    <rect x="195" y="135" width="12" height="12" fill="#ccc"/>
+                    <rect x="213" y="135" width="12" height="12" fill="#ccc"/>
+                    
+                    <!-- Main door in center house -->
+                    <rect x="142" y="150" width="16" height="20" fill="#ccc"/>
+                </svg>
+            </div>
+            <div class="brand-name">LodgeEase</div>
+            <div class="product-name">Lodge Management System</div>
+            <div class="product-subtitle">Complete Hospitality Solution</div>
+        </div>
+
+        <div class="feature-highlight">
+            Keep private system files secure with Firebase cloud integration and advanced encryption.
+        </div>
+
+
+        <!-- USB Cutout positioned like SanDisk -->
+        <div class="usb-cutout-area">
+            <div class="cutout-window">
+                <div class="usb-device-front"></div>
+            </div>
+            <div class="cutout-description">Complete lodge management system on USB 3.0</div>
+        </div>
+
+        <div class="speed-badge">
+            CLOUD<br>READY
+        </div>
+
+        <div class="brand-footer">LodgeEase®</div>
+    </div>
+
+    <!-- BACK SIDE -->
+    <div class="package-side back-side">
+        <div class="accent-decoration"></div>
+        <div class="back-header">
+            <div class="back-logo">
+                <!-- Smaller version of actual logo for back -->
+                <svg width="100%" height="100%" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20,60 Q150,35 280,60 Q210,85 150,80 Q90,85 20,60" fill="#4285f4" opacity="0.6"/>
+                    <path d="M15,55 Q150,30 285,55" fill="none" stroke="#000" stroke-width="2"/>
+                    <circle cx="150" cy="80" r="30" fill="#ffc107" opacity="0.7"/>
+                    <path d="M80,130 L110,105 L140,130 Z" fill="#4285f4"/>
+                    <path d="M140,130 L170,105 L200,130 Z" fill="#4285f4"/>
+                    <rect x="80" y="130" width="60" height="40" fill="#ffffff" stroke="#000" stroke-width="1"/>
+                    <rect x="140" y="130" width="60" height="40" fill="#ffffff" stroke="#000" stroke-width="1"/>
+                    <rect x="92" y="140" width="8" height="8" fill="#ccc"/>
+                    <rect x="108" y="140" width="8" height="8" fill="#ccc"/>
+                    <rect x="152" y="140" width="8" height="8" fill="#ccc"/>
+                    <rect x="168" y="140" width="8" height="8" fill="#ccc"/>
+                </svg>
+            </div>
+            <div class="back-title">LodgeEase Management System</div>
+        </div>
+
+        <div class="section-title">System Requirements</div>
+        <ul class="requirements-list">
+            <li><strong>Operating System:</strong> Windows 10/11, macOS 10.14+, Linux Ubuntu 18.04+</li>
+            <li><strong>Browser:</strong> Chrome 90+, Firefox 88+, Safari 14+, Edge 90+</li>
+            <li><strong>RAM:</strong> Minimum 4GB, Recommended 8GB</li>
+            <li><strong>Storage:</strong> 2GB free space</li>
+            <li><strong>Internet:</strong> Broadband connection required</li>
+            <li><strong>Node.js:</strong> Version 18 or higher</li>
+            <li><strong>Firebase Account:</strong> Required for cloud services</li>
+        </ul>
+
+        <div class="section-title">Quick Start Guide</div>
+        <div class="quick-start">
+            <div style="font-weight: bold; margin-bottom: 4px; color: #1976d2;">Installation Steps:</div>
+            <div class="manual-section">
+                1. Insert USB and run setup.exe<br>
+                2. Install Node.js dependencies<br>
+                3. Configure Firebase credentials<br>
+                4. Run npm install && npm start<br>
+                5. Access at localhost:3000
+            </div>
+        </div>
+
+
+        <div class="support-info">
+            <strong style="color: #1976d2;">Support:</strong> info@lodgeease.com | <strong style="color: #1976d2;">Web:</strong> www.lodgeease.com<br>
+            <strong style="color: #1976d2;">Documentation:</strong> docs.lodgeease.com | <strong style="color: #ffa726;">Version 1.0.0</strong>
+        </div>
+
+        <div class="barcode"></div>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,16 @@
+{
+  "name": "Lodge Ease AI Assistant",
+  "short_name": "LodgeEase AI",
+  "description": "AI-powered hotel management assistant",
+  "start_url": "./AInalysis.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e3c72",
+  "icons": [
+    {
+      "src": "../images/LodgeEaseLogo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

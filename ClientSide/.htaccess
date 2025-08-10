@@ -1,0 +1,51 @@
+# Add proper MIME types and enable CORS
+<IfModule mod_mime.c>
+    # JavaScript
+    AddType application/javascript .js
+    AddType application/javascript .mjs
+    
+    # CSS
+    AddType text/css .css
+    
+    # JSON
+    AddType application/json .json
+    
+    # Fonts
+    AddType application/font-woff .woff
+    AddType application/font-woff2 .woff2
+    AddType font/ttf .ttf
+    AddType font/otf .otf
+    AddType font/eot .eot
+    AddType image/svg+xml .svg
+</IfModule>
+
+# Force content types for specific file extensions
+<FilesMatch "\.js$">
+    ForceType application/javascript
+    Header set Content-Type "application/javascript"
+</FilesMatch>
+
+<FilesMatch "\.css$">
+    ForceType text/css
+    Header set Content-Type "text/css"
+</FilesMatch>
+
+# Enable CORS headers
+<IfModule mod_headers.c>
+    # Enable CORS for all resources
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+    
+    # Cache settings for static resources
+    <FilesMatch "\.(js|css|jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|otf)$">
+        Header set Cache-Control "max-age=604800, public"
+    </FilesMatch>
+</IfModule>
+
+# Force HTTPS
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule> 

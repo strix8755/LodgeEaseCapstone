@@ -1,0 +1,254 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+}
+.hero-bg {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('../components/baguio-city-mirador-hill-sunset.jpg');
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.glass-card {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(8px);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.75rem;
+    width: auto;
+    min-width: 260px;
+    max-width: 300px;
+    margin: 0.25rem auto;
+}
+
+body {
+    background-image: url('../components/marita-kavelashvili-ugnrXk1129g-unsplash.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; 
+    background-repeat: no-repeat;
+  }
+  .page-content {
+    background-color: rgba(255, 255, 255, 0.85); /* Slightly transparent white */
+    max-width: 1200px; /* Contain content in a centered container */
+    margin: 0 auto;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1); /* Optional subtle shadow */
+  }
+
+  .selected-date {
+    background-color: #3B82F6;
+    color: white;
+    border-radius: 9999px;
+  }
+  .in-range {
+    background-color: #BFDBFE;
+  }
+  .hover-date:hover {
+    background-color: #EFF6FF;
+    cursor: pointer;
+  }
+
+  /* Adjust text sizes to maintain proportions */
+  .glass-card h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .glass-card p {
+    font-size: 1rem;
+    line-height: 1.5;
+    opacity: 0.9;
+  }
+
+  /* Error states for inputs */
+  .input-error {
+    border-color: rgb(239, 68, 68) !important; /* red-500 */
+    background-color: rgba(254, 226, 226, 0.2) !important; /* red-100 with some transparency */
+  }
+
+  /* Error message animation */
+  .error-message {
+    animation: shake 0.5s ease-in-out;
+    color: rgb(239, 68, 68);
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    background-color: rgba(254, 226, 226, 0.2);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+
+  /* Form input styles */
+  .form-group input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.3rem 0.4rem;
+    font-size: 0.75rem;
+    height: 2rem;
+  }
+
+  /* Social login buttons */
+  .social-login button {
+    font-size: 0.875rem;
+    padding: 0.5rem;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .glass-card {
+        margin: 0.25rem;
+        padding: 0.5rem;
+    }
+
+    #login {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+  }
+
+  .password-requirements {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 0.25rem;
+    border-radius: 0.375rem;
+    margin-top: 0.15rem;
+    font-size: 0.65rem;
+  }
+
+  .password-requirements p {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .password-requirements ul {
+    margin-top: 0.2rem;
+  }
+
+  .password-requirements li {
+    line-height: 1.1;
+  }
+
+  /* Make the password requirements more compact */
+  .password-requirements {
+    padding: 0.25rem;
+    margin-top: 0.15rem;
+    font-size: 0.65rem;
+  }
+
+  /* Adjust button sizes */
+  button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    height: 2rem;
+  }
+
+  /* Make social login buttons more compact */
+  .social-signup {
+    margin-top: 0.35rem;
+  }
+
+  .social-signup p {
+    font-size: 0.7rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .social-signup button {
+    padding: 0.2rem 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  /* Adjust spacing for error and success messages */
+  .error-message,
+  .success-message {
+    margin-top: 0.25rem;
+    padding: 0.2rem 0.35rem;
+    font-size: 0.65rem;
+  }
+
+  /* Add more compact form styling */
+  .form-group {
+    margin-bottom: 0.35rem;
+  }
+
+  .form-group label {
+    font-size: 0.75rem;
+    margin-bottom: 0.15rem;
+  }
+
+  /* Adjust checkbox size */
+  input[type="checkbox"] {
+    transform: scale(0.75);
+  }
+
+  /* Terms text */
+  label[for="terms"] {
+    font-size: 0.7rem;
+  }
+
+  /* Terms and Conditions Modal Styles */
+  .terms-modal-enter-active, .terms-modal-leave-active {
+    transition: all 0.3s ease;
+  }
+
+  .terms-modal-enter, .terms-modal-leave-to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  /* Custom scrollbar for terms modal */
+  .terms-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) rgba(243, 244, 246, 0.7);
+  }
+
+  .terms-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .terms-scrollbar::-webkit-scrollbar-track {
+    background: rgba(243, 244, 246, 0.7);
+    border-radius: 3px;
+  }
+
+  .terms-scrollbar::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+    border: 2px solid rgba(243, 244, 246, 0.7);
+  }
+
+  /* Section animations */
+  .terms-section {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .terms-section:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Terms content typography */
+  .terms-content h4 {
+    font-weight: 600;
+    color: #1a202c;
+    margin-bottom: 1rem;
+  }
+
+  .terms-content p {
+    line-height: 1.7;
+    color: #4a5568;
+  }
+
+  .terms-content ul li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+  }

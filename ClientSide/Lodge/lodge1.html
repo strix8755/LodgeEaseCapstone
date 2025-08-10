@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airbnb Listing with LodgeEase Top Bar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="lodge1.js" defer></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../Homepage/styles.css">
+  <script src="../components/messagePopup.js"></script>
+  <script>
+    // Temporary map placeholder until Google Maps billing is enabled
+    function initMap() {
+      const mapElement = document.getElementById('lodge-map');
+      if (mapElement) {
+        // Create a placeholder div with a message
+        mapElement.innerHTML = `
+          <div class="flex items-center justify-center h-full bg-gray-100 rounded-lg">
+            <div class="text-center p-4">
+              <i class="fas fa-map-marker-alt text-4xl text-blue-500 mb-2"></i>
+              <p class="text-gray-600">Map temporarily unavailable</p>
+              <p class="text-sm text-gray-500">Located in Baguio City, near Session Road</p>
+            </div>
+          </div>
+        `;
+      }
+    }
+  </script>
+  <style>
+    /* Fix for header overlap issue */
+    body {
+      padding-top: 0; /* Remove any top padding */
+      overflow-y: auto; /* Ensure vertical scrolling works */
+    }
+    
+    /* Fixed header styling to avoid content overlap */
+    .main-header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 50;
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Add proper spacing for content below fixed header */
+    .content-container {
+      padding-top: 80px; /* Adjust based on header height */
+    }
+  </style>
+</head>
+
+<body class="text-gray-800">
+  <header class="main-header">
+    <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between py-3">
+      <!-- Logo -->
+      <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+        <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="flex items-center space-x-4">
+        <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+          <i class="ri-home-line"></i>
+          <span>Home</span>
+        </a>
+        <button id="loginButton" class="nav-button">
+          <i class="ri-login-box-line"></i>
+          <span>Log in</span>
+        </button>
+        <button id="userIconBtn" class="menu-button">
+          <i class="ri-menu-line"></i>
+          <i class="ri-user-line"></i>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Remove the drawer overlay -->
+  <!-- 
+  <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
+   -->
+
+  <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full">
+    <button id="closeDrawer" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+      <i class="ri-close-line text-2xl"></i>
+    </button>
+    <div class="drawer-content p-6">
+        <!-- Content will be dynamically inserted by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content-container max-w-6xl mx-auto px-4">
+    <!-- Title -->
+    <h1 class="text-2xl font-bold mb-4">Pine Haven Lodge</h1>
+
+    <!-- Main content grid -->
+    <div class="grid md:grid-cols-3 gap-4">
+      <!-- Left Section: Images -->
+      <div class="md:col-span-2">
+        <div class="relative">
+          <div class="grid grid-cols-2 gap-2">
+            <img src="../components/1.jpg" alt="Main Image" class="rounded-lg object-cover w-full h-64 md:h-96 col-span-2 cursor-pointer" onclick="openGallery(0)">
+            <img src="../components/2.jpg" alt="Image 1" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(1)">
+            <img src="../components/3.jpg" alt="Image 2" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(2)">
+            <img src="../components/4.jpg" alt="Image 3" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(3)">
+            <img src="../components/5.jpg" alt="Image 4" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(4)">
+          </div>
+          <button onclick="openGallery(0)" class="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-100 transition-colors flex items-center space-x-2">
+            <i class="fas fa-images"></i>
+            <span>View all photos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Section: Booking and Pricing -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-lg font-semibold mb-2">₱6,500 / night</h2>
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Check-in</label>
+            <input id="check-in-date" type="text" readonly class="block w-full border border-gray-300 rounded-md p-2 bg-white cursor-pointer" placeholder="Add dates">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Checkout</label>
+            <input id="check-out-date" type="text" readonly class="block w-full border border-gray-300 rounded-md p-2 bg-white cursor-pointer" placeholder="Add dates">
+          </div>
+        </div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Guests</label>
+        <select id="guests" class="block w-full border border-gray-300 rounded-md p-2 mb-4">
+          <option value="1">1 guest</option>
+          <option value="2">2 guests</option>
+        </select>
+        <div class="form-group mb-4">
+            <label for="guest-contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number:</label>
+            <input 
+                type="tel" 
+                id="guest-contact" 
+                class="block w-full border border-gray-300 rounded-md p-2" 
+                required 
+                pattern="[0-9]+" 
+                minlength="11" 
+                maxlength="11" 
+                placeholder="Enter your contact number"
+            >
+        </div>
+        <div class="booking-button-container">
+            <button 
+                id="reserve-btn" 
+                type="button"
+                class="w-full bg-blue-500 text-white py-2 rounded-md font-medium hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+                Reserve
+            </button>
+        </div>        
+
+        <!-- Pricing Details -->
+        <div id="pricing-details" class="mt-4 hidden">
+          <p class="flex justify-between">
+            <span id="nights-calculation">₱6,500 x 5 nights</span>
+            <span id="total-nights-price">₱32,500</span>
+          </p>
+          <p class="flex justify-between">
+            <span> service fee</span>
+            <span id="service-fee">₱4,588</span>
+          </p>
+          <hr class="my-2">
+          <p class="flex justify-between font-bold">
+            <span>Total before taxes</span>
+            <span id="total-price">₱37,088</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Gallery Modal -->
+    <div id="gallery-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden">
+      <div class="h-full w-full flex flex-col">
+        <!-- Gallery Header -->
+        <div class="p-4 flex justify-between items-center text-white">
+          <span class="text-lg" id="gallery-counter">1 / 5</span>
+          <button onclick="closeGallery()" class="text-2xl hover:text-gray-300">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- Gallery Content -->
+        <div class="flex-1 flex items-center justify-center relative">
+          <button onclick="prevImage()" class="absolute left-4 text-white text-4xl hover:text-gray-300">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <div class="relative w-full h-full flex items-center justify-center">
+            <img id="gallery-image" src="../components/1.jpg" alt="Gallery image" class="max-h-[80vh] max-w-[80vw] object-contain">
+          </div>
+          
+          <button onclick="nextImage()" class="absolute right-4 text-white text-4xl hover:text-gray-300">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        
+        <!-- Thumbnails -->
+        <div class="p-4 flex justify-center space-x-2">
+          <img src="../components/1.jpg" onclick="showImage(0)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/2.jpg" onclick="showImage(1)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/3.jpg" onclick="showImage(2)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/4.jpg" onclick="showImage(3)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/5.jpg" onclick="showImage(4)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+        </div>
+      </div>
+    </div>
+
+    <!-- Location & Amenities Section -->
+    <div class="max-w-5xl mx-auto mt-12 p-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-2xl font-bold mb-6">Location & Amenities</h2>
+      
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Map Section -->
+        <div>
+          <div id="lodge-map" class="w-full h-80 rounded-lg mb-4"></div>
+          <p class="text-gray-600">
+            <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>
+            Located in Baguio City, 10 minutes from Session Road
+          </p>
+          <div class="mt-4 space-y-2">
+            <p class="text-gray-600">
+              <i class="fas fa-walking text-blue-500 mr-2"></i>
+              5 minutes walk to Burnham Park
+            </p>
+            <p class="text-gray-600">
+              <i class="fas fa-car text-blue-500 mr-2"></i>
+              15 minutes drive to Mines View Park
+            </p>
+            <p class="text-gray-600">
+              <i class="fas fa-shopping-bag text-blue-500 mr-2"></i>
+              Near SM Baguio and local markets
+            </p>
+          </div>
+        </div>
+
+        <!-- Amenities Section -->
+        <div>
+          <h3 class="text-xl font-semibold mb-4">What this place offers</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-wifi text-blue-500"></i>
+              <span>Free WiFi</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-parking text-blue-500"></i>
+              <span>Free parking</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-tv text-blue-500"></i>
+              <span>Smart TV</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-hot-tub text-blue-500"></i>
+              <span>Hot tub</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-utensils text-blue-500"></i>
+              <span>Kitchen</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-snowflake text-blue-500"></i>
+              <span>Air conditioning</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-washer text-blue-500"></i>
+              <span>Washer</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-fire text-blue-500"></i>
+              <span>Indoor fireplace</span>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-4">House rules</h3>
+            <div class="space-y-2">
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-clock text-blue-500 mr-3"></i>
+                Check-in: 2:00 PM - 8:00 PM
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-sign-out-alt text-blue-500 mr-3"></i>
+                Checkout: 11:00 AM
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-smoking-ban text-blue-500 mr-3"></i>
+                No smoking
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-paw text-blue-500 mr-3"></i>
+                No pets
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center">
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+        <button id="close-calendar" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div class="flex justify-between items-center mb-6">
+          <button id="prev-month" class="text-gray-600 hover:bg-gray-100 p-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 id="calendar-month" class="text-xl font-semibold text-gray-800">January 2025</h2>
+          <button id="next-month" class="text-gray-600 hover:bg-gray-100 p-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center">
+          <!-- Days will be dynamically populated here -->
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button id="clear-dates" class="text-blue-600 hover:underline">Clear dates</button>
+          <div id="nights-selected" class="text-sm text-gray-600"></div>
+        </div>
+      </div>
+    </div>
+
+<!-- Host Section with Expanded Layout -->
+<div class="bg-white rounded-lg shadow-lg p-8 max-w-5xl mx-auto mt-8 space-y-6">
+    <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+      <!-- Host Profile -->
+      <div class="flex flex-col items-center md:items-start text-center md:text-left">
+        <img src="../components/model.jpg" alt="Host Profile" class="w-24 h-24 rounded-full object-cover shadow-md border-4 border-blue-100 mb-4">
+        <p class="text-2xl font-bold text-gray-800">Chezka</p>
+        <div class="flex items-center space-x-2 mt-2">
+          <span class="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">Superhost</span>
+          <span class="text-sm text-gray-500">6 Years Hosting</span>
+        </div>
+        <p class="text-sm text-gray-500 mt-2">Lives in Tagaytay, Philippines</p>
+      </div>
+
+      <!-- Host Stats with Larger Ratings -->
+      <div class="flex-grow w-full md:w-auto">
+        <div class="bg-blue-50 rounded-lg p-6 text-center">
+          <div class="flex items-center justify-center space-x-4 mb-4">
+            <span class="text-5xl font-bold text-blue-600">4.97</span>
+            <span class="text-yellow-500 text-3xl">★★★★★</span>
+          </div>
+          <p class="text-sm text-gray-500 mb-4">35 Reviews</p>
+          
+          <div class="space-y-2">
+            <p class="text-sm text-gray-700"></p>
+              <span class="font-bold text-green-600">100%</span> Response Rate
+            </p>
+            <p class="text-sm text-gray-700">Responds within an hour</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Reviews Container -->
+  <div id="reviews-section" class="mt-8">
+    <!-- Ratings Overview -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+        <div class="flex items-center space-x-6">
+            <div class="text-center flex-shrink-0">
+                <p class="text-5xl font-bold text-blue-600">5.0</p>
+                <p class="text-gray-500 text-sm uppercase tracking-wider mt-2">Overall Rating</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm w-full">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Cleanliness</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Accuracy</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Check-in</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★☆</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Communication</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★☆</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Location</span>
+                    <div class="flex">
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-800 font-medium">Value</span>
+                    <div class="flex"></div>
+                        <span class="text-yellow-500 text-xl">★★★★★</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Posted Reviews List -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+        <h3 class="text-2xl font-bold mb-6">Reviews</h3>
+        <div id="user-reviews-list" class="space-y-4">
+            <!-- Loading indicator -->
+            <div id="reviews-loading" class="text-center py-4">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                <p class="text-gray-500 mt-2">Loading reviews...</p>
+            </div>
+            <!-- Reviews will be populated here -->
+        </div>
+        <!-- No reviews message -->
+        <div id="no-reviews" class="hidden text-center py-8 text-gray-500">
+            <i class="fas fa-comment-slash text-4xl mb-3"></i>
+            <p>No reviews yet. Be the first to leave a review!</p>
+        </div>
+    </div>
+
+    <!-- Review Form Section -->
+    <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8 mt-8">
+      <h3 class="text-2xl font-bold mb-6">Leave a Review</h3>
+      <form id="review-form" class="space-y-6">
+        <!-- Star Rating -->
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-bold mb-2">Rating</label>
+          <div class="flex space-x-2" id="star-rating">
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="1"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="2"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="3"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="4"></i>
+            <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="5"></i>
+          </div>
+        </div>
+
+        <!-- Review Text -->
+        <div class="mb-4">
+          <label for="review-text" class="block text-gray-700 text-sm font-bold mb-2">Your Review</label>
+          <textarea
+            id="review-text"
+            class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+            rows="4"
+            placeholder="Share your experience..."
+            required
+          ></textarea>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="text-center">
+          <button
+            type="submit"
+            class="bg-blue-500 text-white px-8 py-2 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-white py-12 mt-12">
+    <div class="container mx-auto px-6 text-center">
+      <div class="mb-8">
+        <h3 class="text-3xl font-bold text-blue-500 mb-4">LodgeEase</h3>
+        <p class="text-gray-300">Aspiras palispis highway, Baguio City, Benguet, 2600 Philippines</p>
+        <p class="text-gray-300">Contact: +(63) 9129 912 6584 | lodgeease.baguio@email.com</p>
+      </div>
+      <div class="flex justify-center space-x-6">
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-facebook"></i>
+        </a>
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+
+  <script type="module">
+    import { handleReserveClick } from './lodge1.js';
+    import { initializeUserDrawer } from '../components/userDrawer.js';
+    import { auth, db } from '../../AdminSide/firebase.js';
+
+    // Initialize user drawer
+    initializeUserDrawer(auth, db);
+
+    // Add event listener to reserve button
+    document.addEventListener('DOMContentLoaded', () => {
+        const reserveBtn = document.getElementById('reserve-btn');
+        if (reserveBtn) {
+            reserveBtn.addEventListener('click', handleReserveClick);
+        } else {
+            console.error('Reserve button not found');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const userIcon = document.getElementById('userIconBtn');
+      const userDrawer = document.getElementById('userDrawer');
+      const closeDrawer = document.getElementById('closeDrawer');
+      const drawerOverlay = document.getElementById('drawerOverlay');
+
+      if (userIcon && userDrawer && closeDrawer && drawerOverlay) {
+        // Open drawer
+        userIcon.addEventListener('click', function() {
+          userDrawer.classList.remove('translate-x-full');
+          drawerOverlay.classList.remove('hidden');
+        });
+      
+        // Close drawer
+        closeDrawer.addEventListener('click', closeUserDrawer);
+        drawerOverlay.addEventListener('click', closeUserDrawer);
+      }
+    
+      function closeUserDrawer() {
+        userDrawer.classList.add('translate-x-full');
+        drawerOverlay.classList.add('hidden');
+      }
+    });
+
+    // Gallery functionality
+    const images = [
+      '../components/1.jpg',
+      '../components/2.jpg',
+      '../components/3.jpg',
+      '../components/4.jpg',
+      '../components/5.jpg'
+    ];
+    
+    let currentImageIndex = 0;
+    
+    window.openGallery = function(index) {
+      currentImageIndex = index;
+      document.getElementById('gallery-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      updateGalleryImage();
+    }
+    
+    window.closeGallery = function() {
+      document.getElementById('gallery-modal').classList.add('hidden');
+      document.body.style.overflow = 'auto';
+    }
+    
+    window.prevImage = function() {
+      currentImageIndex = (currentImageIndex - 1 + images.length) % images.length;
+      updateGalleryImage();
+    }
+    
+    window.nextImage = function() {
+      currentImageIndex = (currentImageIndex + 1) % images.length;
+      updateGalleryImage();
+    }
+    
+    window.showImage = function(index) {
+      currentImageIndex = index;
+      updateGalleryImage();
+    }
+    
+    function updateGalleryImage() {
+      const galleryImage = document.getElementById('gallery-image');
+      const counter = document.getElementById('gallery-counter');
+      const thumbs = document.querySelectorAll('.gallery-thumb');
+      
+      galleryImage.src = images[currentImageIndex];
+      counter.textContent = `${currentImageIndex + 1} / ${images.length}`;
+      
+      thumbs.forEach((thumb, index) => {
+        if (index === currentImageIndex) {
+          thumb.classList.add('ring-2', 'ring-blue-500');
+        } else {
+          thumb.classList.remove('ring-2', 'ring-blue-500');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const loginButton = document.getElementById('loginButton');
+      auth.onAuthStateChanged((user) => {
+        if (loginButton) {
+          if (user) {
+            loginButton.style.display = 'none';
+          } else {
+            loginButton.style.display = 'flex';
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

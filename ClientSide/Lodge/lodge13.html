@@ -1,0 +1,2680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ever Lodge - LodgeEase</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../Homepage/styles.css">
+  <link rel="stylesheet" href="../Homepage/transitions.css">
+  <!-- Favicon -->
+  <link rel="icon" href="../components/LodgeEaseLogo.png" type="image/png">
+  <!-- Add jQuery UI CSS -->
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+  <!-- Add jQuery and jQuery UI -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+  <script src="../components/messagePopup.js"></script>
+  <!-- Bridge script to expose Firebase instances for userDrawer-fallback.js -->
+  <script>
+    // Create a bridge to make Firebase accessible to the fallback drawer script
+    document.addEventListener('DOMContentLoaded', function() {
+      // Wait a short time to ensure Firebase module is loaded
+      setTimeout(function() {
+        try {
+          // Try to find Firebase from various modules
+          import('../firebase.js')
+            .then(module => {
+              console.log('Making Firebase available to fallback script');
+              window.firebaseAuth = module.auth;
+              window.firebaseDb = module.db;
+              window.firebaseModule = module;
+              
+              // Force initialize user drawer when Firebase is available
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(module.auth, module.db);
+              }
+            })
+            .catch(error => {
+              console.error('Error importing Firebase module:', error);
+            });
+        } catch (error) {
+          console.error('Error setting up Firebase bridge:', error);
+        }
+      }, 500);
+    });
+  </script>
+  <script src="../Homepage/userDrawer-fallback.js"></script>
+  <script>
+    // Initialize Google Map
+    function initMap() {
+      // Get the map container element
+      const mapElement = document.getElementById('lodge-map');
+      
+      // Only initialize if the element exists
+      if (mapElement) {
+        const lodgeLocation = { lat: 16.4088, lng: 120.6013 }; // Ever Lodge coordinates in Baguio
+        const map = new google.maps.Map(mapElement, {
+          center: lodgeLocation,
+          zoom: 15,
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ]
+        });
+
+        const marker = new google.maps.Marker({
+          position: lodgeLocation,
+          map: map,
+          title: 'Ever Lodge'
+        });
+
+        const infoWindow = new google.maps.InfoWindow({
+          content: '<div class="p-2"><strong>Ever Lodge</strong><br>Your modern retreat in the heart of Baguio</div>'
+        });
+
+        marker.addListener('click', () => {
+          infoWindow.open(map, marker);
+        });
+      } else {
+        console.warn('Map container element not found. Map initialization skipped.');
+      }
+    }
+    
+    // Make sure DOM is loaded before initializing map
+    document.addEventListener('DOMContentLoaded', () => {
+      // Now it's safe to load the Google Maps script
+      if (!window.google || !window.google.maps) {
+        const script = document.createElement('script');
+        script.src = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAaKZC47lvxIv0ej9bECXhUyaoL3FYuDM8&callback=initMap";
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      } else {
+        // If Google Maps is already loaded
+        initMap();
+      }
+    });
+  </script>
+  <style>
+    /* Fix for header overlap issue */
+    body {
+      padding-top: 0; /* Remove top padding */
+      overflow-y: auto !important; /* Force vertical scrolling */
+      margin: 0;
+    }
+    
+    /* Fixed header styling to avoid content overlap */
+    .main-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 50;
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(8px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      height: 72px; /* Set explicit height */
+    }
+    
+    /* Add proper spacing for content below fixed header */
+    .content-container {
+      padding-top: 80px; /* Adjust based on header height */
+    }
+    
+    /* Ensure modals work properly */
+    #gallery-modal {
+      overflow-y: auto;
+    }
+
+    .toggle-checkbox:checked {
+      right: 0;
+      border-color: #4B91F1;
+    }
+    .toggle-checkbox:checked + .toggle-label {
+      background-color: #4B91F1;
+    }
+    .toggle-label {
+      transition: background-color 0.3s ease;
+    }
+    .toggle-checkbox {
+      transition: all 0.3s ease;
+      left: 0;
+    }
+    
+    /* Night promo popup styling */
+    #night-promo-popup {
+      transition: all 0.3s ease;
+      border-left-width: 4px;
+    }
+    
+    #night-promo-popup.animate-pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(52, 211, 153, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
+      }
+    }
+    
+    /* Time selection styling */
+    select#check-in-time, select#check-out-time {
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+      background-position: right 0.5rem center;
+      background-repeat: no-repeat;
+      background-size: 1.5em 1.5em;
+      padding-right: 2.5rem;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+
+    /* Toggle Switch Styles */
+    .toggle-label {
+      position: relative;
+      display: inline-block;
+      width: 48px;
+      height: 24px;
+      background-color: #ccc;
+      border-radius: 24px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .toggle-label:after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background-color: white;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    input[type="checkbox"]:checked + .toggle-label {
+      background-color: #f97316; /* Orange-500 color */
+    }
+
+    input[type="checkbox"]:checked + .toggle-label:after {
+      left: calc(100% - 22px);
+    }
+
+    input[type="checkbox"] {
+      display: none;
+    }
+
+    /* Hourly options styles */
+    .hourly-options {
+      transition: all 0.3s ease;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+
+    .hourly-options:not(.hidden) {
+      max-height: 200px;
+      opacity: 1;
+      margin-top: 0.75rem;
+    }
+
+    /* Toggle Switch Label Text */
+    .toggle-text {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+    
+    /* jQuery UI Datepicker custom styling */
+    .ui-datepicker {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: inherit;
+      width: 320px;
+    }
+    
+    .ui-datepicker .ui-datepicker-header {
+      background: #f8fafc;
+      border: none;
+      border-radius: 6px;
+      padding: 8px;
+    }
+    
+    .ui-datepicker .ui-datepicker-title {
+      font-weight: 600;
+      color: #1e40af;
+    }
+    
+    .ui-datepicker .ui-datepicker-prev,
+    .ui-datepicker .ui-datepicker-next {
+      background: none;
+      border: none;
+      cursor: pointer;
+      top: 8px;
+    }
+    
+    .ui-datepicker .ui-datepicker-prev:hover,
+    .ui-datepicker .ui-datepicker-next:hover {
+      background: #e0f2fe;
+      border: none;
+    }
+    
+    .ui-datepicker th {
+      font-weight: 500;
+      color: #64748b;
+      padding: 7px 0;
+    }
+    
+    .ui-datepicker td {
+      padding: 3px;
+    }
+    
+    .ui-datepicker td span,
+    .ui-datepicker td a {
+      text-align: center;
+      padding: 8px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .ui-datepicker td a.ui-state-default {
+      background: transparent;
+      border: none;
+      color: #334155;
+    }
+    
+    .ui-datepicker td a.ui-state-default:hover {
+      background-color: #e0f2fe;
+      color: #0369a1;
+    }
+    
+    .ui-datepicker td a.ui-state-active {
+      background-color: #0ea5e9;
+      color: white;
+    }
+    
+    .ui-datepicker-in-range a {
+      background-color: #e0f2fe !important;
+      color: #0369a1 !important;
+    }
+    
+    .ui-datepicker td.ui-datepicker-today a {
+      font-weight: bold;
+      border: 1px solid #0ea5e9;
+    }
+    
+    /* Make date inputs look interactive */
+    #check-in-date, #check-out-date {
+      cursor: pointer;
+      background-color: #fff;
+      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3e%3cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 20px 20px;
+      padding-right: 35px;
+    }
+    
+    /* Enhance the in-range styling */
+    .ui-datepicker-in-range {
+      position: relative;
+    }
+    
+    .ui-datepicker-in-range:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 80%;
+      background-color: #e0f2fe;
+      z-index: -1;
+      transform: translateY(-50%);
+    }
+
+    /* Custom scrollbar styles for reviews section */
+    .reviews-scroll-container {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 #f1f5f9;
+    }
+
+    .reviews-scroll-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .reviews-scroll-container::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+
+    .reviews-scroll-container::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    .reviews-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* Review item hover effect */
+    .review-item {
+      transition: all 0.2s ease;
+      border-radius: 8px;
+      padding: 16px;
+      margin: -16px;
+    }
+
+    .review-item:hover {
+      background-color: #f8fafc;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Fade effect at bottom of scroll container */
+    .reviews-scroll-container::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(transparent, rgba(255, 255, 255, 0.8));
+      pointer-events: none;
+    }
+  </style>
+</head>
+
+<body class="text-gray-800">
+  <header class="main-header">
+    <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between py-3">
+      <!-- Logo -->
+      <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+        <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+      </a>
+
+      <!-- Navigation Links -->
+      <div class="flex items-center space-x-4">
+        <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+          <i class="ri-home-line"></i>
+          <span>Home</span>
+        </a>
+        <button id="loginButton" class="nav-button">
+          <i class="ri-login-box-line"></i>
+          <span>Log in</span>
+        </button>
+        <button id="userIconBtn" class="menu-button">
+          <i class="ri-menu-line"></i>
+          <i class="ri-user-line"></i>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Remove the drawer overlay -->
+  <!-- 
+  <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-40"></div>
+   -->
+
+  <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full">
+    <div class="drawer-content p-6">
+        <!-- Content will be dynamically inserted by JavaScript -->
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="text-xl font-bold">User Profile</h3>
+        </div>
+        <div class="py-6 text-center">
+          <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <i class="ri-user-line text-2xl text-gray-400"></i>
+          </div>
+          <p class="mb-6">Please sign in to access your profile</p>
+          <a href="../Login/index.html" class="inline-block bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition-colors">
+            Sign In
+          </a>
+        </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="content-container max-w-6xl mx-auto px-4">
+    <!-- Title -->
+    <h1 class="text-2xl font-bold mb-4">Ever Lodge</h1>
+
+    <!-- Main content grid -->
+    <div class="grid md:grid-cols-3 gap-4">
+      <!-- Left Section: Images -->
+      <div class="md:col-span-2">
+        <div class="relative">
+          <div class="grid grid-cols-2 gap-2">
+            <img src="../components/6.jpg" alt="Main Image" class="rounded-lg object-cover w-full h-64 md:h-96 col-span-2 cursor-pointer" onclick="openGallery(0)">
+            <img src="../components/7.jpg" alt="Image 1" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(1)">
+            <img src="../components/8.jpg" alt="Image 2" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(2)">
+            <img src="../components/9.jpg" alt="Image 3" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(3)">
+            <img src="../components/10.jpg" alt="Image 4" class="rounded-lg object-cover w-full h-32 cursor-pointer" onclick="openGallery(4)">
+          </div>
+          <button onclick="openGallery(0)" class="absolute bottom-4 right-4 bg-white text-gray-800 px-4 py-2 rounded-lg shadow-md hover:bg-gray-100 transition-colors flex items-center space-x-2">
+            <i class="fas fa-images"></i>
+            <span>View all photos</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Section: Booking and Pricing -->
+      <div class="bg-white p-6 rounded-lg shadow-lg">
+        <h2 class="text-lg font-semibold mb-2">Book your stay</h2>
+        
+        <!-- Promo Banner -->
+        <div id="promo-banner" class="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg mb-4 shadow-sm hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <i class="fas fa-tag mr-2"></i>
+              <span class="font-medium text-sm">Night Promo Available</span>
+            </div>
+            <span class="text-sm font-bold">₱580</span>
+          </div>
+          <p class="text-xs mt-1 text-green-50">For 1-night stays: Check-in at 10PM, checkout between 4AM-8AM</p>
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Check-in</label>
+            <input id="check-in-date" type="text" readonly class="block w-full border border-gray-300 rounded-md p-2 bg-white cursor-pointer mb-2" placeholder="Add date">
+            <select id="check-in-time" class="block w-full border border-gray-300 rounded-md p-2">
+              <option value="" disabled selected>Select time</option>
+              <option value="00:00">12:00 AM</option>
+              <option value="01:00">1:00 AM</option>
+              <option value="02:00">2:00 AM</option>
+              <option value="03:00">3:00 AM</option>
+              <option value="04:00">4:00 AM</option>
+              <option value="05:00">5:00 AM</option>
+              <option value="06:00">6:00 AM</option>
+              <option value="07:00">7:00 AM</option>
+              <option value="08:00">8:00 AM</option>
+              <option value="09:00">9:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="12:00">12:00 PM</option>
+              <option value="13:00">1:00 PM</option>
+              <option value="14:00">2:00 PM</option>
+              <option value="15:00">3:00 PM</option>
+              <option value="16:00">4:00 PM</option>
+              <option value="17:00">5:00 PM</option>
+              <option value="18:00">6:00 PM</option>
+              <option value="19:00">7:00 PM</option>
+              <option value="20:00">8:00 PM</option>
+              <option value="21:00">9:00 PM</option>
+              <option value="22:00">10:00 PM</option>
+              <option value="23:00">11:00 PM</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Checkout</label>
+            <input id="check-out-date" type="text" readonly class="block w-full border border-gray-300 rounded-md p-2 bg-white cursor-pointer mb-2" placeholder="Add date">
+            <select id="check-out-time" class="block w-full border border-gray-300 rounded-md p-2">
+              <option value="" disabled selected>Select time</option>
+              <option value="00:00">12:00 AM</option>
+              <option value="01:00">1:00 AM</option>
+              <option value="02:00">2:00 AM</option>
+              <option value="03:00">3:00 AM</option>
+              <option value="04:00">4:00 AM</option>
+              <option value="05:00">5:00 AM</option>
+              <option value="06:00">6:00 AM</option>
+              <option value="07:00">7:00 AM</option>
+              <option value="08:00">8:00 AM</option>
+              <option value="09:00">9:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="12:00">12:00 PM</option>
+              <option value="13:00">1:00 PM</option>
+              <option value="14:00">2:00 PM</option>
+              <option value="15:00">3:00 PM</option>
+              <option value="16:00">4:00 PM</option>
+              <option value="17:00">5:00 PM</option>
+              <option value="18:00">6:00 PM</option>
+              <option value="19:00">7:00 PM</option>
+              <option value="20:00">8:00 PM</option>
+              <option value="21:00">9:00 PM</option>
+              <option value="22:00">10:00 PM</option>
+              <option value="23:00">11:00 PM</option>
+            </select>
+          </div>
+        </div>
+        
+        <!-- Night Promo Popup -->
+        <div id="night-promo-popup" class="hidden bg-green-100 border-l-4 border-green-500 p-4 mb-4 rounded-md">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 text-green-600 mr-3">
+              <i class="fas fa-moon text-2xl"></i>
+            </div>
+            <div class="flex-1">
+              <p class="font-bold text-green-800 text-base">Night Owl Special: ₱580/night!</p>
+              <p class="text-sm text-green-700 mt-1">Your booking qualifies for our special rate with check-in at 10:00 PM and check-out between 4:00 AM and 8:00 AM</p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <span class="text-xs px-2 py-1 bg-green-200 text-green-800 rounded-full">Night Promo Applied</span>
+                <span class="text-xs px-2 py-1 bg-green-200 text-green-800 rounded-full">Save ₱720</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Hidden input to store the rate type value -->
+        <input type="hidden" id="rate-type-value" value="standard">
+        
+        <!-- Toggle for hourly rate -->
+        <div class="mt-3 mb-3">
+          <label class="toggle-text cursor-pointer">
+            <div class="relative">
+              <input type="checkbox" id="hourly-toggle">
+              <div class="toggle-label"></div>
+            </div>
+            <div class="text-gray-700 font-medium">Switch to hourly rate</div>
+          </label>
+          <p id="rate-type-display" class="ml-14 text-sm text-blue-700">Standard (₱1,300/night)</p>
+          <div id="rate-info" class="ml-14 text-xs text-gray-500 mt-1">Night promo rate (₱580) applied for one-night stays with check-in at 10PM and check-out between 4AM-8AM.</div>
+        </div>
+        
+        <!-- Hourly rate selection (hidden by default) -->
+        <div id="hourly-options" class="mt-3 hidden">
+          <label class="block text-sm font-medium text-gray-700 mb-2">Select Hours</label>
+          <select id="hourly-duration" class="block w-full border border-gray-300 rounded-md p-2">
+            <option value="2">2 hours - ₱320</option>
+            <option value="3">3 hours - ₱380</option>
+            <option value="4">4 hours - ₱440</option>
+            <option value="5">5 hours - ₱500</option>
+            <option value="6">6 hours - ₱560</option>
+            <option value="7">7 hours - ₱620</option>
+            <option value="8">8 hours - ₱680</option>
+            <option value="9">9 hours - ₱740</option>
+            <option value="10">10 hours - ₱800</option>
+            <option value="11">11 hours - ₱820</option>
+            <option value="12">12 hours - ₱820</option>
+            <option value="13">13 hours - ₱880</option>
+            <option value="14">14-24 hours - ₱940</option>
+          </select>
+        </div>
+        
+        <label class="block text-sm font-medium text-gray-700 mb-2">Guests</label>
+        <select id="guests" class="block w-full border border-gray-300 rounded-md p-2 mb-4">
+          <option value="1">1 guest</option>
+          <option value="2">2 guests</option>
+          <option value="3">3 guests</option>
+          <option value="4">4 guests</option>
+        </select>
+        <div class="form-group mb-4">
+            <label for="guest-contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Number:</label>
+            <input 
+                type="tel" 
+                id="guest-contact" 
+                class="block w-full border border-gray-300 rounded-md p-2" 
+                required 
+                pattern="[0-9]+" 
+                minlength="11" 
+                maxlength="11" 
+                placeholder="Enter your contact number"
+            >
+            <div id="contact-error" class="text-red-500 text-sm hidden mt-1">Please enter a valid 11-digit phone number</div>
+        </div>
+        <!-- Room Availability Button -->
+        <div class="booking-button-container">
+          <button id="view-availability-btn" class="w-full bg-green-500 text-white py-2 rounded-md font-medium hover:bg-green-600 transition-colors flex items-center justify-center space-x-2">
+            <i class="fas fa-bed"></i>
+            <span>View Room Availability</span>
+          </button>
+        </div>        
+
+        <!-- Pricing Details -->
+        <div id="pricing-details" class="mt-4 hidden">
+          <p class="flex justify-between">
+            <span id="nights-calculation">₱1,300 x 5 nights</span>
+            <span id="total-nights-price">₱6,500</span>
+          </p>
+          <!-- Night Promo Discount Row (Keep this hidden by default) -->
+          <p class="flex justify-between hidden" id="promo-discount-row">
+            <span>Night Promo Discount</span>
+            <span id="promo-discount" class="text-green-600">-₱0</span>
+          </p>
+          <!-- Service Fee Row Removed Completely -->
+          <hr class="my-2">
+          <p class="flex justify-between font-bold">
+            <span>Total</span>
+            <span id="total-price">₱6,500</span>
+          </p>
+        </div>
+        
+        <!-- Best Value Badge -->
+        <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center space-x-2">
+          <i class="fas fa-award text-blue-500"></i>
+          <div>
+            <p class="font-medium text-blue-800">Best Value in Baguio</p>
+            <p class="text-xs text-blue-600">Top-rated location with modern amenities</p>
+          </div>
+        </div>
+        
+        <!-- Reserve Button -->
+        <div class="mt-4">
+            <button 
+                id="reserve-btn" 
+                type="button"
+                data-clicked="false"
+                class="w-full bg-blue-500 text-white py-2 rounded-md font-medium hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+                Reserve
+            </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Photo Gallery Modal -->
+    <div id="gallery-modal" class="fixed inset-0 bg-black bg-opacity-90 z-50 hidden">
+      <div class="h-full w-full flex flex-col">
+        <!-- Gallery Header -->
+        <div class="p-4 flex justify-between items-center text-white">
+          <span class="text-lg" id="gallery-counter">1 / 5</span>
+          <button onclick="closeGallery()" class="text-2xl hover:text-gray-300">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <!-- Gallery Content -->
+        <div class="flex-1 flex items-center justify-center relative">
+          <button onclick="prevImage()" class="absolute left-4 text-white text-4xl hover:text-gray-300">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          
+          <div class="relative w-full h-full flex items-center justify-center">
+            <img id="gallery-image" src="../components/6.jpg" alt="Gallery image" class="max-h-[80vh] max-w-[80vw] object-contain">
+          </div>
+          
+          <button onclick="nextImage()" class="absolute right-4 text-white text-4xl hover:text-gray-300">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+        
+        <!-- Thumbnails -->
+        <div class="p-4 flex justify-center space-x-2">
+          <img src="../components/6.jpg" onclick="showImage(0)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/7.jpg" onclick="showImage(1)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/8.jpg" onclick="showImage(2)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/9.jpg" onclick="showImage(3)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+          <img src="../components/10.jpg" onclick="showImage(4)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
+        </div>
+      </div>
+    </div>
+
+    <!-- Room Availability Modal -->
+    <div id="room-availability-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
+          <div>
+            <h2 class="text-2xl font-bold text-gray-800">Ever Lodge - Room Availability</h2>
+            <p id="availability-dates" class="text-sm text-gray-600 mt-1">Select your dates to check availability</p>
+          </div>
+          <button id="close-availability-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+        
+        <!-- Modal Content -->
+        <div class="p-6">
+          <!-- Legend -->
+          <div class="mb-6 flex flex-wrap gap-4 justify-center">
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-green-500 rounded"></div>
+              <span class="text-sm">Available</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-red-500 rounded"></div>
+              <span class="text-sm">Occupied</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-blue-500 rounded border-2 border-blue-700"></div>
+              <span class="text-sm">Selected</span>
+            </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-4 h-4 bg-gray-300 rounded"></div>
+              <span class="text-sm">Check dates first</span>
+            </div>
+          </div>
+          
+          <!-- Interactive Room Layout -->
+          <div class="bg-gray-100 rounded-lg p-6 min-h-[500px] relative">
+            <!-- Building Layout -->
+            <div class="relative">
+              <!-- Title -->
+              <div class="text-center mb-6">
+                <h3 class="text-lg font-semibold text-gray-700">Ever Lodge Floor Plan</h3>
+                <p class="text-sm text-gray-500">Click on available rooms to select</p>
+              </div>
+              
+              <!-- Floor Layout Grid -->
+              <div class="grid grid-cols-6 gap-3 max-w-4xl mx-auto">
+                <!-- Ground Floor (Rooms 1-18) -->
+                <div class="col-span-6 mb-4">
+                  <h4 class="text-center font-medium text-gray-600 mb-3 border-b pb-2">Ground Floor</h4>
+                  <div class="grid grid-cols-6 gap-2">
+                    <!-- Rooms 1-6 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="1">
+                      <div class="text-sm font-semibold">Room 1</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="2">
+                      <div class="text-sm font-semibold">Room 2</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="3">
+                      <div class="text-sm font-semibold">Room 3</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="4">
+                      <div class="text-sm font-semibold">Room 4</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="5">
+                      <div class="text-sm font-semibold">Room 5</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="6">
+                      <div class="text-sm font-semibold">Room 6</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    
+                    <!-- Rooms 7-12 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="7">
+                      <div class="text-sm font-semibold">Room 7</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="8">
+                      <div class="text-sm font-semibold">Room 8</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="9">
+                      <div class="text-sm font-semibold">Room 9</div>
+                      <div class="text-xs text-gray-600">Suite</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="10">
+                      <div class="text-sm font-semibold">Room 10</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="11">
+                      <div class="text-sm font-semibold">Room 11</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="12">
+                      <div class="text-sm font-semibold">Room 12</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    
+                    <!-- Rooms 13-18 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="13">
+                      <div class="text-sm font-semibold">Room 13</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="14">
+                      <div class="text-sm font-semibold">Room 14</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="15">
+                      <div class="text-sm font-semibold">Room 15</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="16">
+                      <div class="text-sm font-semibold">Room 16</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="17">
+                      <div class="text-sm font-semibold">Room 17</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="18">
+                      <div class="text-sm font-semibold">Room 18</div>
+                      <div class="text-xs text-gray-600">Suite</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Second Floor (Rooms 19-36) -->
+                <div class="col-span-6">
+                  <h4 class="text-center font-medium text-gray-600 mb-3 border-b pb-2">Second Floor</h4>
+                  <div class="grid grid-cols-6 gap-2">
+                    <!-- Rooms 19-24 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="19">
+                      <div class="text-sm font-semibold">Room 19</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="20">
+                      <div class="text-sm font-semibold">Room 20</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="21">
+                      <div class="text-sm font-semibold">Room 21</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="22">
+                      <div class="text-sm font-semibold">Room 22</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="23">
+                      <div class="text-sm font-semibold">Room 23</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="24">
+                      <div class="text-sm font-semibold">Room 24</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    
+                    <!-- Rooms 25-30 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="25">
+                      <div class="text-sm font-semibold">Room 25</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="26">
+                      <div class="text-sm font-semibold">Room 26</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="27">
+                      <div class="text-sm font-semibold">Room 27</div>
+                      <div class="text-xs text-gray-600">Suite</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="28">
+                      <div class="text-sm font-semibold">Room 28</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="29">
+                      <div class="text-sm font-semibold">Room 29</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="30">
+                      <div class="text-sm font-semibold">Room 30</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    
+                    <!-- Rooms 31-36 -->
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="31">
+                      <div class="text-sm font-semibold">Room 31</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="32">
+                      <div class="text-sm font-semibold">Room 32</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="33">
+                      <div class="text-sm font-semibold">Room 33</div>
+                      <div class="text-xs text-gray-600">Deluxe</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="34">
+                      <div class="text-sm font-semibold">Room 34</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="35">
+                      <div class="text-sm font-semibold">Room 35</div>
+                      <div class="text-xs text-gray-600">Standard</div>
+                    </div>
+                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="36">
+                      <div class="text-sm font-semibold">Room 36</div>
+                      <div class="text-xs text-gray-600">Suite</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Selected Room Info -->
+          <div id="selected-room-info" class="mt-6 p-4 bg-blue-50 rounded-lg hidden">
+            <h4 class="font-semibold text-blue-800">Selected Room</h4>
+            <p id="selected-room-details" class="text-sm text-blue-600 mt-1"></p>
+            <button id="confirm-room-selection" class="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
+              Select This Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location & Amenities Section -->
+    <div class="max-w-5xl mx-auto mt-12 p-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-2xl font-bold mb-6">Location & Amenities</h2>
+      
+      <div class="grid md:grid-cols-2 gap-8">
+        <!-- Map Section -->
+        <div>
+          <!-- Add the map container here -->
+          <div id="lodge-map" class="w-full h-80 rounded-lg mb-4"></div>
+          <p class="text-gray-600">
+            <i class="fas fa-map-marker-alt text-blue-500 mr-2"></i>
+            Located in Baguio City, 5 minutes from SM Baguio
+          </p>
+          <div class="mt-4 space-y-2">
+            <p class="text-gray-600">
+              <i class="fas fa-walking text-blue-500 mr-2"></i>
+              8 minutes walk to Session Road
+            </p>
+            <p class="text-gray-600">
+              <i class="fas fa-car text-blue-500 mr-2"></i>
+              10 minutes drive to Camp John Hay
+            </p>
+            <p class="text-gray-600">
+              <i class="fas fa-shopping-bag text-blue-500 mr-2"></i>
+              Near local markets and dining establishments
+            </p>
+          </div>
+        </div>
+
+        <!-- Amenities Section -->
+        <div>
+          <h3 class="text-xl font-semibold mb-4">What this place offers</h3>
+          <div class="grid grid-cols-2 gap-4">
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-wifi text-blue-500"></i>
+              <span>High-speed WiFi</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-parking text-blue-500"></i>
+              <span>Secured parking</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-tv text-blue-500"></i>
+              <span>65" Smart TV</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-mountain text-blue-500"></i>
+              <span>Mountain view</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-utensils text-blue-500"></i>
+              <span>Modern kitchen</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-snowflake text-blue-500"></i>
+              <span>Heating system</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-dumbbell text-blue-500"></i>
+              <span>Fitness center</span>
+            </div>
+            <div class="flex items-center space-x-3">
+              <i class="fas fa-coffee text-blue-500"></i>
+              <span>Coffee shop</span>
+            </div>
+          </div>
+
+          <div class="mt-6">
+            <h3 class="text-xl font-semibold mb-4">House rules</h3>
+            <div class="space-y-2">
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-clock text-blue-500 mr-3"></i>
+                Check-in: 1:00 PM - 6:00 PM
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-sign-out-alt text-blue-500 mr-3"></i>
+                Checkout: 12:00 PM
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-smoking-ban text-blue-500 mr-3"></i>
+                No smoking
+              </p>
+              <p class="flex items-center text-gray-600">
+                <i class="fas fa-paw text-blue-500 mr-3"></i>
+                Small pets allowed (with fee)
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- New Section: Special Offers -->
+    <div class="max-w-5xl mx-auto mt-8 p-6 bg-white rounded-lg shadow-lg">
+      <h2 class="text-2xl font-bold mb-4">Special Offers</h2>
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- Weekly Rate -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-blue-800">Weekly Rate</h3>
+            <span class="text-green-600 font-semibold">10% OFF</span>
+          </div>
+          <p class="text-sm text-gray-600 mt-2">Stay for 7+ nights and get 10% off the total price</p>
+          <div class="mt-3 flex space-x-2">
+            <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">Applied automatically</span>
+          </div>
+        </div>
+        
+        <!-- Night Promo Details -->
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-100">
+          <div class="flex justify-between items-center">
+            <h3 class="font-bold text-green-800">Night Owl Special</h3>
+            <span class="text-green-600 font-semibold">₱580/night</span>
+          </div>
+          <p class="text-sm text-gray-600 mt-2">One-night stays with check-in at 10:00 PM and check-out between 4:00 AM and 8:00 AM</p>
+          <div class="mt-3 flex space-x-2">
+            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">Limited availability</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calendar -->
+    <div id="calendar-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center" style="display: none !important;">
+      <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+        <button id="close-calendar" class="absolute top-4 right-4 text-gray-600 hover:text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div class="flex justify-between items-center mb-6">
+          <button id="prev-month" class="text-gray-600 hover:bg-gray-100 p-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h2 id="calendar-month" class="text-xl font-semibold text-gray-800">January 2025</h2>
+          <button id="next-month" class="text-gray-600 hover:bg-gray-100 p-2 rounded">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center">
+          <!-- Days will be dynamically populated here -->
+        </div>
+
+        <div class="mt-6 flex justify-between">
+          <button id="clear-dates" class="text-blue-600 hover:underline">Clear dates</button>
+          <div id="nights-selected" class="text-sm text-gray-600"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Host Section with Expanded Layout -->
+    <div class="bg-white rounded-lg shadow-lg p-8 max-w-5xl mx-auto mt-8 space-y-6">
+      <div class="flex flex-col md:flex-row items-center space-y-6 md:space-y-0 md:space-x-8">
+        <!-- Host Profile -->
+        <div class="flex flex-col items-center md:items-start text-center md:text-left">
+          <img src="../components/model2.jpg" alt="Host Profile" class="w-24 h-24 rounded-full object-cover shadow-md border-4 border-blue-100 mb-4">
+          <p class="text-2xl font-bold text-gray-800">Michael</p>
+          <div class="flex items-center space-x-2 mt-2">
+            <span class="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full">Superhost</span>
+            <span class="text-sm text-gray-500">4 Years Hosting</span>
+          </div>
+          <p class="text-sm text-gray-500 mt-2">Lives in Baguio City, Philippines</p>
+        </div>
+
+        <!-- Host Stats with Larger Ratings -->
+        <div class="flex-grow w-full md:w-auto">
+          <div class="bg-blue-50 rounded-lg p-6 text-center">
+            <div class="flex items-center justify-center space-x-4 mb-4">
+              <span class="text-5xl font-bold text-blue-600">4.98</span>
+              <span class="text-yellow-500 text-3xl">★★★★★</span>
+            </div>
+            <p class="text-sm text-gray-500 mb-4">42 Reviews</p>
+            
+            <div class="space-y-2">
+              <p class="text-sm text-gray-700">
+                <span class="font-bold text-green-600">98%</span> Response Rate
+              </p>
+              <p class="text-sm text-gray-700">Responds within 2 hours</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews Container -->
+<div id="reviews-section" class="mt-8">
+  <!-- Ratings Overview -->
+  <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+      <div class="flex items-center space-x-6">
+          <div class="text-center flex-shrink-0">
+              <p class="text-5xl font-bold text-blue-600">5.0</p>
+              <p class="text-gray-500 text-sm uppercase tracking-wider mt-2">Overall Rating</p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm w-full">
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-medium">Cleanliness</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★★</span>
+                  </div>
+              </div>
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-medium">Accuracy</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★★</span>
+                  </div>
+              </div>
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-mdium">Check-in</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★☆</span>
+                  </div>
+              </div>
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-medium">Communication</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★☆</span>
+                  </div>
+              </div>
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-medium">Location</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★★</span>
+                  </div>
+              </div>
+              <div class="flex justify-between items-center">
+                  <span class="text-gray-800 font-medium">Value</span>
+                  <div class="flex">
+                      <span class="text-yellow-500 text-xl">★★★★★</span>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Posted Reviews List -->
+  <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8">
+      <h3 class="text-2xl font-bold mb-6">Reviews</h3>
+      <!-- Fixed height container with scroll -->
+      <div class="h-96 overflow-y-auto pr-2 reviews-scroll-container relative">
+        <div id="user-reviews-list" class="space-y-6">
+            <!-- Realistic Filler Reviews -->
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Michael Rodriguez</h4>
+                    <p class="text-sm text-gray-500">January 8, 2024</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Absolutely fantastic experience! Ever Lodge exceeded all my expectations. The room was spotlessly clean, the location is perfect - just minutes from Session Road, and the staff was incredibly accommodating. The view from the window was breathtaking. The amenities were top-notch, especially the heating system which was perfect for the cool Baguio weather. Highly recommend for anyone visiting Baguio!</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-green-100 text-green-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Sarah Chen</h4>
+                    <p class="text-sm text-gray-500">December 22, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Perfect location in the heart of Baguio! The lodge is modern, well-equipped, and very comfortable. Loved the heating system during the cold nights. The WiFi was excellent for remote work, and the smart TV had all the streaming services we needed. The kitchen was fully equipped which allowed us to cook our own meals. Great value for money and would definitely stay here again!</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">James Wilson</h4>
+                    <p class="text-sm text-gray-500">November 15, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Great stay overall! The room was clean and comfortable with a nice mountain view. Easy access to local attractions and restaurants. The secured parking was a huge plus since we drove from Manila. Only minor issue was some noise from the street early in the morning, but the thick curtains helped with that. The fitness center was well-maintained and the coffee shop downstairs served excellent local coffee. Recommended!</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Maria Santos</h4>
+                    <p class="text-sm text-gray-500">October 28, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Wonderful experience! The lodge has all the amenities you need for a comfortable stay. The kitchen was fully equipped with modern appliances, parking was secure, and the smart TV was great for entertainment after long days of sightseeing. The location is unbeatable - walking distance to Session Road, SM Baguio, and all the major tourist spots. Michael was very responsive and helpful throughout our stay.</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-red-100 text-red-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">David Kim</h4>
+                    <p class="text-sm text-gray-500">September 12, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Outstanding service and accommodation! The hosts were very responsive and helpful throughout our entire stay. The room was beautifully furnished with a cozy atmosphere perfect for the cool Baguio weather. Perfect for couples or solo travelers. The fitness center and coffee shop were excellent additional perks that really set this place apart from other accommodations. Will definitely return on our next Baguio trip!</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Jennifer Lopez</h4>
+                    <p class="text-sm text-gray-500">August 20, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Amazing stay at Ever Lodge! The location couldn't be better - right in the heart of Baguio with easy access to everything. The room was modern, clean, and had all the amenities we needed. The mountain view from our window was incredible, especially in the morning with the mist rolling over the mountains. The heating system worked perfectly for the chilly nights. Highly recommend for families or groups visiting Baguio!</p>
+            </div>
+            
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Robert Thompson</h4>
+                    <p class="text-sm text-gray-500">July 3, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Great place to stay in Baguio! The lodge is well-maintained and has all modern conveniences. Loved the central location - we could walk to most attractions and restaurants. The WiFi was fast and reliable, which was important for work. The only minor issue was the water pressure could be better, but overall it was a very comfortable stay. The staff was friendly and accommodating to all our requests.</p>
+            </div>
+
+            <div class="review-item border-b pb-6 mb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-pink-100 text-pink-500 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Emily Davis</h4>
+                    <p class="text-sm text-gray-500">June 18, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Absolutely loved our stay! The room was incredibly cozy and perfect for a romantic getaway. The attention to detail was amazing - from the quality linens to the beautiful city views. The location made it so easy to explore Baguio's attractions on foot. The hosts were super accommodating and even provided local restaurant recommendations that were spot on. Can't wait to come back!</p>
+            </div>
+
+            <div class="review-item pb-6">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center">
+                  <div class="w-12 h-12 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-gray-900">Carlos Mendoza</h4>
+                    <p class="text-sm text-gray-500">May 10, 2023</p>
+                  </div>
+                </div>
+                <div class="text-yellow-500 text-lg">
+                  <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="far fa-star"></i>
+                </div>
+              </div>
+              <p class="text-gray-700 leading-relaxed">Very good experience overall! The lodge is strategically located and well-maintained. Good value for the price with all the essential amenities covered. The kitchen facilities were particularly useful for preparing quick meals. Parking was convenient and secure. The only suggestion would be to upgrade the shower pressure, but everything else was excellent. Would recommend to friends and family visiting Baguio.</p>
+            </div>
+
+            <!-- Loading indicator (hidden by default now) -->
+            <div id="reviews-loading" class="hidden text-center py-4">
+                <i class="fas fa-spinner fa-spin text-blue-500 text-2xl"></i>
+                <p class="text-gray-500 mt-2">Loading reviews...</p>
+            </div>
+        </div>
+      </div>
+      <!-- No reviews message -->
+      <div id="no-reviews" class="hidden text-center py-8 text-gray-500">
+          <i class="fas fa-comment-slash text-4xl mb-3"></i>
+          <p>No reviews yet. Be the first to leave a review!</p>
+      </div>
+  </div>
+
+  <!-- Review Form Section -->
+  <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-6 mb-8 mt-8">
+    <h3 class="text-2xl font-bold mb-6">Leave a Review</h3>
+    <form id="review-form" class="space-y-6">
+      <!-- Star Rating -->
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2">Rating</label>
+        <div class="flex space-x-2" id="star-rating">
+          <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="1"></i>
+          <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="2"></i>
+          <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="3"></i>
+          <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="4"></i>
+          <i class="fas fa-star text-2xl cursor-pointer text-gray-300 hover:text-yellow-500" data-rating="5"></i>
+        </div>
+      </div>
+
+      <!-- Review Text -->
+      <div class="mb-4">
+        <label for="review-text" class="block text-gray-700 text-sm font-bold mb-2">Your Review</label>
+        <textarea
+          id="review-text"
+          class="w-full px-3 py-2 text-gray-700 border rounded-lg focus:outline-none focus:border-blue-500"
+          rows="4"
+          placeholder="Share your experience..."
+          required
+        ></textarea>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="text-center">
+        <button
+          type="submit"
+          class="bg-blue-500 text-white px-8 py-2 rounded-md hover:bg-blue-600 transition-colors"
+        >
+          Submit Review
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+  <!-- File Checker - Add before other scripts -->
+  <script type="module">
+    // First try to load the file checker to detect missing files
+    try {
+      const { fileCheckResults } = await import('./fileChecker.js');
+      // Wait for the check to complete
+      const results = await fileCheckResults;
+      
+      // If critical files are missing, alert the user
+      if (!results.canProceed) {
+        console.error('Critical files are missing:', results.report);
+        alert('The reservation system may not work properly due to missing files. Please contact support if you cannot make a reservation.');
+      }
+    } catch (error) {
+      console.error('Failed to load file checker:', error);
+    }
+  </script>
+
+  <script type="module">
+    // Add error handling for module imports
+    let handleReserveClick, initializeBookingsModal, showBookingsModal, initializeUserDrawer;
+    let auth, db;
+    
+    // Check for immediate auth state when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Only set up basic drawer functionality if window.userDrawerInitialized is not true
+      // This avoids duplicate event handlers
+      if (!window.userDrawerInitialized) {
+        console.log('Setting up basic drawer functionality in DOMContentLoaded');
+        const userIcon = document.getElementById('userIconBtn');
+        const userDrawer = document.getElementById('userDrawer');
+        const drawerOverlay = document.getElementById('drawerOverlay');
+
+        // Try to import firebase.js to get the auth object
+        try {
+          import('../firebase.js')
+            .then(module => {
+              console.log('Firebase module imported in DOMContentLoaded');
+              // Store firebase module for later use
+              window.firebaseModule = module;
+              window.firebaseAuth = module.auth;
+              window.firebaseDb = module.db;
+              
+              // Initialize user drawer with the auth object
+              if (typeof window.initializeUserDrawer === 'function') {
+                console.log('Initializing user drawer with imported Firebase');
+                window.initializeUserDrawer(module.auth, module.db);
+              }
+              
+              // Set up auth state listener to update login button
+              if (module.auth) {
+                module.auth.onAuthStateChanged(user => {
+                  console.log('Auth state changed in DOMContentLoaded listener:', user ? user.email : 'signed out');
+                  
+                  // Update login button visibility
+                  const loginButton = document.getElementById('loginButton');
+                  if (loginButton) {
+                    loginButton.style.display = user ? 'none' : 'flex';
+                  }
+                  
+                  // Update drawer content if function exists
+                  if (typeof window.updateDrawerContent === 'function') {
+                    window.updateDrawerContent(user);
+                  }
+                });
+              }
+            })
+            .catch(error => {
+              console.error('Error importing Firebase in DOMContentLoaded:', error);
+            });
+        } catch (error) {
+          console.error('Dynamic import error in DOMContentLoaded:', error);
+        }
+
+        if (userIcon && userDrawer) {
+          // Open drawer
+          userIcon.addEventListener('click', function() {
+            userDrawer.classList.remove('translate-x-full');
+            if (drawerOverlay) drawerOverlay.classList.remove('hidden');
+          });
+        
+          // Handle overlay clicks to close drawer
+          if (drawerOverlay) {
+            drawerOverlay.addEventListener('click', function() {
+              userDrawer.classList.add('translate-x-full');
+              drawerOverlay.classList.add('hidden');
+            });
+          }
+        }
+      } else {
+        console.log('Skipping drawer setup in DOMContentLoaded - already initialized by module');
+      }
+    });
+  </script>
+
+  <!-- Add this immediately after the last script, before the closing body tag -->
+  <script>
+    // Direct event handler for user icon button
+    const userIconButton = document.getElementById('userIconBtn');
+    if (userIconButton) {
+      userIconButton.addEventListener('click', function() {
+        // Check for current auth state from different sources
+        console.log('User icon clicked, checking auth state');
+        let currentUser = null;
+        
+        // Try different methods to get the current user
+        if (window.firebase && window.firebase.auth) {
+          currentUser = window.firebase.auth().currentUser;
+          console.log('Auth from window.firebase:', currentUser ? currentUser.email : 'No user');
+        }
+        
+        // Try the firebaseAuth from our bridge
+        if (!currentUser && window.firebaseAuth) {
+          currentUser = window.firebaseAuth.currentUser;
+          console.log('Auth from window.firebaseAuth:', currentUser ? currentUser.email : 'No user');
+        }
+        
+        // Try the firebaseModule from our bridge
+        if (!currentUser && window.firebaseModule && window.firebaseModule.auth) {
+          currentUser = window.firebaseModule.auth.currentUser;
+          console.log('Auth from window.firebaseModule:', currentUser ? currentUser.email : 'No user');
+        }
+        
+        // Also try the imported auth if available
+        if (typeof auth !== 'undefined' && auth) {
+          const authUser = auth.currentUser;
+          console.log('Auth from imported auth:', authUser ? authUser.email : 'No user');
+          if (authUser) currentUser = authUser;
+        }
+        
+        // Force re-initialize the drawer with the current auth if needed
+        if (typeof window.initializeUserDrawer === 'function' && 
+            (window.firebaseAuth || window.firebaseModule?.auth)) {
+          console.log('Forcing drawer re-initialization with current auth');
+          window.initializeUserDrawer(
+            window.firebaseAuth || window.firebaseModule.auth, 
+            window.firebaseDb || window.firebaseModule.db
+          );
+        }
+        
+        // If user is logged in, force update the drawer content
+        if (currentUser) {
+          console.log('User is authenticated, updating drawer content');
+          setTimeout(() => {
+            try {
+              if (typeof window.updateDrawerContent === 'function') {
+                window.updateDrawerContent(currentUser);
+              }
+            } catch (error) {
+              console.error('Error updating drawer content on click:', error);
+            }
+          }, 100);
+        }
+      });
+    }
+  </script>
+  
+  <!-- Add global script to load bookingHistory.js -->
+  <script>
+    // Create a function to load and expose the booking history functionality
+    (function loadGlobalBookingHistory() {
+      console.log('Setting up global booking history functions');
+      
+      // Helper function to format date
+      window.formatBookingDate = function(dateValue) {
+        if (!dateValue) return 'N/A';
+        
+        try {
+          let dateObj;
+          
+          if (typeof dateValue === 'object') {
+            if (dateValue.seconds) {
+              // Firestore timestamp
+              dateObj = new Date(dateValue.seconds * 1000);
+            } else if (dateValue instanceof Date) {
+              dateObj = dateValue;
+            } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
+              dateObj = dateValue.toDate();
+            } else {
+              dateObj = new Date(dateValue);
+            }
+          } else if (typeof dateValue === 'string') {
+            dateObj = new Date(dateValue);
+          } else if (typeof dateValue === 'number') {
+            dateObj = new Date(dateValue);
+          } else {
+            return 'N/A';
+          }
+          
+          return dateObj.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          });
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return 'N/A';
+        }
+      };
+      
+      // Helper function for status styling
+      window.getStatusClass = function(status) {
+        switch (status.toLowerCase()) {
+          case 'confirmed':
+          case 'approved':
+            return 'bg-green-100 text-green-800';
+          case 'pending':
+            return 'bg-yellow-100 text-yellow-800';
+          case 'cancelled':
+            return 'bg-red-100 text-red-800';
+          case 'completed':
+            return 'bg-blue-100 text-blue-800';
+          default:
+            return 'bg-gray-100 text-gray-800';
+        }
+      };
+      
+      // Helper function to find date in object
+      window.findDateInObject = function(obj, fieldNames, depth = 3) {
+        if (!obj || depth <= 0) return null;
+        
+        // Try direct fields first
+        for (const field of fieldNames) {
+          if (obj[field]) {
+            return obj[field];
+          }
+        }
+        
+        // Try nested fields
+        for (const key in obj) {
+          if (typeof obj[key] === 'object' && obj[key] !== null) {
+            for (const field of fieldNames) {
+              if (obj[key][field]) {
+                return obj[key][field];
+              }
+            }
+            
+            // Recursively search deeper
+            const result = window.findDateInObject(obj[key], fieldNames, depth - 1);
+            if (result) return result;
+          }
+        }
+        
+        return null;
+      };
+      
+      // Create the global function that will be called by our scripts
+      window.loadBookingHistory = async function(userId, db) {
+        console.log('Global loadBookingHistory called with:', userId);
+        
+        try {
+          const bookingHistoryContainer = document.getElementById('bookingHistoryContainer');
+          if (!bookingHistoryContainer) {
+            console.error('Booking history container not found');
+            return;
+          }
+          
+          // Create a fallback Firestore-like adapter if db is missing collection method
+          if (!db || typeof db.collection !== 'function') {
+            console.log('Creating fallback db with collection method');
+            
+            // Simple adapter with empty results
+            db = {
+              collection: function(collectionPath) {
+                return {
+                  where: function(field, operator, value) {
+                    return {
+                      get: async function() {
+                        return {
+                          empty: true,
+                          docs: [],
+                          forEach: function(callback) {}
+                        };
+                      }
+                    };
+                  }
+                };
+              }
+            };
+          }
+          
+          // Try to fetch bookings
+          try {
+            const bookingsRef = db.collection('bookings');
+            const q = bookingsRef.where('userId', '==', userId);
+            const querySnapshot = await q.get();
+            
+            if (querySnapshot.empty) {
+              bookingHistoryContainer.innerHTML = `
+                <div class="text-center text-gray-500 py-8">
+                  <i class="fas fa-calendar-times text-2xl mb-2"></i>
+                  <p>No booking history found</p>
+                </div>
+              `;
+            } else {
+              // Parse bookings
+              const bookings = [];
+              querySnapshot.forEach(doc => {
+                const data = doc.data();
+                bookings.push({
+                  id: doc.id,
+                  ...data
+                });
+              });
+              
+              // Display bookings
+              bookingHistoryContainer.innerHTML = bookings.map(booking => {
+                const checkInDate = window.formatBookingDate(booking.checkIn);
+                const checkOutDate = window.formatBookingDate(booking.checkOut);
+                const lodgeName = booking.propertyDetails?.name || 'Lodge';
+                const status = booking.status || 'completed';
+                const statusClass = window.getStatusClass(status);
+                
+                return `
+                  <div class="bg-white border rounded-lg shadow-sm p-4 hover:shadow-md transition-shadow">
+                    <div class="flex flex-col">
+                      <div class="flex justify-between mb-2">
+                        <h4 class="font-semibold">${lodgeName}</h4>
+                        <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">
+                          ${status.charAt(0).toUpperCase() + status.slice(1)}
+                        </span>
+                      </div>
+                      <div class="text-sm text-gray-600 mb-2">
+                        Stayed: ${checkInDate} - ${checkOutDate}
+                      </div>
+                      <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-sm text-gray-500">Room:</span>
+                        <span class="font-semibold">${booking.propertyDetails?.roomNumber || 'Standard'}</span>
+                      </div>
+                      <div class="mt-2 flex justify-between items-center">
+                        <div class="text-purple-600 font-bold">₱${parseFloat(booking.totalPrice || 0).toLocaleString()}</div>
+                        <button class="text-blue-600 hover:text-blue-800 text-sm font-medium" 
+                          data-booking-id="${booking.id}" 
+                          data-collection="${booking.collectionSource || 'bookings'}">
+                          View Details
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+              
+              // Add event listeners to view details buttons
+              bookingHistoryContainer.querySelectorAll('[data-booking-id]').forEach(button => {
+                button.addEventListener('click', () => {
+                  const bookingId = button.dataset.bookingId;
+                  const collection = button.dataset.collection;
+                  window.location.href = `../Dashboard/Dashboard.html?bookingId=${bookingId}&collection=${collection}`;
+                });
+              });
+            }
+          } catch (error) {
+            console.error('Error fetching booking history:', error);
+            bookingHistoryContainer.innerHTML = `
+              <div class="text-center text-red-500 py-8">
+                <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+                <p>Error loading booking history. Please try again later.</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          console.error('Error in global loadBookingHistory:', error);
+          document.getElementById('bookingHistoryContainer').innerHTML = `
+            <div class="text-center text-red-500 py-8">
+              <i class="fas fa-exclamation-circle text-2xl mb-2"></i>
+              <p>Error loading booking history. Please try again later.</p>
+            </div>
+          `;
+        }
+      };
+    })();
+  </script>
+  
+  <!-- Bridge script to expose booking functions to window object -->
+  <script type="module">
+    // Import the booking functions from lodge13.js
+    import { showBookingsModal, initializeBookingsModal } from './lodge13.js';
+    
+    // Expose the functions to the window object
+    window.showBookingsModal = showBookingsModal;
+    window.initializeBookingsModal = initializeBookingsModal;
+    
+    console.log('Booking functions exposed to window object');
+  </script>
+  
+  <!-- Add the main lodge13.js script as a module -->
+  <script type="module" src="lodge13.js"></script>
+  
+  <!-- Fallback implementation for booking functions -->
+  <script>
+    // Safety check to ensure booking functions exist
+    if (typeof window.showBookingsModal !== 'function') {
+      console.log('Creating fallback showBookingsModal function');
+      window.showBookingsModal = function() {
+        console.log('Using fallback showBookingsModal');
+        const bookingsPopup = document.getElementById('bookingsPopup');
+        if (bookingsPopup) {
+          bookingsPopup.classList.remove('hidden');
+        } else {
+          console.error('Bookings popup not found, initializing...');
+          // Try to initialize bookings modal if possible
+          if (typeof window.initializeBookingsModal === 'function') {
+            window.initializeBookingsModal();
+            const newPopup = document.getElementById('bookingsPopup');
+            if (newPopup) {
+              newPopup.classList.remove('hidden');
+            }
+          } else {
+            alert('Bookings feature is currently unavailable. Please try again later.');
+          }
+        }
+      };
+    }
+    
+    // Add a fallback for the reserve button
+    window.emergencyReserveClickFallback = function(event) {
+      console.log('Emergency fallback reserve handler called - DISABLED to prevent duplicate bookings');
+      // Disabled to prevent duplicate bookings
+      return false;
+    };
+
+    // Add this script to properly expose the handleReserveClick function to window
+    document.addEventListener('DOMContentLoaded', function() {
+      // Disable fallback mechanisms to prevent duplicate bookings
+      console.log('Disabling fallback mechanisms to prevent duplicate bookings');
+      
+      // Wait for the module script to load
+      setTimeout(function() {
+        try {
+          import('./lodge13.js')
+            .then(module => {
+              if (module && typeof module.handleReserveClick === 'function') {
+                console.log('Successfully imported handleReserveClick from module');
+                // DO NOT assign to window.reserveClickFallback to prevent duplicate calls
+                // window.reserveClickFallback = module.handleReserveClick;
+                console.log('Fallback assignment disabled to prevent duplicate bookings');
+              } else {
+                console.error('handleReserveClick function not found in module');
+              }
+            })
+            .catch(error => {
+              console.error('Error importing lodge13.js module:', error);
+            });
+        } catch (e) {
+          console.error('Error setting up reserve click handler:', e);
+        }
+      }, 300);
+    });
+  </script>
+
+  <!-- Direct Firebase Initialization -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBAJr0JQgWRfGTmSXTK6P7Yn8fkHXG2YeE",
+      authDomain: "lms-app-2b903.firebaseapp.com",
+      projectId: "lms-app-2b903",
+      storageBucket: "lms-app-2b903.appspot.com",
+      messagingSenderId: "1046108373013",
+      appId: "1:1046108373013:web:fc366db1d92b9c4b860e1c",
+      measurementId: "G-WRMW9Z8867"
+    };
+    
+    try {
+      // Initialize Firebase
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+      
+      console.log('Firebase initialized directly in lodge13.html');
+      
+      // Make auth and db available globally
+      window.directAuth = auth;
+      window.directDb = db;
+      
+      // Set up auth state listener
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          console.log('User is signed in with UID:', user.uid);
+          
+          // DISABLED: Update the Reserve button fallback to check direct auth
+          // This is disabled to prevent duplicate booking triggers
+          console.log('Auth-based fallback mechanism disabled to prevent duplicate bookings');
+          /*
+          const originalFallback = window.emergencyReserveClickFallback;
+          window.emergencyReserveClickFallback = function(event) {
+            if (window.directAuth && window.directAuth.currentUser) {
+              alert('Attempting to process your booking with direct auth...');
+              // Try to use the direct auth first
+              const reserveBtn = document.getElementById('reserve-btn');
+              if (reserveBtn) {
+                reserveBtn.disabled = true;
+                reserveBtn.textContent = 'Processing...';
+              }
+              // Wait for main handler to become available
+              setTimeout(() => {
+                if (typeof window.reserveClickFallback === 'function') {
+                  window.reserveClickFallback(event);
+                } else {
+                  // If still not available, fall back to original behavior
+                  originalFallback(event);
+                }
+              }, 500);
+            } else {
+              // Use original fallback
+              originalFallback(event);
+            }
+          };
+          */
+        } else {
+          console.log('No user is signed in with direct Firebase');
+        }
+      });
+    } catch (error) {
+      console.error('Error initializing Firebase directly:', error);
+    }
+  </script>
+
+  <!-- jQuery UI Datepicker Implementation -->
+  <script>
+    $(document).ready(function() {
+      // Initialize date variables
+      let startDate = null;
+      let endDate = null;
+      
+      // Check if syncDateVariables function is available from module
+      if (window.syncDateVariables) {
+        console.log('Found syncDateVariables function, initializing datepicker with sync capability');
+      }
+      
+      // Disable the custom calendar modal completely
+      const checkInInput = document.getElementById('check-in-date');
+      const checkOutInput = document.getElementById('check-out-date');
+      const calendarModal = document.getElementById('calendar-modal');
+      
+      // Remove the click listeners that would show the custom calendar
+      if (checkInInput && checkOutInput) {
+        const oldCheckInClick = checkInInput.onclick;
+        const oldCheckOutClick = checkOutInput.onclick;
+        
+        checkInInput.onclick = function(e) {
+          e.stopPropagation();
+          return false; // Prevent default behavior
+        };
+        
+        checkOutInput.onclick = function(e) {
+          e.stopPropagation();
+          return false; // Prevent default behavior
+        };
+        
+        // Hide the custom calendar modal
+        if (calendarModal) {
+          calendarModal.style.display = 'none';
+          calendarModal.classList.add('hidden');
+          calendarModal.classList.remove('flex');
+        }
+      }
+      
+      // Create a shared datepicker configuration
+      const datepickerConfig = {
+        minDate: 0, // Disable past dates
+        dateFormat: 'M d, yy',
+        showOtherMonths: true,
+        selectOtherMonths: true,
+        numberOfMonths: 1,
+        beforeShowDay: function(date) {
+          // Date formatting for comparison
+          const currentDate = $.datepicker.formatDate('yy-mm-dd', date);
+          const formattedStartDate = startDate ? $.datepicker.formatDate('yy-mm-dd', startDate) : null;
+          const formattedEndDate = endDate ? $.datepicker.formatDate('yy-mm-dd', endDate) : null;
+          
+          // Determine the appropriate class
+          let cssClass = '';
+          
+          // Start date selected
+          if (formattedStartDate === currentDate) {
+            cssClass = 'ui-datepicker-current-day start-date';
+          } 
+          // End date selected
+          else if (formattedEndDate === currentDate) {
+            cssClass = 'ui-datepicker-current-day end-date';
+          }
+          // In-between dates 
+          else if (startDate && endDate && 
+                  date > startDate && 
+                  date < endDate) {
+            cssClass = 'ui-datepicker-in-range';
+          }
+          
+          return [true, cssClass];
+        },
+        onSelect: function(dateText, inst) {
+          const selectedDate = $(this).datepicker('getDate');
+          const isCheckIn = this.id === 'check-in-date';
+          
+          if (isCheckIn) {
+            // Update check-in date
+            startDate = selectedDate;
+            $('#check-in-date').val(dateText);
+            
+            // If end date is before start date, clear end date
+            if (endDate && endDate < startDate) {
+              endDate = null;
+              $('#check-out-date').val('');
+            }
+            
+            // Focus the check-out field next if empty
+            if (!$('#check-out-date').val()) {
+              setTimeout(() => {
+                $('#check-out-date').trigger('focus');
+              }, 100);
+            }
+          } else {
+            // Update check-out date
+            if (!startDate) {
+              // If no start date, set it first
+              startDate = selectedDate;
+              $('#check-in-date').val(dateText);
+              
+              // Focus the check-out field again
+              setTimeout(() => {
+                $('#check-out-date').trigger('focus');
+              }, 100);
+            } else if (selectedDate >= startDate) {
+              // Valid check-out date
+              endDate = selectedDate;
+              $('#check-out-date').val(dateText);
+              
+              // Close the datepicker
+              $(this).datepicker('hide');
+            } else {
+              // Selected date is before check-in
+              alert('Check-out date must be after check-in date');
+              return false;
+            }
+          }
+          
+          // Sync with the module-level variables
+          if (typeof window.syncDateVariables === 'function') {
+            window.syncDateVariables(startDate, endDate);
+          }
+          
+          // Check for night promo eligibility after dates are selected
+          setTimeout(() => {
+            console.log('Date selected - checking night promo eligibility');
+            if (typeof window.updatePromoEligibility === 'function') {
+              window.updatePromoEligibility();
+            }
+          }, 100);
+          
+          // Force a refresh of both datepickers to show the range
+          $('#check-in-date, #check-out-date').datepicker('refresh');
+        },
+        onClose: function(selectedDate) {
+          // When the datepicker closes, update the other input's allowed date range
+          const isCheckIn = this.id === 'check-in-date';
+          
+          if (isCheckIn && selectedDate) {
+            // Set the minimum date for checkout datepicker
+            $('#check-out-date').datepicker('option', 'minDate', selectedDate);
+          } else if (!isCheckIn && selectedDate) {
+            // Set the maximum date for checkin datepicker
+            $('#check-in-date').datepicker('option', 'maxDate', selectedDate);
+          }
+        }
+      };
+      
+      // Initialize the datepickers with shared config
+      $('#check-in-date, #check-out-date').datepicker(datepickerConfig);
+      
+      // Set initial values if they exist in the module
+      if (window.selectedCheckIn) {
+        startDate = window.selectedCheckIn;
+        $('#check-in-date').datepicker('setDate', startDate);
+      }
+      
+      if (window.selectedCheckOut) {
+        endDate = window.selectedCheckOut;
+        $('#check-out-date').datepicker('setDate', endDate);
+      }
+      
+      // Handle manual clearing - when user deletes the input value
+      $('#check-in-date, #check-out-date').on('change', function() {
+        const isEmpty = !$(this).val();
+        const isCheckIn = this.id === 'check-in-date';
+        
+        if (isEmpty && isCheckIn) {
+          startDate = null;
+          // Also reset the other datepicker's minDate restriction
+          $('#check-out-date').datepicker('option', 'minDate', 0);
+        } else if (isEmpty && !isCheckIn) {
+          endDate = null;
+          // Also reset the other datepicker's maxDate restriction
+          $('#check-in-date').datepicker('option', 'maxDate', null);
+        }
+        
+        // Sync changes back to the module
+        if (typeof window.syncDateVariables === 'function') {
+          window.syncDateVariables(startDate, endDate);
+        }
+      });
+      
+      // Check night promo eligibility on time changes
+      $('#check-in-time, #check-out-time').on('change', function() {
+        console.log('Time changed in jQuery handler - checking night promo eligibility');
+        if (typeof window.updatePromoEligibility === 'function') {
+          window.updatePromoEligibility();
+        }
+      });
+      
+      // Expose updatePromoEligibility to window object if not already there
+      if (!window.updatePromoEligibility && typeof updatePromoEligibility === 'function') {
+        window.updatePromoEligibility = updatePromoEligibility;
+      }
+      
+      // Run initial night promo check
+      setTimeout(() => {
+        if (typeof window.updatePromoEligibility === 'function') {
+          console.log('Running initial night promo check from jQuery');
+          window.updatePromoEligibility();
+        }
+      }, 500);
+      
+      // Add custom styling for the date range
+      $('<style>')
+        .text(`
+          .ui-datepicker-in-range {
+            background-color: #e0f2fe !important;
+            color: #0369a1 !important;
+          }
+          .start-date .ui-state-default {
+            background-color: #0ea5e9 !important;
+            color: white !important;
+            border-color: #0ea5e9 !important;
+          }
+          .end-date .ui-state-default {
+            background-color: #0ea5e9 !important;
+            color: white !important;
+            border-color: #0ea5e9 !important;
+          }
+          /* Hide the calendar modal completely */
+          #calendar-modal {
+            display: none !important;
+          }
+        `)
+        .appendTo('head');
+    });
+  </script>
+
+  <!-- Fallback Review System Script -->
+  <script>
+    // Fallback Review System implementation
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initializing fallback review system');
+      
+      // Prevent multiple initializations
+      if (window.reviewSystemInitialized) {
+        console.log('Review system already initialized, skipping...');
+        return;
+      }
+      window.reviewSystemInitialized = true;
+      
+      // Initialize star rating functionality
+      const setupStarRating = () => {
+        const starContainer = document.getElementById('star-rating');
+        if (!starContainer) {
+          console.warn('Star rating container not found');
+          return;
+        }
+
+        // Check if stars already have event listeners
+        if (starContainer.dataset.initialized === 'true') {
+          console.log('Star rating already initialized');
+          return;
+        }
+        starContainer.dataset.initialized = 'true';
+
+        let currentRating = 0;
+        const stars = starContainer.querySelectorAll('i');
+        
+        stars.forEach((star, index) => {
+          const rating = index + 1;
+          
+          star.addEventListener('click', () => {
+            currentRating = rating;
+            updateStarDisplay(stars, rating);
+          });
+          
+          star.addEventListener('mouseenter', () => {
+            updateStarDisplay(stars, rating);
+          });
+          
+          star.addEventListener('mouseleave', () => {
+            updateStarDisplay(stars, currentRating);
+          });
+        });
+
+        // Function to update star display
+        const updateStarDisplay = (starElements, rating) => {
+          starElements.forEach((star, index) => {
+            if (index < rating) {
+              star.classList.remove('text-gray-300');
+              star.classList.add('text-yellow-500');
+            } else {
+              star.classList.remove('text-yellow-500');
+              star.classList.add('text-gray-300');
+            }
+          });
+        };
+
+        // Set up review form submission
+        const reviewForm = document.getElementById('review-form');
+        if (reviewForm) {
+          // Check if form already has event listener
+          if (reviewForm.dataset.listenerAdded === 'true') {
+            console.log('Review form already has event listener');
+            return;
+          }
+          reviewForm.dataset.listenerAdded = 'true';
+          
+          reviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Prevent multiple submissions
+            if (reviewForm.dataset.submitting === 'true') {
+              console.log('Form already submitting, ignoring...');
+              return;
+            }
+            reviewForm.dataset.submitting = 'true';
+            
+            const reviewText = document.getElementById('review-text').value.trim();
+            
+            if (!reviewText) {
+              alert('Please enter a review');
+              reviewForm.dataset.submitting = 'false';
+              return;
+            }
+            
+            if (currentRating === 0) {
+              alert('Please select a rating');
+              reviewForm.dataset.submitting = 'false';
+              return;
+            }
+
+            // Check if user is logged in (fallback check)
+            let userLoggedIn = false;
+            try {
+              // Try multiple ways to check auth status
+              if (window.directAuth && window.directAuth.currentUser) {
+                userLoggedIn = true;
+              } else if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+                userLoggedIn = true;
+              } else if (window.firebaseModule && window.firebaseModule.auth && window.firebaseModule.auth.currentUser) {
+                userLoggedIn = true;
+              }
+            } catch (error) {
+              console.error('Error checking auth status:', error);
+            }
+
+            if (!userLoggedIn) {
+              alert('Please log in to submit a review');
+              reviewForm.dataset.submitting = 'false';
+              return;
+            }
+
+            try {
+              // Show loading state
+              const submitBtn = reviewForm.querySelector('button[type="submit"]');
+              if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Submitting...';
+              }
+
+              // Simulate review submission (replace with actual implementation)
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Add review to the display (local only since this is fallback)
+              addReviewToDisplay(reviewText, currentRating);
+              
+              // Reset form
+              reviewForm.reset();
+              currentRating = 0;
+              updateStarDisplay(stars, 0);
+              
+              // Show success message
+              alert('Review submitted successfully!');
+              
+              // Reset submit button
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+              }
+              
+            } catch (error) {
+              console.error('Error submitting review:', error);
+              alert('Failed to submit review. Please try again.');
+              
+              // Reset submit button
+              const submitBtn = reviewForm.querySelector('button[type="submit"]');
+              if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit Review';
+              }
+            } finally {
+              // Always reset submitting flag
+              reviewForm.dataset.submitting = 'false';
+            }
+          });
+        }
+      };
+
+      // Function to add a review to the display
+      const addReviewToDisplay = (text, rating) => {
+        const reviewsList = document.getElementById('user-reviews-list');
+        if (!reviewsList) return;
+
+        // Get user name from auth if available
+        let userName = 'You';
+        try {
+          if (window.directAuth && window.directAuth.currentUser) {
+            userName = window.directAuth.currentUser.displayName || window.directAuth.currentUser.email || 'You';
+          } else if (window.firebaseAuth && window.firebaseAuth.currentUser) {
+            userName = window.firebaseAuth.currentUser.displayName || window.firebaseAuth.currentUser.email || 'You';
+          } else if (window.firebaseModule && window.firebaseModule.auth && window.firebaseModule.auth.currentUser) {
+            userName = window.firebaseModule.auth.currentUser.displayName || window.firebaseModule.auth.currentUser.email || 'You';
+          }
+        } catch (error) {
+          console.error('Error getting user name:', error);
+        }
+
+        const currentDate = new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        // Generate star rating HTML
+        let starRating = '';
+        for (let i = 1; i <= 5; i++) {
+          if (i <= rating) {
+            starRating += '<i class="fas fa-star"></i>';
+          } else {
+            starRating += '<i class="far fa-star"></i>';
+          }
+        }
+
+        const reviewHTML = `
+          <div class="border-b pb-6 mb-6" style="background-color: #f0f9ff; padding: 16px; border-radius: 8px;" data-review-type="user-submitted">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center">
+                <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center mr-4">
+                  <i class="fas fa-user text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-gray-900">${userName} <span class="text-sm text-blue-600">(Your Review)</span></h4>
+                  <p class="text-sm text-gray-500">${currentDate}</p>
+                </div>
+              </div>
+              <div class="text-yellow-500 text-lg">
+                ${starRating}
+              </div>
+            </div>
+            <p class="text-gray-700 leading-relaxed">${text}</p>
+          </div>
+        `;
+
+        // Check if user already has a review to prevent multiple reviews from same user
+        const existingUserReview = reviewsList.querySelector('[data-review-type="user-submitted"]');
+        if (existingUserReview) {
+          // Replace existing review instead of adding a new one
+          existingUserReview.outerHTML = reviewHTML;
+        } else {
+          // Prepend the new review to the top of the list
+          reviewsList.insertAdjacentHTML('afterbegin', reviewHTML);
+        }
+      };
+
+      // Initialize star rating with a small delay to ensure DOM is ready
+      setTimeout(() => {
+        setupStarRating();
+      }, 100);
+    });
+  </script>
+
+  <!-- Room Availability Modal Script -->
+  <script>
+    // Room Availability Modal functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Initializing room availability modal');
+      
+      // Prevent multiple initializations
+      if (window.roomAvailabilityInitialized) {
+        console.log('Room availability already initialized, skipping...');
+        return;
+      }
+      window.roomAvailabilityInitialized = true;
+      
+      const modal = document.getElementById('room-availability-modal');
+      const viewAvailabilityBtn = document.getElementById('view-availability-btn');
+      const closeModalBtn = document.getElementById('close-availability-modal');
+      const availabilityDatesP = document.getElementById('availability-dates');
+      const selectedRoomInfo = document.getElementById('selected-room-info');
+      const selectedRoomDetails = document.getElementById('selected-room-details');
+      const confirmRoomSelectionBtn = document.getElementById('confirm-room-selection');
+      
+      let selectedRoom = null;
+      let currentAvailability = {};
+      
+      // Room type pricing
+      const roomPricing = {
+        'Standard': 1300,
+        'Deluxe': 1500,
+        'Suite': 1800
+      };
+      
+      // Open modal
+      viewAvailabilityBtn?.addEventListener('click', function() {
+        console.log('Opening room availability modal');
+        openRoomAvailabilityModal();
+      });
+      
+      // Close modal
+      closeModalBtn?.addEventListener('click', function() {
+        modal?.classList.add('hidden');
+      });
+      
+      // Close modal on background click
+      modal?.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          modal.classList.add('hidden');
+        }
+      });
+      
+      function openRoomAvailabilityModal() {
+        // Get selected dates
+        const checkInDate = document.getElementById('check-in-date')?.value;
+        const checkOutDate = document.getElementById('check-out-date')?.value;
+        
+        if (!checkInDate || !checkOutDate) {
+          alert('Please select check-in and check-out dates first');
+          return;
+        }
+        
+        // Update modal dates display
+        if (availabilityDatesP) {
+          availabilityDatesP.textContent = `Availability for ${checkInDate} to ${checkOutDate}`;
+        }
+        
+        // Show modal
+        modal?.classList.remove('hidden');
+        
+        // Check room availability
+        checkRoomAvailability(checkInDate, checkOutDate);
+      }
+      
+      async function checkRoomAvailability(checkIn, checkOut) {
+        console.log('Checking room availability for:', checkIn, 'to', checkOut);
+        
+        try {
+          // Parse dates
+          const startDate = new Date(checkIn);
+          const endDate = new Date(checkOut);
+          
+          // Get Firebase db instance
+          let db = null;
+          if (window.directDb) {
+            db = window.directDb;
+          } else if (window.firebaseDb) {
+            db = window.firebaseDb;
+          } else if (window.firebaseModule?.db) {
+            db = window.firebaseModule.db;
+          }
+          
+          if (!db) {
+            console.warn('No database connection available, showing mock availability');
+            showMockAvailability();
+            return;
+          }
+          
+          // Query bookings that overlap with the selected dates
+          // We need to check for bookings where:
+          // - booking start date is before our end date AND
+          // - booking end date is after our start date
+          
+          const { collection, query, where, getDocs, and, or } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+          
+          const bookingsRef = collection(db, 'bookings');
+          
+          // Get all bookings for Ever Lodge (propertyId: 13)
+          const q = query(
+            bookingsRef,
+            where('propertyDetails.propertyId', '==', '13'),
+            where('status', 'in', ['confirmed', 'approved', 'pending'])
+          );
+          
+          const querySnapshot = await getDocs(q);
+          
+          // Initialize all rooms as available
+          const availability = {};
+          for (let i = 1; i <= 36; i++) {
+            availability[i] = 'available';
+          }
+          
+          // Check each booking for conflicts
+          querySnapshot.forEach((doc) => {
+            const booking = doc.data();
+            
+            // Parse booking dates
+            let bookingStart, bookingEnd;
+            
+            if (booking.checkIn?.toDate) {
+              bookingStart = booking.checkIn.toDate();
+            } else if (booking.checkIn) {
+              bookingStart = new Date(booking.checkIn);
+            }
+            
+            if (booking.checkOut?.toDate) {
+              bookingEnd = booking.checkOut.toDate();
+            } else if (booking.checkOut) {
+              bookingEnd = new Date(booking.checkOut);
+            }
+            
+            // Check for overlap
+            if (bookingStart && bookingEnd) {
+              const hasOverlap = (bookingStart < endDate) && (bookingEnd > startDate);
+              
+              if (hasOverlap) {
+                const roomNumber = booking.propertyDetails?.roomNumber || booking.roomNumber;
+                if (roomNumber && availability[roomNumber]) {
+                  availability[roomNumber] = 'occupied';
+                  console.log(`Room ${roomNumber} is occupied during selected dates`);
+                }
+              }
+            }
+          });
+          
+          currentAvailability = availability;
+          updateRoomDisplay(availability);
+          
+        } catch (error) {
+          console.error('Error checking room availability:', error);
+          showMockAvailability();
+        }
+      }
+      
+      function showMockAvailability() {
+        // Mock availability for demonstration
+        const availability = {};
+        for (let i = 1; i <= 36; i++) {
+          // Randomly make some rooms occupied for demo
+          availability[i] = Math.random() > 0.7 ? 'occupied' : 'available';
+        }
+        
+        currentAvailability = availability;
+        updateRoomDisplay(availability);
+      }
+      
+      function updateRoomDisplay(availability) {
+        const roomItems = document.querySelectorAll('.room-item');
+        
+        roomItems.forEach(item => {
+          const roomNumber = parseInt(item.dataset.room);
+          const status = availability[roomNumber];
+          
+          // Reset classes
+          item.className = 'room-item p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all';
+          
+          // Apply status styling
+          if (status === 'available') {
+            item.classList.add('bg-green-500', 'text-white');
+            item.style.cursor = 'pointer';
+          } else if (status === 'occupied') {
+            item.classList.add('bg-red-500', 'text-white');
+            item.style.cursor = 'not-allowed';
+          } else {
+            item.classList.add('bg-gray-300');
+            item.style.cursor = 'default';
+          }
+          
+          // Add click handler for available rooms
+          item.onclick = function() {
+            if (status === 'available') {
+              selectRoom(roomNumber, item);
+            } else if (status === 'occupied') {
+              alert(`Room ${roomNumber} is not available for the selected dates.`);
+            }
+          };
+        });
+      }
+      
+      function selectRoom(roomNumber, roomElement) {
+        // Clear previous selection
+        document.querySelectorAll('.room-item').forEach(item => {
+          item.classList.remove('bg-blue-500', 'border-2', 'border-blue-700');
+          if (currentAvailability[parseInt(item.dataset.room)] === 'available') {
+            item.classList.add('bg-green-500');
+          }
+        });
+        
+        // Highlight selected room
+        roomElement.classList.remove('bg-green-500');
+        roomElement.classList.add('bg-blue-500', 'border-2', 'border-blue-700');
+        
+        // Get room type
+        const roomTypeElement = roomElement.querySelector('.text-xs');
+        const roomType = roomTypeElement ? roomTypeElement.textContent : 'Standard';
+        const price = roomPricing[roomType] || 1300;
+        
+        selectedRoom = {
+          number: roomNumber,
+          type: roomType,
+          price: price
+        };
+        
+        // Show selected room info
+        if (selectedRoomInfo && selectedRoomDetails) {
+          selectedRoomDetails.textContent = `Room ${roomNumber} - ${roomType} (₱${price.toLocaleString()}/night)`;
+          selectedRoomInfo.classList.remove('hidden');
+        }
+      }
+      
+      // Confirm room selection
+      confirmRoomSelectionBtn?.addEventListener('click', function() {
+        if (!selectedRoom) {
+          alert('Please select a room first');
+          return;
+        }
+        
+        // Update the main booking form with selected room
+        updateBookingFormWithRoom(selectedRoom);
+        
+        // Close modal
+        modal?.classList.add('hidden');
+        
+        // Show success message
+        alert(`Room ${selectedRoom.number} (${selectedRoom.type}) has been selected for your booking!`);
+      });
+      
+      function updateBookingFormWithRoom(room) {
+        // Store selected room data for use in booking
+        window.selectedRoomData = room;
+        
+        // Update any existing room display elements if they exist
+        const roomDisplayElements = document.querySelectorAll('[data-room-display]');
+        roomDisplayElements.forEach(element => {
+          element.textContent = `Room ${room.number} - ${room.type}`;
+        });
+        
+        // Update pricing if needed
+        console.log('Selected room for booking:', room);
+        
+        // Trigger pricing update if function exists
+        if (typeof window.updatePricingCalculation === 'function') {
+          window.updatePricingCalculation();
+        }
+      }
+      
+      // Make functions available globally
+      window.openRoomAvailabilityModal = openRoomAvailabilityModal;
+      window.checkRoomAvailability = checkRoomAvailability;
+      window.selectedRoomData = null;
+    });
+  </script>
+</body>
+</html>

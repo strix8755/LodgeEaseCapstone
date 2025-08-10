@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Log - LodgeEase Admin</title>
+    
+    <!-- Add Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- No JavaScript fallback -->
+    <noscript>
+        <div class="p-4 bg-red-100 text-red-700 text-center">
+            This page requires JavaScript to function properly.
+        </div>
+    </noscript>
+
+    <!-- Update script loading order -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    
+    <!-- Add type="module" to all module scripts -->
+    <script type="module">
+        // Import Firebase initialization
+        import { initializeFirebase } from '../firebase.js';
+        
+        // Initialize Firebase when the page loads
+        window.addEventListener('load', async () => {
+            try {
+                await initializeFirebase();
+                console.log('Firebase initialized successfully');
+                // Remove PageLogger initialization
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+                document.getElementById('errorState').classList.remove('hidden');
+                document.getElementById('errorMessage').textContent = 'Error initializing application: ' + error.message;
+            }
+        });
+    </script>
+    
+    <!-- Keep other module scripts -->
+    <script type="module" src="../js/auth-check.js"></script>
+    <script type="module" src="activity_log.js"></script>
+    <script type="module" src="./activityLogger.js"></script>
+    
+    <!-- Keep existing stylesheets -->
+    <link rel="stylesheet" href="../Dashboard/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&display=swap" rel="stylesheet">
+
+    <!-- Add debug styles -->
+    <style>
+        .debug-info {
+            display: none;
+            padding: 8px;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+        .show-debug .debug-info {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar will be injected here -->
+    <div id="app" v-cloak>
+        <!-- Sidebar removed -->
+        <!-- <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../images/LodgeEaseLogo.png" alt="Lodge Ease Logo" class="logo">
+                <h2>Lodge Ease</h2>
+            </div>
+            <ul>
+                <li><a href="../Dashboard/Dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="../Room Management/room_management.html"><i class="fas fa-bed"></i> Room Management</a></li>
+                <li><a href="../Requests/booking_requests.html"><i class="fas fa-clock"></i> Booking Requests</a></li>
+                <li><a href="../Billing/billing.html"><i class="fas fa-money-bill-wave"></i> Billing</a></li>
+                <li><a href="../Reports/reports.html"><i class="fas fa-chart-line"></i> Reports</a></li>
+                <li><a href="../BusinessAnalytics/business_analytics.html"><i class="fas fa-chart-pie"></i> Business Analytics</a></li>
+                <li><a href="../ActivityLog/activity_log.html" class="active"><i class="fas fa-history"></i> Activity Log</a></li>
+                <li><a href="../Settings/settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../LongTerm/longterm_management.html"><i class="fas fa-home"></i> Long-term Stays</a></li>
+                <li><a href="../AInalysis/AInalysis.html"><i class="fas fa-robot"></i> ChatBot</a></li>
+            </ul>
+            
+            <div class="auth-buttons">
+                <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside> -->
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Debug Information (hidden by default) -->
+            <div class="debug-info max-w-7xl mx-auto mt-4">
+                <p>Auth Status: {{ isAuthenticated ? 'Authenticated' : 'Not Authenticated' }}</p>
+                <p v-if="currentUser">Current User: {{ currentUser.email }}</p>
+            </div>
+
+            <!-- Enhanced Error State -->
+            <div id="errorState" class="hidden max-w-7xl mx-auto mt-4 p-4 bg-red-50 rounded-lg text-red-700">
+                <p class="flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span id="errorMessage">An error occurred</span>
+                </p>
+                <button onclick="document.body.classList.toggle('show-debug')" class="mt-2 text-sm text-blue-600 hover:text-blue-800">
+                    Toggle Debug Info
+                </button>
+            </div>
+
+            <div class="max-w-7xl mx-auto py-6 px-4">
+                <!-- Loading State with improved visibility -->
+                <div id="loadingState" class="hidden mb-4 p-4 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <div class="animate-spin mr-3 h-5 w-5 text-blue-600">
+                        <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <span class="text-blue-700">Loading activity logs...</span>
+                </div>
+
+                <!-- Simplified Filters -->
+                <div class="bg-white shadow-sm rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-3">Filter Logs</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <select id="userFilter" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Users</option>
+                            <!-- User options will be populated dynamically -->
+                        </select>
+                        
+                        <select id="actionFilter" class="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Activities</option>
+                            <option value="login">Login</option>
+                            <option value="logout">Logout</option>
+                            <option value="navigation">Navigation</option>
+                            <option value="booking">Booking</option>
+                            <option value="room">Room Management</option>
+                            <option value="room_deletion">Room Deletion</option>
+                            <option value="request">Request</option>
+                        </select>
+                        
+                        <!-- Updated date filter with start and end date -->
+                        <div class="date-range-filter flex flex-col">
+                            <div class="text-xs text-gray-500 mb-1">Date Range:</div>
+                            <div class="flex items-center gap-2">
+                                <div class="flex-1">
+                                    <input type="date" id="startDateFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="From">
+                                </div>
+                                <div class="flex-none text-gray-400">to</div>
+                                <div class="flex-1">
+                                    <input type="date" id="endDateFilter" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="To">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <button id="applyFiltersBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors">
+                                <i class="fas fa-filter mr-1"></i> Apply Filters
+                            </button>
+                            
+                            <button id="clearFiltersBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-md transition-colors">
+                                <i class="fas fa-times mr-1"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Status -->
+                    <div id="filterStatus" class="text-sm text-gray-500 mt-3 flex items-center">
+                        <span class="inline-block mr-2"><i class="fas fa-info-circle text-blue-500"></i></span>
+                        <span>Select filters and click Apply to filter activity logs</span>
+                    </div>
+                </div>
+
+                <!-- Activity Log Table -->
+                <div class="bg-white shadow-md rounded-lg overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-9 py-3 text-left text-xs font-medium text-white-500 uppercase tracking-wider whitespace-nowrap">
+                                    <div class="flex items-center space-x-1">
+                                        <span>Timestamp</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4" />
+                                        </svg>
+                                    </div>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white-500 uppercase tracking-wider whitespace-nowrap">
+                                    <div class="flex items-center space-x-1">
+                                        <span>User</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white-500 uppercase tracking-wider whitespace-nowrap">
+                                    <div class="flex items-center space-x-1">
+                                        <span>Action</span>
+                                    </div>
+                                </th>
+                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white-500 uppercase tracking-wider">
+                                    <div class="flex items-center space-x-1">
+                                        <span>Details</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityLogTable" class="bg-white divide-y divide-gray-200">
+                            <!-- Activity logs will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Enhanced error handling -->
+    <script>
+        // For debugging purposes
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.error);
+            const errorState = document.getElementById('errorState');
+            const errorMessage = document.getElementById('errorMessage');
+            if (errorState && errorMessage) {
+                errorMessage.textContent = 'An error occurred: ' + (e.error?.message || 'Unknown error');
+                errorState.classList.remove('hidden');
+                // Show debug info automatically on error
+                document.body.classList.add('show-debug');
+            }
+        });
+
+        // Add v-cloak style
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>[v-cloak] { display: none; }</style>
+        `);
+        
+        // Add event listener for clear filters button
+        document.addEventListener('DOMContentLoaded', function() {
+            const clearBtn = document.getElementById('clearFiltersBtn');
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    if (typeof window.clearFilters === 'function') {
+                        window.clearFilters();
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Sidebar and Settings Loader -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { Sidebar } from '../components/sidebar.js';
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js';
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Activity Log page.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Activity Log page:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML before the #app div
+             const appElement = document.querySelector('#app');
+             if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+             } else {
+                console.error('#app element not found for sidebar injection');
+                return;
+             }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+
+    <!-- Add ActivityLogger before closing body -->
+    <script type="module" src="./activityLogger.js"></script>
+</body>
+</html>

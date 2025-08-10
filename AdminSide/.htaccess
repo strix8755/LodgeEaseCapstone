@@ -1,0 +1,39 @@
+# Proper MIME type for JavaScript modules
+AddType application/javascript .js
+AddType application/javascript .mjs
+
+# Proper MIME type for CSS
+AddType text/css .css
+
+# Set character encoding
+AddCharset UTF-8 .html .css .js .mjs .json
+
+# Allow cross-origin requests
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+</IfModule>
+
+# Enable CORS for fonts
+<FilesMatch "\.(ttf|otf|eot|woff|woff2)$">
+    <IfModule mod_headers.c>
+        Header set Access-Control-Allow-Origin "*"
+    </IfModule>
+</FilesMatch>
+
+# Fix specific MIME types for modules
+<Files "*.js">
+    ForceType application/javascript
+</Files>
+
+<Files "*.css">
+    ForceType text/css
+</Files>
+
+# Force HTTPS
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>

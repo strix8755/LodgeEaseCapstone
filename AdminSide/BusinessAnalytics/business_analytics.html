@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ever Lodge Analytics - Using everlodgebookings collection</title>
+    <!-- Firebase and Auth Check must be first -->
+    <script type="module" src="../firebase.js"></script>
+    <script type="module" src="../AInalysis/auth-check.js"></script>
+    <script type="module" src="../js/pageLogger.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <!-- Import the annotation plugin differently -->
+    <script>
+        // Initialize Chart.js plugins properly
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure ChartDataLabels is available globally
+            if (typeof ChartDataLabels !== 'undefined') {
+                window.ChartDataLabels = ChartDataLabels;
+                if (typeof Chart !== 'undefined') {
+                    Chart.register(ChartDataLabels);
+                    console.log('ChartDataLabels plugin registered successfully');
+                }
+            }
+            
+            // Load the annotation plugin explicitly
+            const annotationScript = document.createElement('script');
+            annotationScript.src = 'https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0/dist/chartjs-plugin-annotation.min.js';
+            annotationScript.onload = function() {
+                try {
+                    // The annotation plugin should now be available as 'ChartAnnotation'
+                    if (typeof ChartAnnotation !== 'undefined') {
+                        window.ChartAnnotation = ChartAnnotation;
+                        if (typeof Chart !== 'undefined') {
+                            Chart.register(ChartAnnotation);
+                            console.log('ChartAnnotation plugin registered successfully');
+                        }
+                    } else {
+                        console.warn('ChartAnnotation not defined after loading script');
+                    }
+                } catch (error) {
+                    console.error('Error registering annotation plugin:', error);
+                }
+            };
+            annotationScript.onerror = function() {
+                console.error('Failed to load annotation plugin script');
+            };
+            document.head.appendChild(annotationScript);
+        });
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="business_analytics.css">
+
+    <!-- Sidebar and Settings Loader -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { Sidebar } from '../components/sidebar.js';
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js';
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Business Analytics.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Business Analytics:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML
+            const appElement = document.getElementById('app');
+            if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+            } else {
+                console.error('App element #app not found for sidebar injection');
+                return;
+            }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Initial loading overlay -->
+    <div id="initial-loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading analytics...</span>
+        </div>
+    </div>
+    <!-- Sidebar injected here -->
+    <div id="app" v-cloak>
+        <!-- Static Sidebar removed -->
+        <!-- <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../images/LodgeEaseLogo.png" alt="Lodge Ease Logo" class="logo">
+                <h2>Lodge Ease</h2>
+            </div>
+            <ul>
+                <li><a href="../Dashboard/Dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="../Room Management/room_management.html"><i class="fas fa-bed"></i> Room Management</a></li>
+                <li><a href="../Requests/booking_requests.html"><i class="fas fa-clock"></i> Booking Requests</a></li>
+                <li><a href="../Billing/billing.html"><i class="fas fa-money-bill-wave"></i> Billing</a></li>
+                <li><a href="../Reports/reports.html"><i class="fas fa-chart-line"></i> Reports</a></li>
+                <li><a href="../BusinessAnalytics/business_analytics.html" class="active"><i class="fas fa-chart-pie"></i> Business Analytics</a></li>
+                <li><a href="../ActivityLog/activity_log.html"><i class="fas fa-history"></i> Activity Log</a></li>
+                <li><a href="../Settings/settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../LongTerm/longterm_management.html"><i class="fas fa-home"></i> Long-term Stays</a></li>
+                <li><a href="../AInalysis/AInalysis.html"><i class="fas fa-robot"></i> ChatBot</a></li>
+            </ul>
+            
+            <div class="auth-buttons">
+                <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside> -->
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="data-source-banner" style="background-color: #e6f7ff; border-left: 4px solid #1890ff; margin-bottom: 20px; padding: 15px; border-radius: 4px;">
+                <h2 style="margin: 0; color: #096dd9; font-size: 18px;">
+                    <i class="fas fa-database" style="margin-right: 8px;"></i>
+                    Ever Lodge Analytics - Using everlodgebookings Collection
+                </h2>
+                <p style="margin: 5px 0 0; color: #555;">
+                    All analytics displayed on this page are calculated from the everlodgebookings collection data.
+                </p>
+            </div>
+            
+            <div v-if="error" class="error-message">{{ error }}</div>
+            
+            <!-- Update loading indicators -->
+            <div v-if="loading.charts" class="loading-overlay">
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Loading analytics data...</span>
+                </div>
+            </div>
+
+            <!-- Updated Metrics Summary -->
+            <div class="metrics-summary">
+                <div class="metric-card primary">
+                    <div class="metric-header">
+                        <h4>Total Sales</h4>
+                        <span class="time-period">{{ selectedDateRangeLabel }}</span>
+                    </div>
+                    <button class="info-button" aria-label="More information about Total Sales">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Calculation:</strong> Sum of all completed booking payments (excluding cancelled bookings) from the last 30 days only. Includes room charges, services, taxes, and additional fees from the everlodgebookings collection.<br><br>
+                        <strong>Date Range:</strong> Calculated from exactly 30 days ago to today, ensuring accurate short-term performance tracking.<br><br>
+                        <strong>Benchmarks:</strong> Industry average varies by location and property type. Consistent month-over-month growth of 5-15% indicates healthy performance.<br><br>
+                        <strong>Insights:</strong> Track this against occupancy to identify pricing opportunities. High sales with low occupancy suggests good pricing strategy. Low sales with high occupancy indicates potential for rate increases.<br><br>
+                        <strong>Action Items:</strong> If declining, review pricing strategy, promotional offers, and service quality. If growing, consider expanding capacity or premium services.
+                    </div>
+                    <p class="value">{{ formatCurrency(metrics.totalSales) }}</p>
+                    <p class="trend" :class="metrics.salesGrowth >= 0 ? 'positive' : 'negative'">
+                        <i :class="metrics.salesGrowth >= 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                        {{ isNaN(metrics.salesGrowth) ? '0.00' : Math.min(999.99, Math.abs(metrics.salesGrowth)).toFixed(2) }}%
+                    </p>
+                </div>
+                <div class="metric-card success">
+                    <div class="metric-header">
+                        <h3>Current Occupancy</h3>
+                        <span class="time-period">Today</span>
+                    </div>
+                    <button class="info-button" aria-label="More information about Current Occupancy">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Calculation:</strong> (Unique occupied rooms today ÷ Total available rooms) × 100. Shows real-time occupancy status for current day.<br><br>
+                        <strong>Benchmarks:</strong> Industry standard is 60-80%. Above 85% may indicate pricing is too low or demand exceeds supply. Below 50% suggests need for marketing or pricing adjustments.<br><br>
+                        <strong>Insights:</strong> High occupancy with low revenue suggests room rates are too low. Low occupancy with high ADR indicates pricing may be too high for market demand.<br><br>
+                        <strong>Action Items:</strong> Target 80% for optimal revenue. If below 70%, consider promotional campaigns, rate reductions, or marketing initiatives. If above 90%, consider rate increases.
+                    </div>
+                    <p class="value">{{ isNaN(metrics.averageOccupancy) ? '0.00' : metrics.averageOccupancy.toFixed(2) }}%</p>
+                    <p class="subtext">Target: 80%</p>
+                </div>
+                <div class="metric-card warning">
+                    <div class="metric-header">
+                        <h3>Average Sales Per Booking</h3>
+                        <span class="time-period">{{ selectedDateRangeLabel }}</span>
+                    </div>
+                    <button class="info-button" aria-label="More information about Average Sales Per Booking">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Calculation:</strong> Total sales revenue (last 30 days) ÷ Total number of completed bookings (last 30 days). Includes all charges per booking from room rates to additional services.<br><br>
+                        <strong>Date Range:</strong> Both sales and booking counts are calculated from the same 30-day period for accurate per-booking averages.<br><br>
+                        <strong>Benchmarks:</strong> Varies by property type. Budget properties: ₱2,000-6,000, Mid-scale: ₱4,000-10,000, Upscale: ₱6,000-15,000+ per booking. Growth of 3-8% annually is healthy.<br><br>
+                        <strong>Insights:</strong> Declining values may indicate guests choosing cheaper rooms or fewer add-ons. Increasing values suggest successful upselling or market positioning improvements.<br><br>
+                        <strong>Action Items:</strong> To increase: promote room upgrades, package deals, spa services, dining options. Train staff on upselling techniques. Review pricing strategy for additional services.
+                    </div>
+                    <p class="value">{{ formatCurrency(metrics.avgSalesPerBooking) }}</p>
+                    <p class="trend" :class="{ positive: metrics.avgSalesGrowth > 0 }">
+                        {{ metrics.avgSalesGrowth > 0 ? '▲' : '▼' }} {{ isNaN(metrics.avgSalesGrowth) ? '0.00' : Math.min(999.99, Math.abs(metrics.avgSalesGrowth)).toFixed(2) }}%
+                    </p>
+                </div>
+                
+                <!-- Sales Forecast Metric Card -->
+                <div class="metric-card secondary">
+                    <div class="metric-header">
+                        <h3>Sales Forecast</h3>
+                        <span class="time-period">Next 3 Months</span>
+                    </div>
+                    <button class="info-button" aria-label="More information about Sales Forecast">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Calculation:</strong> Uses machine learning algorithms analyzing historical sales patterns, seasonal trends, booking lead times, and market conditions to project next 3 months revenue.<br><br>
+                        <strong>Accuracy:</strong> Typically 85-95% accurate for 30-90 day forecasts. Accuracy decreases for longer periods due to market volatility and external factors.<br><br>
+                        <strong>Insights:</strong> Positive growth indicates strong forward bookings and market position. Negative projections suggest need for immediate marketing intervention or pricing adjustments.<br><br>
+                        <strong>Action Items:</strong> Use for budget planning, staff scheduling, inventory management. If forecast is low, launch marketing campaigns, adjust rates, or target new customer segments immediately.
+                    </div>
+                    <p class="value">{{ formatCurrency(metrics.forecastedSales) }}</p>
+                    <p class="trend positive">
+                        <i class="fas fa-chart-line"></i>
+                        {{ metrics.forecastGrowth.toFixed(1) }}% growth
+                    </p>
+                </div>
+            </div>
+
+            <!-- Updated Charts Grid -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-line mr-2"></i>Occupancy Rate</h3>
+                    <button class="info-button" aria-label="More information about Occupancy Rate Chart">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Purpose:</strong> This chart displays the percentage of rooms occupied over time, showing daily and monthly occupancy patterns from the everlodgebookings collection.<br><br>
+                        <strong>Data Source:</strong> Real-time calculation based on check-in and check-out dates of confirmed bookings. Updates automatically as new bookings are made or cancelled.<br><br>
+                        <strong>How to Read:</strong> Each data point represents the occupancy rate for that specific time period. Higher percentages indicate better room utilization and revenue generation.<br><br>
+                        <strong>Industry Benchmarks:</strong> Target occupancy: 70-85%. Below 60% suggests pricing or marketing issues. Above 90% may indicate opportunity for rate increases.<br><br>
+                        <strong>Insights:</strong> Look for seasonal patterns, weekday vs weekend differences, and correlate with pricing strategies. Sudden drops may indicate external factors affecting demand.<br><br>
+                        <strong>Action Items:</strong> Use trends to forecast demand, adjust pricing strategies, plan maintenance during low-occupancy periods, and identify opportunities for promotional campaigns.
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="occupancyChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-dollar-sign mr-2"></i>Total Sales</h3>
+                    <button class="info-button" aria-label="More information about Total Sales Chart">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        This chart shows historical sales data with forecasted values for upcoming months. Blue bars represent actual revenue, while yellow bars show predicted future sales based on seasonal trends and historical performance.
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="revenueChart"></canvas>
+                        <div class="debug-info">
+                            <div>Chart Status: <span id="revenue-chart-status">Loading...</span></div>
+                            <div>Data Points: <span id="revenue-data-points">0</span></div>
+                            <div>Last Update: <span id="revenue-last-update">Never</span></div>
+                        </div>
+                        <div v-if="loading.charts" class="loading-overlay">
+                            <div class="loading-spinner">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <span>Loading sales data...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-calendar-check mr-2"></i>Bookings</h3>
+                    <button class="info-button" aria-label="More information about Bookings Chart">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Purpose:</strong> Tracks the total number of bookings made over time, showing booking volume trends and patterns from the everlodgebookings collection.<br><br>
+                        <strong>Data Includes:</strong> All confirmed bookings, including new reservations, modifications, and cancellations. Provides volume metrics independent of revenue or room type.<br><br>
+                        <strong>Calculation Method:</strong> Counts unique booking records by booking date, showing both daily booking activity and cumulative monthly totals.<br><br>
+                        <strong>Key Metrics:</strong> Peak booking periods, booking velocity trends, and comparison against historical performance to identify growth or decline patterns.<br><br>
+                        <strong>Business Impact:</strong> High booking volumes indicate strong demand and effective marketing. Low volumes may signal pricing issues, market competition, or seasonal effects.<br><br>
+                        <strong>Strategic Use:</strong> Plan staffing levels, inventory management, forecast revenue trends, evaluate marketing campaign effectiveness, and identify optimal pricing windows for maximum bookings.
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="bookingsChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-area mr-2"></i>Seasonal Trends</h3>
+                    <button class="info-button" aria-label="More information about Seasonal Trends Chart">
+                        <i class="fas fa-info"></i>
+                    </button>
+                    <div class="tooltip">
+                        <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
+                        <strong>Purpose:</strong> Analyzes seasonal patterns in occupancy and booking behavior over the past 12 months, helping identify peak and low seasons from historical everlodgebookings data.<br><br>
+                        <strong>Data Analysis:</strong> Compares month-over-month performance, identifies recurring seasonal patterns, and highlights cyclical trends that impact business planning.<br><br>
+                        <strong>Seasonal Insights:</strong> Shows which months consistently perform better, reveals vacation patterns, holiday impacts, and weather-related booking trends specific to your location.<br><br>
+                        <strong>Forecasting Value:</strong> Enables prediction of future performance based on historical patterns, helping anticipate busy periods and plan for slower seasons.<br><br>
+                        <strong>Business Applications:</strong> Schedule maintenance during low seasons, adjust pricing for peak periods, plan marketing campaigns for shoulder seasons, and optimize staffing levels.<br><br>
+                        <strong>Strategic Planning:</strong> Use for annual budgeting, capacity planning, promotional calendar development, and setting realistic performance targets based on seasonal expectations.
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="seasonalTrendsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analysis Modal -->
+            <div v-if="showAnalysisModal" class="analysis-modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Detailed Analysis - {{ selectedPeriod }}</h3>
+                        <button @click="showAnalysisModal = false" class="close-btn">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="analysis-metrics">
+                            <div class="metric">
+                                <h4>Value</h4>
+                                <p>{{ formatMetricValue(selectedValue) }}</p>
+                            </div>
+                            <div class="metric">
+                                <h4>YoY Growth</h4>
+                                <p>{{ calculateGrowth(selectedPeriod) }}%</p>
+                            </div>
+                            <div class="metric">
+                                <h4>Contributing Factors</h4>
+                                <ul>
+                                    <li v-for="factor in getContributingFactors(selectedPeriod)" :key="factor.name">
+                                        {{ factor.name }}: {{ factor.value }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="trend-analysis">
+                            <h4>Trend Analysis</h4>
+                            <canvas ref="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="business_analytics.js"></script>
+    <script>
+        // Hide the initial loading overlay when Vue is ready and data is loaded
+        window.__hideInitialOverlay = function() {
+            const overlay = document.getElementById('initial-loading-overlay');
+            if (overlay) {
+                overlay.classList.add('hide');
+                setTimeout(() => overlay.style.display = 'none', 500);
+            }
+        };
+    </script>
+</body>
+</html>

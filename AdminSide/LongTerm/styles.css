@@ -1,0 +1,112 @@
+.add-tenant-btn {
+    padding: 0.2rem 0.4rem; /* Add semicolon */
+    height: 2.5rem; /* Add semicolon */
+    width: 9rem; /* Add semicolon */
+}
+
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    margin: 40px 0;
+}
+
+.chart-container {
+    background: white;
+    padding: 20px 30px; /* Adjust padding for better spacing */
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden; /* Prevent overflow */
+}
+
+.chart-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.revenue-chart,
+.occupancy-chart {
+    height: auto;
+    min-height: 400px;
+}
+
+.revenue-chart canvas,
+.occupancy-chart canvas {
+    display: block;
+    width: 100% !important; /* Ensure canvas fits the container */
+    height: auto !important; /* Maintain aspect ratio */
+    max-height: 450px; /* Slightly increase max height */
+    padding: 10px; /* Add padding inside the canvas */
+}
+
+.chart-header {
+    color: #1e3c72;
+    font-size: 1.25rem;
+    margin-bottom: 15px; /* Reduce margin for better alignment */
+    padding-bottom: 10px; /* Adjust padding for consistency */
+    border-bottom: 2px solid #f0f2f5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap; /* Allow wrapping for smaller screens */
+    gap: 10px; /* Add spacing between elements */
+}
+
+.chart-info-btn {
+    background: none;
+    border: none;
+    color: #1e3c72;
+    padding: 5px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.chart-info-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Add these styles for image error handling */
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-avatar.error {
+    background-color: #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.search-container {
+    position: relative;
+}
+
+.search-container i.fas.fa-search {
+    top: 32%;
+    transform: translateY(-50%);
+    color: #9CA3AF;
+}
+
+.search-input {
+    padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    width: 250px;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px #3b82f6;
+}
+
+@media (max-width: 1024px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+}

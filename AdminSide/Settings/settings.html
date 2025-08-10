@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Lodge Ease</title>
+    <script type="module" src="../firebase.js"></script>
+    <script type="module" src="../js/auth-check.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+<body>
+    <!-- Sidebar will be injected here by sidebar.js -->
+    <div id="app" v-cloak>
+        <!-- Sidebar Navigation Removed -->
+
+        <main class="main-content">
+            <div class="page-header">
+                <h1><i class="fas fa-cog"></i> Settings</h1>
+                <p>Configure your Lodge Ease system and account preferences</p>
+            </div>
+
+            <!-- Success message -->
+            <div v-if="showSuccessMessage" class="success-alert">
+                <i class="fas fa-check-circle"></i> {{ successMessage }}
+            </div>
+            
+            <!-- Error message -->
+            <div v-if="errorMessage" class="error-alert">
+                <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+            </div>
+
+            <!-- Settings Tabs -->
+            <div class="settings-tabs">
+                <button :class="['tab-btn', { active: activeTab === 'system' }]" @click="setActiveTab('system')">
+                    <i class="fas fa-sliders-h"></i> System
+                </button>
+                <button :class="['tab-btn', { active: activeTab === 'notifications' }]" @click="setActiveTab('notifications')">
+                    <i class="fas fa-bell"></i> Notifications
+                </button>
+                <button :class="['tab-btn', { active: activeTab === 'security' }]" @click="setActiveTab('security')">
+                    <i class="fas fa-shield-alt"></i> Security
+                </button>
+                <button :class="['tab-btn', { active: activeTab === 'account' }]" @click="setActiveTab('account')">
+                    <i class="fas fa-user-circle"></i> Account
+                </button>
+            </div>
+
+            <div class="settings-content">
+                <!-- System Settings -->
+                <div v-if="activeTab === 'system'" class="tab-content">
+                    <div class="panel">
+                        <h2><i class="fas fa-sliders-h"></i> System Settings</h2>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label>Default Check-in Time</label>
+                                <input type="time" v-model="systemSettings.checkInTime" class="search-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Default Check-out Time</label>
+                                <input type="time" v-model="systemSettings.checkOutTime" class="search-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Currency</label>
+                                <select v-model="systemSettings.currency" class="search-input">
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="PESO">PESO (₱)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Date Format</label>
+                                <select v-model="systemSettings.dateFormat" class="search-input">
+                                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Language</label>
+                                <select v-model="systemSettings.language" class="search-input">
+                                    <option value="English">English</option>
+                                    <option value="Spanish">Spanish</option>
+                                    <option value="Tagalog">Tagalog</option>
+                                </select>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="systemSettings.preferLongTerm">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Prefer Long-term Stays Mode
+                                        <small>When enabled, shows Long-term Stays and hides Room Management.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="systemSettings.enableNotifications">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Enable System Notifications
+                                        <small>Show real-time notifications for system events.</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Add Save Button for System Settings -->
+                        <button
+                            v-show="settingsModified"
+                            @click="saveSettings"
+                            class="save-all-button"
+                            :disabled="loading">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            <span v-else>Save System Settings</span>
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- Notification Settings -->
+                <div v-if="activeTab === 'notifications'" class="tab-content">
+                    <div class="panel">
+                        <h2><i class="fas fa-bell"></i> Notification Settings</h2>
+                        <div class="settings-form">
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="notifications.emailAlerts">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Email Alerts
+                                        <small>Receive system notifications via email.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="notifications.bookingConfirmations">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Booking Confirmations
+                                        <small>Send booking confirmations to guests automatically.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="notifications.paymentAlerts">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Payment Alerts
+                                        <small>Receive notifications for payment activities.</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                         <!-- Add Save Button for Notification Settings -->
+                         <button
+                            v-show="settingsModified"
+                            @click="saveSettings"
+                            class="save-all-button"
+                            :disabled="loading">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            <span v-else>Save Notification Settings</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Security Settings -->
+                <div v-if="activeTab === 'security'" class="tab-content">
+                    <div class="panel">
+                        <h2><i class="fas fa-shield-alt"></i> Security Settings</h2>
+                        <div class="settings-form">
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="security.twoFactorAuth">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Two-Factor Authentication
+                                        <small>
+                                            Require a second verification step when logging in.
+                                            <span v-if="security.twoFactorAuth" style="color:#007bff;">(A code will be required on next login.)</span>
+                                        </small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" v-model="security.loginAlerts">
+                                    <span class="slider"></span>
+                                    <span class="label-text">
+                                        Login Alerts
+                                        <small>Receive notifications for all login attempts.</small>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>Session Timeout (minutes)</label>
+                                <input type="number" v-model="security.sessionTimeout" min="5" max="240" class="search-input">
+                                <small class="form-help">Time in minutes before an inactive session is logged out.</small>
+                            </div>
+                        </div>
+                         <!-- Add Save Button for Security Settings -->
+                         <button
+                            v-show="settingsModified"
+                            @click="saveSettings"
+                            class="save-all-button"
+                            :disabled="loading">
+                            <i v-if="loading" class="fas fa-spinner fa-spin"></i>
+                            <span v-else>Save Security Settings</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Account Settings -->
+                <div v-if="activeTab === 'account'" class="tab-content">
+                    <div class="panel account-settings">
+                        <h2><i class="fas fa-user-shield"></i> Account Settings</h2>
+                        <div class="settings-form">
+                            <!-- User Profile Section -->
+
+                                <div class="profile-form">
+                                    <h3>Profile Information</h3>
+                                    <div class="form-group">
+                                        <label>Full Name</label>
+                                        <input type="text" v-model="userProfile.fullname" class="search-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Username</label>
+                                        <input type="text" v-model="userProfile.username" class="search-input">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone Number</label>
+                                        <input type="tel" v-model="userProfile.phoneNumber" class="search-input">
+                                    </div>
+                                    <button @click="saveProfileSettings" class="save-button" :disabled="loading && savingSection === 'profile'">
+                                        <i v-if="loading && savingSection === 'profile'" class="fas fa-spinner fa-spin"></i>
+                                        <span v-else>Save Profile</span>
+                                    </button>
+                                </div>
+
+                                <div class="password-section">
+                                    <h3>Change Password</h3>
+                                    <div v-if="passwordError" class="password-error">{{ passwordError }}</div>
+                                    <div class="form-group">
+                                        <label>Current Password</label>
+                                        <div class="input-with-icon">
+                                            <input :type="showPassword.current ? 'text' : 'password'" v-model="passwords.current" class="search-input">
+                                            <i @click="togglePasswordVisibility('current')" :class="['fa', showPassword.current ? 'fa-eye-slash' : 'fa-eye']"></i>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>New Password</label>
+                                        <div class="input-with-icon">
+                                            <input :type="showPassword.new ? 'text' : 'password'" v-model="passwords.new" class="search-input">
+                                            <i @click="togglePasswordVisibility('new')" :class="['fa', showPassword.new ? 'fa-eye-slash' : 'fa-eye']"></i>
+                                        </div>
+                                        <div v-if="passwords.new" class="password-strength">
+                                            <div :class="['strength-meter', passwordStrength]"></div>
+                                            <span>{{ passwordStrengthText }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Confirm New Password</label>
+                                        <div class="input-with-icon">
+                                            <input :type="showPassword.confirm ? 'text' : 'password'" v-model="passwords.confirm" class="search-input">
+                                            <i @click="togglePasswordVisibility('confirm')" :class="['fa', showPassword.confirm ? 'fa-eye-slash' : 'fa-eye']"></i>
+                                        </div>
+                                    </div>
+                                    <button @click="changePassword" class="change-password-btn" :disabled="!isPasswordValid || (loading && savingSection === 'password')">
+                                        <i v-if="loading && savingSection === 'password'" class="fas fa-spinner fa-spin"></i>
+                                        <span v-else>Change Password</span>
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- 2FA Modal -->
+    <div v-if="show2FAModal" class="modal" style="display:flex;align-items:center;justify-content:center;">
+        <div class="modal-content" style="max-width:400px;">
+            <h3>Two-Factor Authentication</h3>
+            <p>Please enter the 2FA code sent to your email.</p>
+            <input v-model="input2FACode" type="text" maxlength="6" class="search-input" placeholder="Enter 6-digit code" style="margin-bottom:10px;">
+            <div>
+                <button @click="verify2FACode" class="save-button">Verify</button>
+                <button @click="show2FAModal=false" class="logout-btn" style="margin-left:10px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add the scripts at the end -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { PageLogger } from '../js/pageLogger.js';
+        import { Sidebar } from '../components/sidebar.js'; // Import Sidebar
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js'; // Import settings loader
+
+        // Generate and inject the sidebar before Vue initializes
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+        // Insert the sidebar HTML before the #app div
+        document.body.insertAdjacentHTML('afterbegin', sidebarHTML);
+
+        // Initialize sidebar after fetching the setting
+        async function initializeSidebar() {
+            try {
+                // Ensure Firebase is initialized (might need a check or wait)
+                // Assuming initializeFirebase() is called elsewhere and completes
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm); // Initialize sidebar with the setting
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default if error occurs
+            }
+        }
+        initializeSidebar();
+
+    </script>
+    <script type="module" src="settings.js"></script>
+</body>
+</html>

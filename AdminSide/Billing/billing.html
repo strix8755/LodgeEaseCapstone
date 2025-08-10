@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billing Management - Lodge Ease</title>
+    <script type="module" src="../firebase.js"></script>
+    <script type="module" src="../AInalysis/auth-check.js"></script>
+    <script type="module" src="billing.js"></script>
+    <script type="module" src="../Dashboard/transitions.js"></script>
+    <link rel="stylesheet" href="../Dashboard/transitionStyle.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600&family=Roboto:wght@400&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Basic styles for the initial loading overlay */
+        #initial-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }
+        #initial-loading-overlay.hide {
+            opacity: 0;
+        }
+        .loading-spinner {
+            text-align: center;
+            color: #333;
+        }
+        .loading-spinner i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #007bff; /* Or your theme color */
+        }
+        .loading-spinner span {
+            display: block;
+            font-size: 1.2rem;
+        }
+    </style>
+
+
+    <!-- Add PageLogger initialization -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { PageLogger } from '../js/pageLogger.js';
+        
+        window.addEventListener('load', async () => {
+            try {
+                const { app, auth, db } = await initializeFirebase() || {};
+                if (!app || !auth || !db) {
+                    throw new Error('Firebase initialization failed');
+                }
+                console.log('Firebase initialized successfully');
+                // PageLogger will handle navigation logging through auth state change
+            } catch (error) {
+                console.error('Error initializing Firebase:', error);
+            }
+        });
+    </script>
+
+    <!-- Sidebar and Settings Loader -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        import { Sidebar } from '../components/sidebar.js';
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js';
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Billing page.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Billing page:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML
+            const appElement = document.getElementById('app');
+            if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+            } else {
+                console.error('App element #app not found for sidebar injection');
+                return;
+            }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Initial loading overlay -->
+    <div id="initial-loading-overlay">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading billing data...</span>
+        </div>
+    </div>
+    <!-- Sidebar injected here -->
+    <div id="app">
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Loading spinner -->
+            <div v-if="loading" class="spinner">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            
+            <!-- Page Header -->
+            <header class="page-header">
+                <div class="header-content">
+                    <h1 class="page-title">Billing Management</h1>
+                    <div class="header-actions">
+                        <div class="search-container">
+                            <input 
+                                type="text" 
+                                v-model="searchQuery" 
+                                placeholder="Search bills, customers, or room numbers..." 
+                                aria-label="Search bills" 
+                                title="Search"
+                            >
+                            <i class="fas fa-search search-icon"></i>
+                        </div>
+                        <div class="date-filter-container">
+                            <label class="date-filter-label">Filter by Date</label>
+                            <div class="date-filter">
+                                <input 
+                                    type="date" 
+                                    v-model="startDate" 
+                                    class="date-input"
+                                    aria-label="Start date"
+                                    placeholder="Start Date"
+                                >
+                                <span class="date-separator">to</span>
+                                <input 
+                                    type="date" 
+                                    v-model="endDate" 
+                                    class="date-input"
+                                    aria-label="End date"
+                                    placeholder="End Date"
+                                >
+                                <button @click="filterByDateRange" class="filter-btn">
+                                    <i class="fas fa-filter"></i> Filter
+                                </button>
+                                <button @click="resetFilter" class="reset-btn">
+                                    <i class="fas fa-undo"></i> Reset
+                                </button>
+                            </div>
+                        </div>
+                        <div class="button-group">
+                            <button @click="openModal()" class="primary-button">
+                                <i class="fas fa-plus"></i> Create New Bill
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <section class="bill-list-section">
+                <!-- Table Container -->
+                <div class="table-container">
+                    <!-- Date Navigation Bar -->
+                    <div class="date-navigation">
+                        <button @click="goToPreviousDay" class="date-nav-btn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2 class="current-date">{{ formattedCurrentDate }}</h2>
+                        <button @click="goToNextDay" class="date-nav-btn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                        <button @click="goToToday" class="today-btn">
+                            <i class="fas fa-calendar-day"></i> Today
+                        </button>
+                    </div>
+                    
+                    <table id="billListTable" class="bills-table">
+                        <thead>
+                            <tr>
+                                <th>NAME</th>
+                                <th>CHECK-IN</th>
+                                <th>CHECK-OUT</th>
+                                <th>DURATION</th>
+                                <th>ROOM</th>
+                                <th>STATUS</th>
+                                <th>TOTAL AMOUNT</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="showNoDataMessage || (paginatedBills.length === 0)">
+                                <td colspan="8" class="text-center">No billing data available for current selection</td>
+                            </tr>
+                            <tr v-else v-for="bill in paginatedBills" :key="bill.id">
+                                <td>{{ bill.customerName }}</td>
+                                <td>{{ formatDate(bill.date) }}</td>
+                                <td>{{ formatDate(bill.checkOut) }}</td>
+                                <td>{{ bill.duration !== 'N/A' ? bill.duration : 'N/A' }}</td>
+                                <td>
+                                    {{ bill.roomNumber }} 
+                                    <span v-if="bill.roomType" class="room-type">({{ bill.roomType }})</span>
+                                </td>
+                                <td>
+                                    <span :class="'status-badge ' + getStatusClass(bill.status)">
+                                        {{ formatStatus(bill.status) }}
+                                    </span>
+                                </td>
+                                <td>₱{{ bill.totalAmount || 0 }}</td>
+                                <td class="actions">
+                                    <button @click="viewBill(bill)" class="action-btn view-btn" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button 
+                                        @click="openEditModal(bill)" 
+                                        class="action-btn edit-btn" 
+                                        :title="canEditBill(bill) ? 'Edit Billing' : 'Cannot edit bills from dates older than today'"
+                                        :disabled="!canEditBill(bill)"
+                                        :class="{ 'disabled': !canEditBill(bill) }"
+                                    >
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button @click="deleteBill(bill)" class="action-btn delete-btn" title="Delete Bill">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination section -->
+                    <div class="pagination-controls">
+                        <div class="pagination-info">
+                            Showing {{ paginatedBills.length ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }} to {{ Math.min(currentPage * itemsPerPage, finalFilteredBills.length) }} of {{ finalFilteredBills.length }} bills
+                        </div>
+                        <div class="pagination-buttons">
+                            <button 
+                                @click="changePage(currentPage - 1)" 
+                                :disabled="currentPage === 1"
+                                class="pagination-btn"
+                            >
+                                Previous
+                            </button>
+                            <button 
+                                @click="changePage(currentPage + 1)" 
+                                :disabled="currentPage === totalPages"
+                                class="pagination-btn"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Create Bill Modal -->
+        <div id="createBillModal" class="modal" v-show="showModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Create New Bill</h2>
+                    <span class="close" @click="closeModal">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="submitBill">
+                        <div class="form-group">
+                            <label for="customerName">Customer Name:</label>
+                            <input type="text" id="customerName" v-model="newBill.customerName" required>
+                        </div>
+                        
+                        <!-- Booking Type Selection -->
+                        <div class="form-group">
+                            <label for="bookingType">Booking Type:</label>
+                            <select id="bookingType" v-model="newBill.bookingType" required @change="updateBookingTypeAndPricing">
+                                <option value="standard">Standard Rate (₱1,300/night)</option>
+                                <option value="night-promo">Night Promo (10PM-8AM) - ₱580</option>
+                                <option value="hourly">Hourly Rate</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Duration selector for hourly rates -->
+                        <div class="form-group" v-if="newBill.bookingType === 'hourly'">
+                            <label for="duration">Duration (Hours):</label>
+                            <input type="number" id="duration" v-model="newBill.duration" min="1" required @change="updateBookingTypeAndPricing">
+                            <label for="hourlyPrice" class="mt-2">Hourly Price (₱):</label>
+                            <input type="number" id="hourlyPrice" v-model="newBill.hourlyPrice" min="0" step="0.01" required @change="updateBookingTypeAndPricing">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="billDate">Check-in:</label>
+                                <div class="date-time-container">
+                                    <input type="date" id="billDate" v-model="newBill.date" required @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="billTime" v-model="newBill.checkInTime" @change="updateBookingTypeAndPricing">
+                                </div>
+                            </div>
+                            <div class="form-group" v-if="newBill.bookingType !== 'hourly'">
+                                <label for="billCheckOut">Check-out:</label>
+                                <div class="date-time-container">
+                                    <input type="date" id="billCheckOut" v-model="newBill.checkOut" :required="newBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="billCheckOutTime" v-model="newBill.checkOutTime" :required="newBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Help text based on booking type -->
+                        <div class="help-text" v-if="newBill.bookingType === 'hourly'">
+                            <i class="fas fa-info-circle"></i> Enter duration and price for hourly rates.
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="roomNumber">Room Number:</label>
+                                <input type="text" id="roomNumber" v-model="newBill.roomNumber" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="roomType">Room Type:</label>
+                                <input type="text" id="roomType" v-model="newBill.roomType">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="baseCost">Base Room Cost:</label>
+                                <input type="number" id="baseCost" v-model="newBill.baseCost" step="0.01" readonly>
+                                <small>(Automatically calculated based on booking type)</small>
+                            </div>
+                        </div>
+                        <div class="expenses-section">
+                            <h3>Additional Expenses</h3>
+                            <div v-for="(expense, index) in newBill.expenses" :key="index" class="expense-item">
+                                <input type="text" v-model="expense.description" placeholder="Description" required>
+                                <input type="number" v-model="expense.amount" placeholder="Amount" step="0.01" required>
+                                <button type="button" @click="removeExpense(index)" class="remove-expense">&times;</button>
+                            </div>
+                            <button type="button" @click="addExpense" class="button">Add Expense</button>
+                        </div>
+                        <div class="form-group total-amount">
+                            <strong>Total Amount: ₱{{ calculateTotal }}</strong>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" @click="closeModal" class="button cancel" :disabled="isSubmitting">Cancel</button>
+                            <button type="submit" class="button" :disabled="isSubmitting">
+                                <span v-if="isSubmitting">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Creating...
+                                </span>
+                                <span v-else>Create Bill</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- View/Edit Bill Modal -->
+        <div id="viewBillModal" class="modal" v-show="showViewModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 v-if="isEditMode">Edit Billing Details</h2>
+                    <h2 v-else>View Billing Details</h2>
+                    <span class="close" @click="closeViewModal">&times;</span>
+                </div>
+                <div class="modal-body" v-if="editingBill">
+                    <form @submit.prevent="updateBill">
+                        <div class="bill-source-indicator" v-if="editingBill.source">
+                            <span v-if="editingBill.source === 'bookings'" class="badge booking-badge">
+                                <i class="fas fa-bed"></i> Booking Charge
+                            </span>
+                            <span v-else class="badge custom-badge">
+                                <i class="fas fa-file-invoice-dollar"></i> Custom Bill
+                            </span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editCustomerName">Customer Name:</label>
+                            <input type="text" id="editCustomerName" v-model="editingBill.customerName" :disabled="!isEditMode" required>
+                        </div>
+                        
+                        <!-- Duration selector for hourly rates (Edit) -->
+                        <div class="form-group" v-if="isEditMode && editingBill.bookingType === 'hourly'">
+                            <label for="editDuration">Duration (Hours):</label>
+                            <input type="number" id="editDuration" v-model="editingBill.duration" min="1" required @change="updateBookingTypeAndPricing">
+                            <label for="editHourlyPrice" class="mt-2">Hourly Price (₱):</label>
+                            <input type="number" id="editHourlyPrice" v-model="editingBill.hourlyPrice" min="0" step="0.01" required @change="updateBookingTypeAndPricing">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editBillDate">Check-in:</label>
+                                <div class="date-time-container">
+                                    <input type="date" id="editBillDate" v-model="editingBill.date" :disabled="!isEditMode" required @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="editBillTime" v-model="editingBill.checkInTime" :disabled="!isEditMode" @change="updateBookingTypeAndPricing">
+                                </div>
+                            </div>
+                            <div class="form-group" v-if="editingBill.bookingType !== 'hourly' || !isEditMode">
+                                <label for="editBillCheckOut">Check-out:</label>
+                                <div class="date-time-container">
+                                    <input type="date" id="editBillCheckOut" v-model="editingBill.checkOut" :disabled="!isEditMode" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="editBillCheckOutTime" v-model="editingBill.checkOutTime" :disabled="!isEditMode" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Help text based on booking type (Edit) -->
+                        <div class="help-text" v-if="isEditMode && editingBill.bookingType === 'night-promo'">
+                            <i class="fas fa-info-circle"></i> Night Promo (10:00 PM - 8:00 AM) - ₱580 flat rate.
+                        </div>
+                        <div class="help-text" v-if="isEditMode && editingBill.bookingType === 'hourly'">
+                            <i class="fas fa-info-circle"></i> Enter duration and price for hourly rates.
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editRoomNumber">Room Number:</label>
+                                <input type="text" id="editRoomNumber" v-model="editingBill.roomNumber" :disabled="!isEditMode" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="editRoomType">Room Type:</label>
+                                <input type="text" id="editRoomType" v-model="editingBill.roomType" :disabled="!isEditMode">
+                            </div>
+                        </div>
+                        
+                        <!-- Rate information -->
+                        <div class="rate-info-section">
+                            <h3>Rate Information</h3>
+                            <div class="rate-details">
+                                <div class="rate-row">
+                                    <span>Booking Type:</span>
+                                    <span>
+                                        <span v-if="editingBill.bookingType === 'hourly'">Hourly Rate</span>
+                                        <span v-else-if="editingBill.bookingType === 'night-promo'">Night Promo (10PM-8AM)</span>
+                                        <span v-else>Standard Rate</span>
+                                    </span>
+                                </div>
+                                <div class="rate-row">
+                                    <span>Duration:</span>
+                                    <span v-if="editingBill.bookingType === 'hourly'">
+                                        {{ editingBill.duration }} hours
+                                    </span>
+                                    <span v-else-if="editingBill.duration && editingBill.duration !== 'N/A'">
+                                        {{ editingBill.duration }} nights
+                                    </span>
+                                    <span v-else-if="editingBill.numberOfNights">
+                                        {{ editingBill.numberOfNights }} nights
+                                    </span>
+                                    <span v-else>N/A</span>
+                                </div>
+                                <div class="rate-row" v-if="editingBill.nightlyRate">
+                                    <span>Rate:</span>
+                                    <span>₱{{ editingBill.nightlyRate.toLocaleString() }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editBaseCost">Base Room Cost:</label>
+                                <input type="number" id="editBaseCost" v-model="editingBill.baseCost" :disabled="!isEditMode" step="0.01" :readonly="isEditMode">
+                                <small v-if="isEditMode">(Automatically calculated based on booking type)</small>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editStatus">Status:</label>
+                            <select id="editStatus" v-model="editingBill.status" :disabled="!isEditMode">
+                                <option value="pending">Pending</option>
+                                <option value="unpaid">Unpaid</option>
+                                <option value="paid">Paid</option>
+                                <option value="canceled">Canceled</option>
+                            </select>
+                        </div>
+                        <div class="expenses-section">
+                            <h3>Additional Expenses</h3>
+                            <div v-for="(expense, index) in editingBill.expenses" :key="index" class="expense-item">
+                                <input type="text" v-model="expense.description" placeholder="Description" :disabled="!isEditMode" required>
+                                <input type="number" v-model="expense.amount" placeholder="Amount" step="0.01" :disabled="!isEditMode" required>
+                                <button v-if="isEditMode" type="button" @click="removeEditExpense(index)" class="remove-expense">&times;</button>
+                            </div>
+                            <button v-if="isEditMode" type="button" @click="addEditExpense" class="button">Add Expense</button>
+                        </div>
+                        <div class="form-group total-amount">
+                            <strong>Total Amount: ₱{{ calculateEditTotal }}</strong>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" @click="closeViewModal" class="button cancel" :disabled="isUpdating">Cancel</button>
+                            <button v-if="isEditMode" type="submit" class="button" :disabled="isUpdating">
+                                <span v-if="isUpdating">
+                                    <i class="fas fa-spinner fa-spin mr-2"></i>Updating...
+                                </span>
+                                <span v-else>Update Bill</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

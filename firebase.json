@@ -1,0 +1,151 @@
+{
+  "functions": {
+    "source": "functions"
+  },
+  "hosting": [
+    {
+      "target": "client",
+      "public": "ClientSide",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "rewrites": [
+        {
+          "source": "/Homepage",
+          "destination": "/Homepage/rooms.html"
+        },
+        {
+          "source": "/",
+          "destination": "/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(css)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/css"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "max-age=3600"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js)",
+          "headers": [
+            {
+              "key": "Content-Type", 
+              "value": "application/javascript"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "max-age=3600"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(jpg|jpeg|png|gif|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "target": "admin",
+      "public": "AdminSide",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "cleanUrls": false,
+      "trailingSlash": false,
+      "rewrites": [
+        {
+          "source": "/Dashboard/**",
+          "destination": "/Dashboard/Dashboard.html"
+        },
+        {
+          "source": "/",
+          "destination": "/Login/index.html"
+        },
+        {
+          "source": "**",
+          "destination": "/Login/index.html"
+        }
+      ],
+      "headers": [
+        {
+          "source": "**/*.@(css)",
+          "headers": [
+            {
+              "key": "Content-Type",
+              "value": "text/css"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "max-age=3600"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(js)",
+          "headers": [
+            {
+              "key": "Content-Type", 
+              "value": "application/javascript"
+            },
+            {
+              "key": "Cache-Control",
+              "value": "max-age=3600"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(jpg|jpeg|png|gif|webp|ico)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=86400"
+            }
+          ]
+        },
+        {
+          "source": "**/*.@(html)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

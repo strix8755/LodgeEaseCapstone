@@ -1,0 +1,1416 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Font Family */
+body {
+    font-family: 'Roboto', sans-serif;
+}
+
+h1, h2 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* Main container layout */
+#app {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: rgba(44, 62, 80, 0.9);
+    color: white;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+.logo {
+    width: 60px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.sidebar h2 {
+    font-size: 20px;
+    color: white;
+}
+
+/* Navigation */
+.sidebar ul {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s;
+}
+
+.sidebar ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 20px;
+    background-color: #f5f6fa;
+    overflow-y: auto;
+    height: 100vh;
+    width: calc(100% - 250px);
+    min-height: 100vh;
+}
+
+/* Page Header */
+.page-header {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    margin: 0;
+    color: #333;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px 35px 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #1e3c72;
+}
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+}
+
+/* View Filters */
+.view-filters {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    padding: 10px 14px;
+    border: 1px solid #e2e8f0;
+    background-color: white;
+    color: #4a5568;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    background-color: #f7fafc;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn.active {
+    background-color: #1e3c72;
+    color: white;
+    border-color: #1e3c72;
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2);
+}
+
+.filter-btn.active:hover {
+    background-color: #2a5298;
+    border-color: #2a5298;
+}
+
+/* Date Filter Styles */
+.date-filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.date-filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3c72;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: #1e3c72;
+}
+
+.date-separator {
+    color: #666;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.filter-btn, .reset-btn {
+    padding: 8px 14px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.filter-btn {
+    background-color: #1e3c72;
+    color: white;
+    border-color: #1e3c72;
+}
+
+.reset-btn {
+    background-color: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.filter-btn:hover {
+    background-color: #2a5298;
+}
+
+.reset-btn:hover {
+    background-color: #5a6268;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+.primary-button {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2);
+    white-space: nowrap;
+    flex-shrink: 0;
+    height: 40px;
+}
+
+.primary-button:hover {
+    background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(30, 60, 114, 0.3);
+}
+
+.primary-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2);
+}
+
+.primary-button i {
+    font-size: 13px;
+}
+
+/* Table Container */
+.table-container {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Bills Table */
+.bills-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.bills-table th,
+.bills-table td {
+    padding: 15px 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.bills-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+}
+
+.bills-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.room-type {
+    font-size: 12px;
+    color: #666;
+}
+
+/* Date Navigation */
+.date-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.current-date {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e3c72;
+    margin: 0;
+    min-width: 200px;
+    text-align: center;
+}
+
+.date-nav-btn {
+    background-color: white;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+}
+
+.date-nav-btn:hover {
+    background-color: #f7fafc;
+    border-color: #cbd5e0;
+    color: #2d3748;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.today-btn {
+    background-color: #1e3c72;
+    color: white;
+    border: 1px solid #1e3c72;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.today-btn:hover {
+    background-color: #2a5298;
+    border-color: #2a5298;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2);
+}
+
+.today-btn i {
+    font-size: 14px;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 15px;
+    padding: 25px 20px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e0e0e0;
+    border-radius: 0 0 10px 10px;
+}
+
+.pagination-info {
+    color: #666;
+    font-size: 14px;
+    text-align: center;
+}
+
+.pagination-buttons {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.pagination-btn {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background-color: white;
+    color: #333;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 100px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #1e3c72;
+    color: white;
+    border-color: #1e3c72;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(30, 60, 114, 0.2);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: #f5f5f5;
+}
+
+.pagination-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+/* Spinner */
+.spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+}
+
+.spinner i {
+    font-size: 2rem;
+    color: #1e3c72;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Form Section */
+.billing-form-section, .billing-table-section, .billing-summary-section {
+    margin-bottom: 30px;
+}
+
+.billing-form-section label,
+.billing-summary-section label {
+    display: block;
+    margin: 10px 0 5px;
+}
+
+.billing-form-section input,
+.billing-summary-section input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.button {
+    background-color: #1e3c72;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #2a5298;
+}
+
+/* Table Section */
+.billing-table-section table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    text-align: left;
+}
+
+th {
+    background-color: #1e3c72;
+    color: white;
+}
+
+tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* Summary Section */
+.billing-summary-section {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.message {
+    margin-top: 20px;
+    color: green;
+    font-weight: bold;
+}
+
+/* Styles for Create Bill Section */
+.create-bill-section {
+    margin-bottom: 20px;
+    text-align: right;
+}
+
+/* Styles for Bill List Section */
+.bill-list-section {
+    margin-top: 30px;
+    margin-bottom: 2rem;
+}
+
+.bill-list-section table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.bill-list-section th, .bill-list-section td {
+    padding: 12px;
+    border: 1px solid #ced4da;
+    text-align: left;
+}
+
+.bill-list-section th {
+    background-color: #1e3c72;
+    color: white;
+}
+
+.bill-list-section tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.bill-list-section td .view-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.bill-list-section td .view-btn:hover {
+    background-color: #bdbdbd;
+}
+
+.bill-list-section td .view-btn i {
+    font-size: 14px;
+}
+
+/* Sort Controls */
+.form-input {
+    background-color: white;
+    border-color: #e2e8f0;
+    font-size: 14px;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #1e3c72;
+    box-shadow: 0 0 0 2px rgba(30, 60, 114, 0.2);
+}
+
+.bill-list-header .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 200px;
+    }
+
+    .main-content {
+        margin-left: 200px;
+        width: calc(100% - 200px);
+        padding: 15px;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+
+    .search-container {
+        min-width: auto;
+        flex: none;
+    }
+
+    .search-container input {
+        width: 100%;
+    }
+
+    .date-filter-container {
+        width: 100%;
+    }
+
+    .date-filter {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .date-filter-label {
+        margin-bottom: 5px;
+        width: 100%;
+    }
+
+    .date-input {
+        width: 120px;
+        min-width: 120px;
+    }
+
+    .date-separator {
+        display: none;
+    }
+
+    .filter-btn,
+    .reset-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .button-group {
+        width: 100%;
+    }
+
+    .primary-button {
+        width: 100%;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 14px;
+        height: auto;
+    }
+
+    .bills-table th,
+    .bills-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    .actions {
+        display: flex;
+        gap: 5px;
+    }
+
+    .action-btn {
+        padding: 6px 8px;
+        font-size: 12px;
+        min-width: auto;
+    }
+
+    .pagination-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .pagination-buttons {
+        justify-content: center;
+    }
+
+    .pagination-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    .date-navigation {
+        flex-direction: row;
+        gap: 10px;
+        padding: 10px 15px;
+    }
+
+    .current-date {
+        font-size: 16px;
+        min-width: 150px;
+    }
+
+    .date-nav-btn {
+        padding: 8px 10px;
+        min-width: 35px;
+        height: 35px;
+    }
+
+    .today-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+}
+
+/* Auth Buttons Styles */
+.auth-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    padding: 0 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+}
+
+.auth-buttons button,
+.auth-buttons a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #ff4757;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #ff6b81;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2);
+}
+
+.auth-buttons i {
+    font-size: 16px;
+}
+
+/* Loading Spinner */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.loading i {
+    font-size: 2rem;
+    color: #1e3c72;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .auth-buttons {
+        padding: 0 10px;
+    }
+
+    .logout-btn, .login-btn {
+        padding: 10px;
+    }
+
+    .auth-buttons span {
+        display: none;
+    }
+
+    .auth-buttons i {
+        margin: 0;
+    }
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+    display: flex;
+}
+
+.modal[style*="display: none"] {
+    display: none !important;
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    width: 80%;
+    max-width: 800px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #4a6da7;
+}
+
+.close {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #555;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-row .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.expenses-section {
+    margin: 20px 0;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+    border: 1px solid #eee;
+}
+
+.expenses-section h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #444;
+}
+
+.expense-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.remove-expense {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.total-amount {
+    font-size: 1.1rem;
+    text-align: right;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.button {
+    padding: 8px 16px;
+    background-color: #4a6da7;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.button:hover {
+    background-color: #3a5a8a;
+}
+
+.button.cancel {
+    background-color: #6c757d;
+}
+
+.button.cancel:hover {
+    background-color: #5a6268;
+}
+
+/* Table styles */
+.actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+}
+
+.action-btn {
+    border: none;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+}
+
+.view-btn {
+    color: #2563eb;
+    background-color: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+.view-btn:hover {
+    background-color: #2563eb;
+    color: white;
+    border-color: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.2);
+}
+
+.edit-btn {
+    color: #d97706;
+    background-color: #fef3c7;
+    border-color: #fde68a;
+    margin: 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+}
+
+.edit-btn:hover {
+    background-color: #d97706;
+    color: white;
+    border-color: #d97706;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(217, 119, 6, 0.2);
+}
+
+/* Disabled edit button styles */
+.edit-btn:disabled,
+.edit-btn.disabled {
+    color: #9ca3af !important;
+    background-color: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    transform: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.edit-btn:disabled:hover,
+.edit-btn.disabled:hover {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    border-color: #d1d5db !important;
+    transform: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+}
+
+.delete-btn {
+    color: #dc2626;
+    background-color: #fef2f2;
+    border-color: #fecaca;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+    color: white;
+    border-color: #dc2626;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading spinner */
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading i {
+    font-size: 3rem;
+    color: #4a6da7;
+}
+
+/* Status badges */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+}
+
+.status-paid {
+    background-color: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.status-unpaid {
+    background-color: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.status-pending {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.status-confirmed {
+    background-color: #e0e7ff;
+    color: #3730a3;
+    border-color: #c7d2fe;
+}
+
+.status-canceled {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+.status-na {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    border-color: #d1d5db;
+}
+
+/* Date navigation */
+.date-navigation {
+    margin-bottom: 1.5rem;
+}
+
+.date-nav-btn {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+
+.date-nav-btn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.current-date {
+    text-align: center;
+}
+
+/* Source indicator badge in edit modal */
+.bill-source-indicator {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.badge {
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.booking-badge {
+    background-color: rgba(0, 123, 255, 0.15);
+    color: #007bff;
+}
+
+.custom-badge {
+    background-color: rgba(108, 117, 125, 0.15);
+    color: #6c757d;
+}
+
+/* Make Vue show/hide work with display flex */
+.modal[style*="display: block"] {
+    display: flex !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .expense-item {
+        flex-direction: column;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .date-navigation {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+    
+    .view-filters {
+        flex-wrap: wrap;
+    }
+}
+
+/* Date-time container styles */
+.date-time-container {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.date-time-container input[type="date"] {
+    flex: 2;
+}
+
+.date-time-container input[type="time"] {
+    flex: 1;
+}
+
+/* Add additional CSS styles for enhanced billing UI */
+
+:root {
+    --primary-color: #4a6da7;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+}
+
+/* Styles for rate details in billing view */
+.rate-info-section {
+    margin-bottom: 20px;
+}
+
+.rate-info-section h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #444;
+}
+
+.rate-details {
+    background-color: #f7f9fc;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #e0e7ff;
+    margin-top: 5px;
+}
+
+.rate-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px dashed #e0e7ff;
+    font-size: 0.9rem;
+}
+
+.rate-row:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Badge styles for bill source */
+.bill-source-indicator {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 5px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.booking-badge {
+    background-color: #ebf5ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+}
+
+.custom-badge {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    flex-shrink: 0;
+}
+
+/* Desktop optimization */
+@media (min-width: 1200px) {
+    .header-actions {
+        align-items: flex-end;
+        flex-wrap: nowrap;
+    }
+
+    .search-container {
+        max-width: 400px;
+    }
+
+    .date-filter {
+        flex-wrap: nowrap;
+    }
+
+    .date-input {
+        width: 150px;
+    }
+}
+
+/* Tablet optimization */
+@media (min-width: 769px) and (max-width: 1199px) {
+    .header-actions {
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .search-container {
+        min-width: 300px;
+        flex: 1;
+    }
+
+    .date-filter-container {
+        flex-shrink: 0;
+    }
+
+    .button-group {
+        flex-shrink: 0;
+        width: auto;
+    }
+}

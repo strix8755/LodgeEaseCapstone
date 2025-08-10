@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LodgeEase - Baguio City Hotels</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../Homepage/styles.css">
+  <Script src="rooms.js"></Script>
+</head>
+
+<body class="text-gray-800">
+  <header class="fixed w-full z-50 bg-white/80 backdrop-blur-md shadow-lg">
+    <header class="main-header fixed w-full z-50">
+      <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between">
+        <!-- Logo -->
+        <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+          <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+        </a>
+  
+        <!-- Navigation Links -->
+        <div class="flex items-center space-x-4">
+          <a href="../Homepage/rooms.html" class="nav-button active" title="Go to homepage">
+            <i class="ri-home-line"></i>
+            <span>Home</span>
+          </a>
+          <button id="loginButton" class="nav-button">
+            <i class="ri-login-box-line"></i>
+            <span>Log in</span>
+          </button>
+          <button id="userIconBtn" class="menu-button">
+            <i class="ri-menu-line"></i>
+            <i class="ri-user-line"></i>
+          </button>
+        </div>
+      </nav>
+  </header>
+  <div class="flex min-h-screen">
+
+        <!-- Main Content -->
+        <div class="flex-grow p-10 flex justify-center">
+            <div class="bg-white rounded-xl shadow-lg p-10 max-w-xl w-full">
+                <div class="text-center mb-8 pb-6 border-b-2 border-gray-100">
+                    <h1 class="text-3xl font-semibold text-gray-800 mb-2">Extend Your Stay</h1>
+                    <p class="text-gray-600">Room 304 - John Doe</p>
+                    <p class="text-gray-600">Current Check-out: Nov 18, 2024</p>
+                </div>
+
+                <div class="mb-8">
+                    <h2 class="text-2xl text-gray-800 text-center mb-6">Room Availability</h2>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="bg-gray-100 p-6 rounded-lg text-center border border-gray-200 hover:scale-105 transition transform">
+                            <h3 class="mb-2 text-lg text-gray-800"></h3>
+                            <p>Room 304</p>
+                            <p>Available</p>
+                            <span class="block mt-2 text-green-600 font-bold">P1189/night</span>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg text-center border border-gray-200 hover:scale-105 transition transform">
+                            <h3 class="mb-2 text-lg text-gray-800"></h3>
+                            <p>Room 307</p>
+                            <p>Available</p>
+                            <span class="block mt-2 text-green-600 font-bold">P1189/night</span>
+                        </div>
+                        <div class="bg-gray-100 p-6 rounded-lg text-center border border-gray-200 hover:scale-105 transition transform">
+                            <h3 class="mb-2 text-lg text-gray-800"></h3>
+                            <p>Room 305</p>
+                            <p>Available</p>
+                            <span class="block mt-2 text-green-600 font-bold">P1189/night</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-100 rounded-lg p-8">
+                    <h2 class="text-2xl text-gray-800 text-center mb-6">Extend Reservation</h2>
+                    <form id="stay-extension-form">
+                        <div class="mb-6">
+                            <label for="extension-nights" class="block mb-2 text-gray-700">Number of Nights</label>
+                            <select id="extension-nights" class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+                                <option value="">Select Nights</option>
+                                <option value="1">1 Night</option>
+                                <option value="2">2 Nights</option>
+                                <option value="3">3 Nights</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="new-checkout" class="block mb-2 text-gray-700">New Checkout Date</label>
+                            <input type="date" id="new-checkout" class="w-full p-3 border border-gray-300 rounded focus:outline-none focus:border-green-500" required>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-lg mb-6">
+                            <div class="flex justify-between mb-2">
+                                <span>Nightly Rate</span>
+                                <span>P1189</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Number of Nights</span>
+                                <span id="selected-nights">0</span>
+                            </div>
+                            <div class="flex justify-between pt-2 mt-2 border-t border-gray-200 font-bold">
+                                <span>Total Cost</span>
+                                <span id="total-cost">P0</span>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between">
+                            <button type="button" onclick="cancelExtension()" class="bg-gray-600 text-white py-3 px-6 rounded hover:bg-gray-700 transition">Cancel</button>
+                            <button type="submit" class="bg-green-500 text-white py-3 px-6 rounded hover:bg-green-600 transition">Confirm Extension</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div 
+    id="userDrawer" 
+    class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full"
+  >
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-bold text-gray-800">My Account</h2>
+        <button id="closeDrawer" class="text-gray-500 hover:text-gray-700">
+          <i class="ri-close-line text-2xl"></i>
+        </button>
+      </div>
+  
+      <div class="space-y-4">
+        <div class="flex items-center space-x-4 bg-gray-100 p-4 rounded-lg">
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <i class="ri-user-line text-blue-600"></i>
+          </div>
+          <div>
+            <h3 class="font-semibold">John Doe</h3>
+            <p class="text-sm text-gray-500">john.doe@example.com</p>
+          </div>
+        </div>
+  
+        <div class="space-y-2">
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-user-settings-line text-gray-600"></i>
+            <span>Profile Settings</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-heart-line text-gray-600"></i>
+            <span>Saved Lodges</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-book-line text-gray-600"></i>
+            <span>My Bookings</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-message-3-line text-gray-600"></i>
+            <span>Messages</span>
+          </a>
+  
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-building-3-line text-gray-600"></i>
+            <span>Extend Stay</span>
+          </a>
+          <!-- New Dashboard and Bill Checkout sections -->
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-dashboard-3-line text-green-600"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-bill-line text-purple-600"></i>
+            <span>Bill Checkout</span>
+          </a>
+          
+          <a href="#" class="flex items-center space-x-3 p-3 hover:bg-gray-100 rounded-lg transition">
+            <i class="ri-logout-box-r-line text-red-600"></i>
+            <span class="text-red-600">Logout</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Overlay -->
+  <div 
+    id="drawerOverlay" 
+    class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"
+  ></div>
+  
+  <footer class="bg-gray-900 text-white py-12">
+    <div class="container mx-auto px-6 text-center">
+      <div class="mb-8">
+        <h3 class="text-3xl font-bold text-blue-500 mb-4">LodgeEase</h3>
+        <p class="text-gray-300">Aspiras palispis highway, Baguio City, Benguet, 2600 Philippines</p>
+        <p class="text-gray-300">Contact: +(63) 9129 912 6584 | lodgeease.baguio@email.com</p>
+      </div>
+      <div class="flex justify-center space-x-6">
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-instagram"></i>
+        </a>
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-facebook"></i>
+        </a>
+        <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+          <i class="fab fa-twitter"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const userIcon = document.querySelector('.ri-user-line');
+      const userDrawer = document.getElementById('userDrawer');
+      const closeDrawer = document.getElementById('closeDrawer');
+      const drawerOverlay = document.getElementById('drawerOverlay');
+    
+      // Open drawer
+      userIcon.addEventListener('click', function() {
+        userDrawer.classList.remove('translate-x-full');
+        drawerOverlay.classList.remove('hidden');
+      });
+    
+      // Close drawer
+      closeDrawer.addEventListener('click', closeUserDrawer);
+      drawerOverlay.addEventListener('click', closeUserDrawer);
+    
+      function closeUserDrawer() {
+        userDrawer.classList.add('translate-x-full');
+        drawerOverlay.classList.add('hidden');
+      }
+    });
+    </script>
+  </body>
+  </html>

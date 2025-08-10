@@ -1,0 +1,34 @@
+/* Fix for header overlap issue */
+body {
+    padding-top: 0; /* Remove any top padding */
+    overflow-y: auto !important; /* Ensure vertical scrolling works */
+    margin: 0;
+}
+
+/* Fixed header styling to avoid content overlap */
+.main-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 50;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    height: 72px; /* Set explicit height */
+}
+
+/* Add proper spacing for content below fixed header */
+.content-container {
+    padding-top: 80px; /* Adjust based on header height */
+}
+
+/* Ensure modals work properly */
+#gallery-modal, #calendar-modal {
+    overflow-y: auto;
+}
+
+/* Fix for nested header issue (duplicate headers) */
+header .main-header {
+    position: relative;
+    box-shadow: none;
+}

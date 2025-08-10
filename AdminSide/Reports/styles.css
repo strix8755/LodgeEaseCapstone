@@ -1,0 +1,1595 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    overflow: hidden;
+}
+
+h1, h2 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* App Container */
+.app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: rgba(44, 62, 80, 0.9);
+    color: white;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+.logo {
+    width: 60px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.sidebar h2 {
+    font-size: 20px;
+    color: white;
+}
+
+/* Navigation */
+.sidebar ul {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s;
+}
+
+.sidebar ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 20px;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: #ecf0f1;
+}
+
+/* Page Header with toggle */
+.page-header {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+}
+
+/* Button group container */
+.button-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Button styles in view-toggle */
+.view-toggle .fixed-excel-btn, 
+.view-toggle .fixed-import-btn,
+.view-toggle .btn-toggle-owner,
+.view-toggle .btn-toggle-booking {
+    margin: 0;
+    height: 36px;
+    min-width: 140px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+/* Owner button styles */
+.btn-toggle-owner, .btn-toggle-booking {
+    background-color: #2c3e50 !important;
+    color: white !important;
+    display: inline-flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    cursor: pointer !important;
+}
+
+.btn-toggle-owner:hover, .btn-toggle-booking:hover {
+    background-color: #34495e !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2) !important;
+}
+
+/* Adjust the width of the import hint */
+.view-toggle .fixed-import-hint {
+    white-space: nowrap;
+    bottom: -20px;
+    font-size: 0.65rem;
+    z-index: 10;
+}
+
+/* Cards */
+.card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+/* Filter Section */
+.filter-controls {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Reports Controls */
+.reports-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+/* Search Controls */
+.search-controls {
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-icon {
+    position: absolute;
+    left: 12px;
+    color: #6c757d;
+    z-index: 2;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 12px 10px 35px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: #4285f4;
+    box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    transition: color 0.3s ease, background-color 0.3s ease;
+}
+
+.clear-search-btn:hover {
+    color: #dc3545;
+    background-color: #f8f9fa;
+}
+
+/* Count Indicator */
+.count-indicator {
+    display: flex;
+    align-items: center;
+}
+
+.count-badge {
+    background-color: #e9ecef;
+    color: #495057;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.count-badge i {
+    color: #6c757d;
+}
+
+.search-results-text {
+    color: #4285f4;
+    font-style: italic;
+}
+
+/* Numbering Column */
+.number-column {
+    width: 50px;
+    text-align: center;
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.number-cell {
+    text-align: center;
+    background-color: #f8f9fa;
+    font-weight: 500;
+    color: #495057;
+    width: 50px;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.pagination-controls .btn {
+    min-width: 80px;
+}
+
+.page-info {
+    font-weight: 500;
+    color: #495057;
+    padding: 0 10px;
+}
+
+/* Search Filter in Owner Reports */
+.search-filter {
+    flex: 1;
+    max-width: 300px;
+    margin-left: 15px;
+}
+
+/* Owner Reports Filters Layout */
+.owner-reports-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.owner-reports-filters .date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.owner-reports-filters .search-filter {
+    margin-left: 0;
+    max-width: 100%;
+}
+
+.owner-reports-filters .count-indicator,
+.owner-reports-filters .pagination-controls {
+    margin-top: 0;
+    padding: 10px;
+    background-color: white;
+}
+
+/* Reports Grid */
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* Chart Containers */
+.chart-container {
+    height: 300px;
+    margin: 20px 0;
+}
+
+/* AI Insights */
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.insight-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 6px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+        padding: 15px 10px;
+    }
+
+    .logo-container h2,
+    .nav-text {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 70px;
+    }
+
+    .nav-link {
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .nav-link i {
+        margin: 0;
+    }
+
+    .reports-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header-main {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .view-toggle {
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 10px;
+    }
+    
+    .view-toggle button {
+        width: 100%;
+    }
+
+    .reports-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .search-controls {
+        max-width: 100%;
+    }
+    
+    .owner-reports-filters {
+        gap: 10px;
+    }
+    
+    .owner-reports-filters .date-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .filter-controls {
+        flex-direction: column;
+    }
+    
+    .filter-group {
+        width: 100%;
+    }
+
+    .chart-container {
+        height: 250px;
+    }
+}
+
+/* Auth Buttons Styles */
+.auth-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    padding: 0 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+}
+
+.auth-buttons button,
+.auth-buttons a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #ff4757;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #ff6b81;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2);
+}
+
+.auth-buttons i {
+    font-size: 16px;
+}
+
+
+/* Loading Overlay styles */
+.loading, #initial-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-spinner-container {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    min-width: 200px;
+}
+
+/* Specific rules for the loading text */
+.loading-spinner-container p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+#initial-loading-overlay.hide {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Table Section */
+.table-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin: 20px;
+    padding: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.bookings-table th,
+.bookings-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.bookings-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+.status-badge.confirmed {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.actions {
+    margin: 0;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Actions Wrapper and Button Styles */
+.actions-wrapper {
+    display: none !important;
+}
+
+/* Button styles */
+.btn-export, .btn-import {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    min-width: 130px;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-export {
+    background-color: #4285f4;
+    color: white;
+}
+
+.btn-export:hover {
+    background-color: #3367d6;
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.3);
+}
+
+.btn-import {
+    background-color: #34a853;
+    color: white;
+}
+
+.btn-import:hover {
+    background-color: #2d8d46;
+    box-shadow: 0 4px 8px rgba(52, 168, 83, 0.3);
+}
+
+/* Import hint styling */
+.import-hint {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.7rem;
+    color: #6b7280;
+    white-space: nowrap;
+    background-color: #f9f9f9;
+    padding: 1px 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Import Container */
+.import-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 20px;
+}
+
+.btn-secondary:hover + .import-hint {
+    color: #4b5563;
+}
+
+/* Additional tooltip style - appears on hover */
+.import-container::after {
+    position: absolute;
+    top: -40px;
+    left: 80%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 10;
+}
+
+.import-container:hover::after {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Owner Reports Section */
+.owner-reports-section {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+.owner-reports-content {
+    margin-top: 20px;
+}
+
+/* Owner Reports Tabs */
+.owner-reports-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.owner-reports-tabs button {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    font-weight: 500;
+    color: #555;
+    transition: all 0.3s;
+}
+
+.owner-reports-tabs button:hover {
+    color: #3498db;
+}
+
+.owner-reports-tabs button.active {
+    color: #3498db;
+    border-bottom: 3px solid #3498db;
+}
+
+/* Owner Reports Actions */
+.owner-reports-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+/* Excel-like Table */
+.excel-table-container {
+    max-width: 100%;
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    font-size: 14px;
+}
+
+.excel-table th {
+    background-color: #f2f2f2;
+    padding: 10px;
+    text-align: left;
+    font-weight: 500;
+    border: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+}
+
+.excel-table td {
+    padding: 0;
+    border: 1px solid #ddd;
+}
+
+.excel-table input {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    font-family: 'Roboto', sans-serif;
+}
+
+.excel-table input:focus {
+    outline: 2px solid #3498db;
+}
+
+.excel-table input[type="number"] {
+    text-align: right;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: #e74c3c;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    color: #c0392b;
+}
+
+/* Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1100;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    width: 400px;
+    max-width: 90%;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #777;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.pin-input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.error-message {
+    color: #e74c3c;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .owner-reports-tabs {
+        flex-direction: column;
+        border-bottom: none;
+    }
+    
+    .owner-reports-tabs button {
+        width: 100%;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .owner-reports-actions {
+        flex-wrap: wrap;
+    }
+    
+    .owner-reports-actions button {
+        flex: 1;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+}
+
+/* Owner Reports Filters */
+.owner-reports-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+    background-color: #f5f7f9;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.date-filter label {
+    font-weight: 500;
+    margin-right: 5px;
+    color: #2c3e50;
+}
+
+.date-filter input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    flex-grow: 1;
+    max-width: 250px;
+    background-color: #fff;
+    transition: border-color 0.2s;
+}
+
+.date-filter input[type="date"]:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.filter-instructions {
+    padding: 10px 15px;
+    background-color: #fffde7;
+    border-radius: 6px;
+    border-left: 4px solid #ffd54f;
+}
+
+.filter-instructions p {
+    margin: 0;
+    color: #5d4037;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-instructions i {
+    color: #ff9800;
+    font-size: 16px;
+}
+
+.report-date-display {
+    padding: 10px 15px;
+    background-color: #e4f1fe;
+    border-radius: 6px;
+    margin-top: 10px;
+    border-left: 4px solid #3498db;
+}
+
+.report-date-display h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 13px;
+}
+
+/* Pagination Controls */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-info {
+    font-size: 14px;
+    color: #666;
+    padding: 0 10px;
+}
+
+.pagination-controls button {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    color: #495057;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.pagination-controls button:hover:not(:disabled) {
+    background-color: #e9ecef;
+    color: #212529;
+}
+
+.pagination-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .owner-reports-filters {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .date-filter, .pagination-controls {
+        width: 100%;
+    }
+    
+    .pagination-controls {
+        justify-content: space-between;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .auth-buttons {
+        padding: 0 10px;
+    }
+
+    .logout-btn, .login-btn {
+        padding: 10px;
+    }
+
+    .auth-buttons span {
+        display: none;
+    }
+
+    .auth-buttons i {
+        margin: 0;
+    }
+}
+
+.icon-container {
+    display: inline-block; 
+    margin-bottom: 15px;
+}
+
+/* Only the icon should spin, not any text or container */
+.loading-spinner-container .icon-container i {
+    font-size: 2.5rem;
+    color: #1e3c72;
+}
+
+/* Ensure no animations on text or containers */
+.loading-spinner-container > *:not(.icon-container),
+.loading-spinner-container > * > *:not(i) {
+    animation: none !important;
+    transform: none !important;
+}
+
+/* Button styles - General */
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn i {
+    font-size: 1em;
+}
+
+/* Button styles - Specific types */
+.btn-export, .btn-import {
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    min-width: 130px;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-export {
+    background-color: #4285f4;
+    color: white;
+}
+
+.btn-export:hover {
+    background-color: #3367d6;
+    box-shadow: 0 4px 8px rgba(66, 133, 244, 0.3);
+}
+
+.btn-import {
+    background-color: #34a853;
+    color: white;
+}
+
+.btn-import:hover {
+    background-color: #2d8d46;
+    box-shadow: 0 4px 8px rgba(52, 168, 83, 0.3);
+}
+
+.btn-action {
+    background-color: #fbbc05;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    min-width: 130px;
+    justify-content: center;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-action:hover {
+    background-color: #e8a800;
+    box-shadow: 0 4px 8px rgba(251, 188, 5, 0.3);
+}
+
+/* Button primary and secondary styles */
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    position: relative;
+}
+
+/* Actions Wrapper */
+.actions-wrapper {
+    margin: 10px 0;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 12px 15px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+/* Top level standalone buttons (outside Vue app) */
+.main-content > button,
+.app > button,
+body > button,
+body > .btn-export,
+body > div > .btn-export,
+button[class^="btn"][style*="width"],
+div:not(.action-buttons):not(.owner-reports-actions) > .btn-export,
+a.btn-export,
+div.btn-export,
+button.btn-export {
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    min-width: 130px !important;
+    max-width: 200px !important;
+    width: auto !important;
+    height: auto !important;
+    justify-content: center !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin: 10px auto !important;
+}
+
+/* Target the specific top blue button seen in the screenshot */
+body > .btn-export,
+body > button.btn-export,
+body > div > .btn-export,
+body > div > button.btn-export {
+    position: relative !important;
+    width: auto !important;
+    max-width: 200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    display: flex !important;
+}
+
+/* Target standalone buttons that might appear at the very top */
+body > .btn,
+body > button,
+body > a[class*="btn"],
+body > div > .btn,
+body > div > button,
+body > div > a[class*="btn"],
+.app > .btn,
+.app > button,
+.app > a[class*="btn"],
+.app > div > .btn:not(.owner-reports-actions .btn):not(.action-buttons .btn),
+.app > div > button:not(.owner-reports-actions button):not(.action-buttons button),
+.app > div > a[class*="btn"]:not(.owner-reports-actions a):not(.action-buttons a) {
+    padding: 6px 10px !important;
+    border-radius: 4px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    min-width: 120px !important;
+    max-width: 180px !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 10px auto !important;
+    
+    /* Center and layout the button properly */
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    
+    /* Fix positioning */
+    position: relative !important;
+    transform: none !important;
+}
+
+/* Direct styling for the blue export button and green import button */
+[class*="export"][class*="excel"],
+[class*="import"][class*="data"],
+div[class*="export-to-excel"],
+div[class*="import-data"],
+a[class*="export-to-excel"],
+a[class*="import-data"],
+button[class*="export-to-excel"],
+button[class*="import-data"] {
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    height: auto !important;
+    width: auto !important;
+    max-width: 170px !important;
+    margin: 10px auto !important;
+    border-radius: 4px !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    transform: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Unified button container to group all standalone buttons */
+.button-group-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin: 15px auto;
+    padding: 12px 15px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    max-width: 600px;
+    flex-wrap: wrap;
+    border: 1px solid #e9ecef;
+    position: relative;
+}
+
+/* Empty container should be hidden */
+.button-group-container:empty {
+    display: none;
+}
+
+/* When container is inside main content, give it a different style */
+.main-content .button-group-container {
+    margin: 0 0 20px 0;
+    background-color: #fff;
+}
+
+/* Target the specific standalone Export to Excel and Import Data buttons */
+body > [class*="btn-export-to-excel"],
+body > [class*="export-to-excel"],
+body > [class*="btn-import-data"],
+body > [class*="import-data"],
+div:not(.app) > [class*="btn-export-to-excel"],
+div:not(.app) > [class*="export-to-excel"],
+div:not(.app) > [class*="btn-import-data"],
+div:not(.app) > [class*="import-data"],
+a:not(.app *)[href*="excel"],
+a:not(.app *)[href*="export"],
+a:not(.app *)[href*="import"],
+div[style*="margin"]:not(.app *) > button,
+div[style*="padding"]:not(.app *) > button,
+div[style*="display"]:not(.app *) > button,
+div:not(.app *):not(.action-buttons) button[onclick*="export"],
+div:not(.app *):not(.action-buttons) button[onclick*="import"] {
+    /* Hidden by default */
+    display: none !important;
+}
+
+/* Direct overlay fix for those exact buttons */
+body:before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 130px; /* Target just the top area where these buttons appear */
+    background-color: transparent;
+    z-index: 999;
+    pointer-events: none;
+}
+
+/* Add our own fixed buttons in the correct layout */
+.main-content:before {
+    content: "";
+    display: block;
+    height: 10px;
+}
+
+.main-content:after {
+    display: flex;
+    content: "";
+    margin: 20px 0;
+    height: 50px;
+    background-color: #f8f9fa;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    padding: 0 10px;
+    border: 1px solid #e9ecef;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Hide any standalone buttons that might be outside our control */
+body > .btn,
+body > button,
+body > a.btn,
+body > [class*="btn"],
+body > div > .btn:not(.fixed-excel-btn):not(.fixed-import-btn):not(.button-group-container *),
+body > div > button:not(.fixed-excel-btn):not(.fixed-import-btn):not(.button-group-container *),
+body > div > a.btn:not(.fixed-excel-btn):not(.fixed-import-btn):not(.button-group-container *) {
+    display: none !important;
+}
+
+/* Target and hide those specific standalone buttons at the top */
+body > div > a.btn,
+body > div > button.btn,
+body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay) > button,
+body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay) > a,
+body > div:not(.app):not(.sidebar):not(.modal):not(#initial-loading-overlay),
+body > a.btn,
+body > button.btn {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    position: absolute !important;
+    left: -9999px !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Force our buttons to be visible */
+.view-toggle .fixed-excel-btn, 
+.view-toggle .fixed-import-btn {
+    display: inline-flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: static !important;
+    height: auto !important;
+    width: auto !important;
+    overflow: visible !important;
+}
+
+/* Tooltip styles */
+.tooltip-alt {
+    position: relative;
+}
+
+.tooltip-alt .tooltip-text {
+    visibility: hidden;
+    width: max-content;
+    max-width: 200px;
+    background-color: #2c3e50;
+    color: white;
+    text-align: center;
+    border-radius: 4px;
+    padding: 6px 10px;
+    position: absolute;
+    bottom: -50px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.2s, visibility 0.2s;
+    font-size: 11px;
+    line-height: 1.3;
+    z-index: 9999;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    font-weight: 400;
+}
+
+.tooltip-alt .tooltip-text::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #2c3e50 transparent;
+}
+
+/* Fix for buttons to have proper icon spacing */
+.fixed-excel-btn i,
+.fixed-import-btn i,
+.btn-toggle-owner i {
+    margin-right: 8px;
+}
+
+/* Add hover and active states for buttons */
+.fixed-excel-btn:hover,
+.fixed-import-btn:hover,
+.btn-toggle-owner:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+}
+
+.fixed-excel-btn:hover {
+    background-color: #3367d6;
+}
+
+.fixed-import-btn:hover {
+    background-color: #2d8d46;
+}
+
+.btn-toggle-owner:hover {
+    background-color: #34495e;
+}
+
+.fixed-excel-btn:active,
+.fixed-import-btn:active,
+.btn-toggle-owner:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Add hover effect to make the tooltips appear */
+.tooltip-alt:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Button alignment and structure */
+.fixed-excel-btn,
+.fixed-import-btn,
+.btn-toggle-owner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 15px;
+    height: 38px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    line-height: 1.4;
+    border: none;
+    outline: none;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin: 0;
+    user-select: none;
+    text-align: center;
+}
+
+/* Different colors for different buttons */
+.fixed-excel-btn {
+    background-color: #4285f4;
+}
+
+.fixed-import-btn {
+    background-color: #34a853;
+}
+
+.btn-toggle-owner {
+    background-color: #2c3e50;
+}
+
+/* View toggle flex container */
+.view-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+}
+
+/* Button group */
+.button-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Make the text aligned in all buttons */
+.fixed-excel-btn > span,
+.fixed-import-btn > span,
+.btn-toggle-owner > span {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Remove fixed-import-hint as it interrupts alignment */
+.fixed-import-hint {
+    display: none;
+}

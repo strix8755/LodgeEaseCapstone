@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LodgeEase Package Design</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .package-container {
+            width: 400px;
+            height: 600px;
+            background: linear-gradient(145deg, #ffffff, #f8f9fa);
+            border-radius: 25px;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .package-header {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 40px;
+            background: #333;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .package-header::before {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 8px;
+            background: #000;
+            border-radius: 4px;
+        }
+
+        .gradient-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(66, 165, 245, 0.1) 0%,
+                rgba(33, 150, 243, 0.3) 25%,
+                rgba(30, 136, 229, 0.4) 50%,
+                rgba(25, 118, 210, 0.5) 75%,
+                rgba(21, 101, 192, 0.6) 100%);
+            border-radius: 25px;
+        }
+
+        .flowing-shapes {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            border-radius: 25px;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(45deg, 
+                rgba(33, 150, 243, 0.4),
+                rgba(21, 101, 192, 0.6));
+        }
+
+        .shape1 {
+            width: 200px;
+            height: 200px;
+            top: -50px;
+            right: -50px;
+            background: linear-gradient(45deg, 
+                rgba(33, 150, 243, 0.3),
+                rgba(21, 101, 192, 0.5));
+        }
+
+        .shape2 {
+            width: 150px;
+            height: 150px;
+            bottom: -30px;
+            left: -30px;
+            background: linear-gradient(45deg, 
+                rgba(25, 118, 210, 0.4),
+                rgba(30, 136, 229, 0.3));
+        }
+
+        .shape3 {
+            width: 100px;
+            height: 100px;
+            top: 40%;
+            left: -20px;
+            background: linear-gradient(45deg, 
+                rgba(66, 165, 245, 0.2),
+                rgba(33, 150, 243, 0.4));
+        }
+
+        .content {
+            position: relative;
+            z-index: 10;
+            padding: 60px 30px 30px;
+            height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1565c0;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #1976d2;
+            margin-bottom: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .tagline {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 280px;
+            line-height: 1.4;
+        }
+
+        .product-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .usb-device {
+            width: 120px;
+            height: 40px;
+            background: linear-gradient(45deg, #1565c0, #1976d2);
+            border-radius: 8px;
+            position: relative;
+            box-shadow: 0 8px 20px rgba(21, 101, 192, 0.4);
+            transform: rotate(-5deg);
+        }
+
+        .usb-device::before {
+            content: '';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 16px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        .usb-device::after {
+            content: 'LodgeEase';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .features {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+
+        .feature-list {
+            font-size: 11px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .feature-list li {
+            margin-bottom: 3px;
+        }
+
+        .capacity-badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+        }
+
+        .version-badge {
+            position: absolute;
+            bottom: 20px;
+            left: 30px;
+            background: rgba(21, 101, 192, 0.1);
+            color: #1565c0;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 10px;
+            font-weight: bold;
+            border: 1px solid rgba(21, 101, 192, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="package-container">
+        <div class="package-header"></div>
+        
+        <div class="gradient-background"></div>
+        
+        <div class="flowing-shapes">
+            <div class="shape shape1"></div>
+            <div class="shape shape2"></div>
+            <div class="shape shape3"></div>
+        </div>
+
+        <div class="capacity-badge">16GB</div>
+        <div class="version-badge">v1.0.0</div>
+        
+        <div class="content">
+            <div class="title">LodgeEase</div>
+            <div class="subtitle">MANAGEMENT SYSTEM</div>
+            <div class="tagline">Complete lodge management solution with customer booking portal and administrative dashboard</div>
+            
+            <div class="product-area">
+                <div class="usb-device"></div>
+            </div>
+            
+            <div class="features">
+                <div class="feature-title">System Includes:</div>
+                <ul class="feature-list">
+                    <li>• Customer Booking Portal</li>
+                    <li>• Administrative Dashboard</li>
+                    <li>• Firebase Integration</li>
+                    <li>• Analytics & Reporting</li>
+                    <li>• Payment Processing</li>
+                    <li>• Room Management</li>
+                    <li>• Installation Guide</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

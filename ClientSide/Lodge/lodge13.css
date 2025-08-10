@@ -1,0 +1,125 @@
+/* Special styling for Ever Lodge */
+
+/* Night promo badge animation */
+.bg-gradient-to-r.from-green-500 {
+    transition: all 0.3s ease;
+}
+
+.night-promo-badge {
+    position: relative;
+    overflow: hidden;
+}
+
+.night-promo-badge::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+    transform: translateX(-100%);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Enhanced calendar day styling */
+.selected-date {
+    background: #3b82f6 !important;
+    color: white !important;
+    font-weight: bold;
+    border-radius: 50%;
+}
+
+.in-range {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+}
+
+.hover-date:hover:not(.selected-date):not(.in-range) {
+    background: #f3f4f6;
+    cursor: pointer;
+}
+
+/* Pricing display animation */
+#pricing-details {
+    transition: all 0.3s ease;
+}
+
+#pricing-details.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+    height: 0;
+    overflow: hidden;
+}
+
+/* Best value badge */
+.best-value-badge {
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    background-color: #10B981;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 4px;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Pulse animation for promotional elements */
+.promo-pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Calendar improvements */
+#calendar-modal {
+    backdrop-filter: blur(2px);
+}
+
+/* Progress bar animation for reservation process */
+.reservation-progress {
+    height: 5px;
+    background: linear-gradient(90deg, #3b82f6 0%, #10B981 100%);
+    animation: progress-grow 2s ease forwards;
+}
+
+@keyframes progress-grow {
+    0% {
+        width: 0%;
+    }
+    100% {
+        width: 100%;
+    }
+}
+
+/* Gallery enhancements */
+.gallery-thumb {
+    transition: all 0.2s ease;
+}
+
+.gallery-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}

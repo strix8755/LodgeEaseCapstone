@@ -1,0 +1,1854 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    overflow: auto;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+/* App Container */
+#app, .app {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: auto;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: rgba(44, 62, 80, 0.9);
+    color: white;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+/* Logo Section */
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+.logo {
+    width: 60px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.sidebar h2 {
+    font-size: 20px;
+    color: white;
+}
+
+/* Navigation */
+.sidebar ul {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s;
+}
+
+.sidebar ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: 250px;
+    padding: 30px;
+    height: 100vh;
+    overflow-y: auto;
+    background-color: #ecf0f1;
+}
+
+.dashboard-header {
+    margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+    font-size: 24px;
+    color: #1e3c72;
+    margin-bottom: 15px;
+}
+
+/* Dashboard Panels */
+.dashboard-panels {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+/* General Panel Styles */
+.panel {
+    flex: 1;
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.panel h2 {
+    color: #1e3c72;
+    margin-bottom: 10px;
+}
+
+/* Overview Section */
+.overview {
+    margin-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+}
+
+.overview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.overview-item {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin: 15px;
+    padding: 20px;
+    flex: 1;
+    transition: box-shadow 0.3s;
+}
+
+.overview-item h3 {
+    font-size: 1.5em;
+    color: #1e3c72;
+    margin-bottom: 10px;
+}
+
+.overview-item p {
+    font-size: 2em;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Buttons */
+.analyze-button {
+    background-color: #1e3c72;
+    color: white;
+    padding: 0.8rem;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.analyze-button:hover {
+    background-color: #2a5298;
+}
+
+.button-rooms {
+    border-radius: 50px;
+    padding: 10px;
+}
+
+#button-rooms-add {
+    color: white;
+    background-color: #1e3c72;
+    border-radius: 100px;
+    padding: 10px;
+    text-align: right;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#button-rooms-add:hover {
+    background-color: #2a5298;
+}
+/* Search Inputs */
+.search-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+}
+
+th {
+    background-color: #1e3c72;
+    color: white;
+}
+
+/* Analysis Feedback */
+.analysis-feedback {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f0f8ff;
+    border-left: 5px solid #1e3c72;
+}
+
+.analysis-feedback h4 {
+    margin-bottom: 10px;
+}
+
+/* Room Management Status Columns */
+.status-column-booked {
+    background-color: #f94449;
+    border-radius: 100px;
+    padding: 1px;
+    text-align: center;
+    color: white;
+}
+
+.status-column-reserved {
+    background-color: #ffee8c;
+    border-radius: 100px;
+    padding: 1px;
+    text-align: center;
+}
+
+.status-column-available {
+    background-color: #6fc276;
+    border-radius: 100px;
+    padding: 1px;
+    text-align: center;
+    color: white;
+}
+
+/* Room Management Buttons */
+.button-rooms {
+    border-radius: 50px;
+    padding: 10px;
+}
+
+#button-rooms-add {
+    color: white;
+    background-color: #1e3c72;
+    border-radius: 100px;
+    padding: 10px;
+    text-align: right;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#button-rooms-add:hover {
+    background-color: #2a5298;
+}
+
+.container {
+    text-align: left;
+}
+
+#search-for-rooms {
+    width: 300px;
+    color: #2a5298;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 70px;
+        padding: 15px 10px;
+    }
+
+    .logo-container h2,
+    .sidebar ul li a span {
+        display: none;
+    }
+
+    .main-content {
+        margin-left: 70px;
+        padding: 20px;
+    }
+
+    .sidebar ul li a {
+        justify-content: center;
+        padding: 12px;
+    }
+
+    .sidebar ul li a i {
+        margin: 0;
+    }
+
+    .dashboard-panels {
+        flex-direction: column;
+    }
+
+    .overview-item {
+        margin: 10px 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .overview-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .analyze-button {
+        margin: 10px 0;
+    }
+
+    #search-for-rooms {
+        width: 100%;
+    }
+}
+
+.status-pending {
+    background-color: #FEF3C7;
+    color: #92400E;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+}
+
+.status-occupied {
+    background-color: #DCFCE7;
+    color: #166534;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+}
+
+/* Add these styles if they're not already present */
+.auth-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    padding: 0 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+}
+
+.auth-buttons button,
+.auth-buttons a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #ff4757;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #ff6b81;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2);
+}
+
+.auth-buttons i {
+    font-size: 16px;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    height: auto;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: visible;
+}
+
+.canvas-container {
+    position: relative;
+    flex: 1;
+    min-height: 350px;
+    width: 100%;
+    margin: 1rem 0;
+    padding-bottom: 30px;
+}
+
+.canvas-container canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 30px) !important;
+    max-height: none !important;
+}
+
+/* Charts Section */
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    height: auto;
+    min-height: 450px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Chart Tooltip Styles */
+.chartjs-tooltip {
+    opacity: 1 !important;
+    position: absolute;
+    background: rgba(0, 0, 0, 0.8) !important;
+    color: white !important;
+    border-radius: 0.5rem;
+    padding: 0.75rem !important;
+    pointer-events: none;
+    transform: translate(-50%, 0);
+    transition: all 0.15s ease;
+    z-index: 1000;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Chart Controls */
+.chart-controls {
+    background: #F9FAFB;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+    z-index: 5;
+}
+
+.chart-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+.chart-select {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 1rem;
+    font-size: 0.875rem;
+    color: #374151;
+    min-width: 160px;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+}
+
+/* Remove metric cards from sales chart */
+.sales-chart .chart-metrics {
+    display: none;
+}
+
+.sales-chart .metric {
+    display: none;
+}
+
+.sales-chart canvas {
+    width: 110% !important; 
+    height: 110% !important; 
+    position: absolute !important;
+    top: -5% !important; 
+    left: -5% !important;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+
+    .sales-chart {
+        min-height: 450px;
+    }
+
+    .sales-chart .canvas-container {
+        min-height: 300px;
+    }
+}
+
+@media (max-width: 640px) {
+    .sales-chart {
+        min-height: 400px;
+    }
+
+    .sales-chart .canvas-container {
+        min-height: 250px;
+    }
+
+    .chart-filters {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .chart-select {
+        width: 100%;
+    }
+}
+
+/* AI Insights Section */
+.ai-insights {
+    margin: 20px 0;
+    padding: 20px;
+}
+
+.ai-insights h2 {
+    color: #1e3c72;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
+
+.insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.insight-card {
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.insight-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.insight-card h3 {
+    color: #1e3c72;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.insight-card .message {
+    color: #4a5568;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.insight-card .recommendation {
+    color: #2b6cb0;
+    font-weight: 500;
+    padding-top: 8px;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Statistics Overview */
+.statistics-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-card i {
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.stat-card h3 {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.stat-card p {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* Charts Grid */
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+    color: #2c3e50;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chart-header .subtitle {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.metric-card i {
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-content h3 {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.metric-content h3 .fa-info-circle {
+    cursor: help;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+
+.metric-content h3 .fa-info-circle:hover {
+    opacity: 1;
+}
+
+.metric-value {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.metric-period {
+    color: #95a5a6;
+    font-size: 0.8rem;
+}
+
+/* Updated Metrics Dashboard */
+.metrics-dashboard {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.metric-card i {
+    font-size: 2rem;
+    color: #3B82F6;
+    background: #EFF6FF;
+    padding: 1rem;
+    border-radius: 0.75rem;
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-content h3 {
+    color: #4B5563;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.metric-period {
+    font-size: 0.75rem;
+    color: #6B7280;
+}
+
+/* Recent Bookings */
+.recent-bookings {
+    background: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-top: 40px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    color: #2c3e50;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #7f8c8d;
+}
+
+.search-input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    font-size: 0.9rem;
+}
+
+.bookings-table-container {
+    overflow-x: auto;
+}
+
+.bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.bookings-table th,
+.bookings-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.bookings-table th {
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.status-pending {
+    background-color: #ffeeba;
+    color: #856404;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.status-confirmed {
+    background-color: #d4edda;
+    color: #155724;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.status-checked-in {
+    background-color: #cce5ff;
+    color: #004085;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.status-completed {
+    background-color: #e2e3e5;
+    color: #383d41;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .statistics-overview {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .search-container {
+        width: 100%;
+        margin-top: 1rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Enhanced Chart Containers */
+.chart-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.chart-filters {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.chart-select {
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: white;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+.chart-metrics {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.metric {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.metric span {
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.metric strong {
+    font-size: 1.1rem;
+    color: #2c3e50;
+}
+
+.metric strong.positive {
+    color: #2ecc71;
+}
+
+.metric strong.negative {
+    color: #e74c3c;
+}
+
+.chart-footer {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+}
+
+.forecast-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.forecast-info h4 {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0;
+}
+
+.forecast-values {
+    display: flex;
+    gap: 1rem;
+}
+
+.forecast-values span {
+    padding: 0.25rem 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+}
+
+/* Updated Chart Containers */
+.revenue-chart,
+.occupancy-chart {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 1.5rem;
+    height: auto;
+    min-height: 450px;
+}
+
+.revenue-chart:hover,
+.occupancy-chart:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .chart-controls {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .chart-filters {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .chart-select {
+        width: 100%;
+    }
+
+    .chart-metrics {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .forecast-values {
+        flex-wrap: wrap;
+    }
+}
+
+/* Add these styles for proper canvas rendering */
+.canvas-container {
+    position: relative;
+    width: 100%;
+    height: 300px;
+    margin-top: 1rem;
+}
+
+.chart-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% ;
+    height: 100% ;
+}
+
+.room-chart {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    height: auto;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.room-chart:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.room-chart h3 {
+    color: #1e3c72;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f2f5;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.room-chart .canvas-container {
+    flex: 1;
+    position: relative;
+    min-height: 300px;
+    margin-top: 0.5rem;
+}
+
+.room-chart canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Add responsive styles */
+@media (max-width: 768px) {
+    .room-chart {
+        min-height: 350px;
+    }
+    
+    .room-chart .canvas-container {
+        min-height: 250px;
+    }
+}
+
+/* Chart Info Button */
+.chart-info-btn {
+    background: none;
+    border: none;
+    color: #1e3c72;
+    padding: 5px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.chart-info-btn:hover {
+    transform: scale(1.1);
+}
+
+/* Chart Info Modal */
+.chart-info-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.chart-info-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chart-info-content h4 {
+    color: #1e3c72;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.chart-info-body {
+    color: #4a5568;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.chart-info-close {
+    background: #1e3c72;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.chart-info-close:hover {
+    background: #2a5298;
+}
+
+[v-cloak] {
+    display: none;
+}
+
+/* Explanation Button and Modal */
+.chart-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.chart-info-btn,
+.chart-explain-btn {
+    background: none;
+    border: none;
+    padding: 5px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.chart-info-btn {
+    color: #1e3c72;
+}
+
+.chart-explain-btn {
+    color: #f39c12;
+}
+
+.chart-info-btn:hover,
+.chart-explain-btn:hover {
+    transform: scale(1.1);
+}
+
+.chart-explanation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.chart-explanation-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.chart-explanation-content h4 {
+    color: #1e3c72;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f0f2f5;
+}
+
+.chart-explanation-body {
+    color: #4a5568;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.chart-explanation-body h5 {
+    color: #2a4365;
+    border-bottom: 1px solid #e2e8f0;
+    padding-bottom: 0.5rem;
+}
+
+.chart-explanation-body ul {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.chart-explanation-body ul.list-disc li {
+    margin-bottom: 0.5rem;
+}
+
+.chart-explanation-body li {
+    margin-bottom: 0.5rem;
+}
+
+.chart-explanation-body .highlight {
+    color: #1e3c72;
+    font-weight: bold;
+}
+
+.chart-explanation-body .bg-yellow-50 {
+    border-radius: 0.375rem;
+}
+
+.chart-explanation-close {
+    background: #1e3c72;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.chart-explanation-close:hover {
+    background: #2a5298;
+}
+
+/* Add CSS styles for chart hover effects */
+.canvas-container {
+    position: relative;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.canvas-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.chart-container {
+    transition: all 0.3s ease;
+}
+
+.chart-container:hover {
+    z-index: 10;
+}
+
+/* Style the tooltips (these will work with Chart.js tooltips) */
+canvas {
+    cursor: pointer;
+}
+
+/* Custom cursor for charts */
+.chart-container canvas {
+    cursor: crosshair;
+}
+
+/* Add subtle loading animation for charts */
+@keyframes chartFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.canvas-container {
+    animation: chartFadeIn 0.5s ease-out forwards;
+}
+
+/* Stagger the animations for a nice effect */
+.sales-chart .canvas-container { animation-delay: 0.1s; }
+.occupancy-chart .canvas-container { animation-delay: 0.2s; }
+.room-type-chart .canvas-container { animation-delay: 0.3s; }
+.booking-trend-chart .canvas-container { animation-delay: 0.4s; }
+
+/* Add highlight effect for active chart */
+.chart-container.active .canvas-container {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+}
+
+/* Add tooltip for chart actions */
+.chart-info-btn, .chart-explain-btn {
+    position: relative;
+}
+
+.chart-info-btn::after, .chart-explain-btn::after {
+    position: absolute;
+    width: max-content;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    bottom: calc(100% + 5px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 100;
+}
+
+.chart-info-btn:hover::after, .chart-explain-btn:hover::after {
+    opacity: 1;
+}
+
+.chart-info-btn::after {
+    content: "Show chart information";
+}
+
+.chart-explain-btn::after {
+    content: "Explain current data";
+}
+
+/* Add styles for chart explanations */
+.chart-explanation-content {
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.chart-explanation-body {
+    line-height: 1.6;
+}
+
+/* Add highlight effect for data points */
+.chart-highlight {
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { transform: scale(1); }
+    to { transform: scale(1.1); }
+}
+
+/* Add responsive hover effects for mobile */
+@media (max-width: 768px) {
+    .canvas-container:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .chart-container.active .canvas-container {
+        transform: none;
+    }
+}
+
+/* Add specific styles for sales analysis chart */
+.sales-chart {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 450px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.sales-chart .canvas-container {
+    position: relative;
+    flex: 1;
+    min-height: 350px;
+    width: 100%;
+    margin: 1rem 0;
+    padding-bottom: 30px;
+}
+
+.sales-chart canvas {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100% - 30px) !important;
+    max-height: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .sales-chart {
+        min-height: 400px;
+    }
+    
+    .sales-chart .canvas-container {
+        min-height: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sales-chart {
+        min-height: 350px;
+    }
+    
+    .sales-chart .canvas-container {
+        min-height: 250px;
+    }
+}
+
+/* Notification System Styles */
+.notification-bell-btn {
+    transition: color 0.2s ease, transform 0.2s ease;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.notification-bell-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+.notification-bell-btn:active {
+    transform: scale(0.95);
+}
+
+.notification-bell-btn i {
+    animation: bellRing 0.5s ease-in-out;
+}
+
+.notification-bell-btn:hover i {
+    animation: bellRing 0.8s ease-in-out infinite;
+}
+
+@keyframes bellRing {
+    0%, 100% { transform: rotate(0deg); }
+    10%, 30%, 50%, 70%, 90% { transform: rotate(-10deg); }
+    20%, 40%, 60%, 80% { transform: rotate(10deg); }
+}
+
+.notification-badge {
+    font-size: 10px;
+    min-width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.notification-dropdown {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    animation: notificationSlideDown 0.3s ease-out;
+}
+
+@keyframes notificationSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.notification-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.notification-header h3 {
+    color: white;
+    font-weight: 600;
+}
+
+.notification-header button {
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
+}
+
+.notification-header button:hover {
+    color: white;
+}
+
+.notification-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    position: relative;
+}
+
+.notification-item:hover {
+    background-color: #f8fafc;
+    transform: translateX(2px);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item.unread {
+    background-color: #f0f9ff;
+    border-left: 3px solid #3b82f6;
+}
+
+.notification-item.unread::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    right: 16px;
+    width: 8px;
+    height: 8px;
+    background-color: #3b82f6;
+    border-radius: 50%;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.notification-message {
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-bottom: 6px;
+}
+
+.notification-time {
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.notification-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    margin-right: 12px;
+    font-size: 14px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.notification-icon.booking {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.notification-icon.payment {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.notification-icon.cancellation {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.notification-footer {
+    background-color: #f9fafb;
+    border-radius: 0 0 8px 8px;
+}
+
+.notification-footer button {
+    transition: all 0.2s ease;
+}
+
+.notification-footer button:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Notification Modal Styles */
+#notificationModal {
+    backdrop-filter: blur(5px);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+#notificationModal .bg-white {
+    animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+    0% {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+}
+
+.modal-header h2 {
+    color: white;
+}
+
+.modal-header button {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-header button:hover {
+    color: white;
+}
+
+.booking-detail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.booking-detail-item:last-child {
+    border-bottom: none;
+}
+
+.booking-detail-label {
+    font-weight: 600;
+    color: #374151;
+    flex-shrink: 0;
+    min-width: 120px;
+}
+
+.booking-detail-value {
+    color: #6b7280;
+    text-align: right;
+    flex: 1;
+}
+
+.booking-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.booking-status-badge.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.booking-status-badge.confirmed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.booking-status-badge.cancelled {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Responsive Design for Notifications */
+@media (max-width: 768px) {
+    .notification-dropdown {
+        width: 320px;
+        right: -20px;
+    }
+    
+    #notificationModal .bg-white {
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+    }
+    
+    .notification-item {
+        padding: 16px 12px;
+    }
+    
+    .notification-title {
+        font-size: 13px;
+    }
+    
+    .notification-message {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification-dropdown {
+        width: 280px;
+        right: -40px;
+    }
+    
+    .notification-header {
+        padding: 12px 16px;
+    }
+    
+    .notification-header h3 {
+        font-size: 16px;
+    }
+    
+    .dashboard-header .flex {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .notification-bell-btn {
+        align-self: flex-end;
+    }
+}

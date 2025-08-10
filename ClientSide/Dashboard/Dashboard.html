@@ -1,0 +1,2401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Client Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../Homepage/styles.css">
+    <script src="https://raw.githack.com/eKoopmans/html2pdf/master/dist/html2pdf.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css">
+    <!-- Replace the forbidden Font Awesome kit with standard CDN version -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <!-- Print Styles -->
+    <style>
+        @media print {
+            @page {
+                size: letter portrait;
+                margin: 0.5in;
+            }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            
+            /* Compact print styles to fit on one page */
+            #printable-content {
+                font-size: 10pt !important;
+                line-height: 1.2 !important;
+            }
+            
+            #printable-content h1 {
+                font-size: 16pt !important;
+                margin-bottom: 5px !important;
+            }
+            
+            #printable-content h2 {
+                font-size: 14pt !important;
+                margin-bottom: 5px !important;
+            }
+            
+            #printable-content h3 {
+                font-size: 12pt !important;
+                margin-bottom: 4px !important;
+            }
+            
+            #printable-content .border-b {
+                padding-bottom: 3px !important;
+                margin-bottom: 3px !important;
+            }
+            
+            #printable-content .mb-6 {
+                margin-bottom: 10px !important;
+            }
+            
+            #printable-content .p-4, 
+            #printable-content .p-5, 
+            #printable-content .p-6 {
+                padding: 8px !important;
+            }
+            
+            #printable-content .grid {
+                gap: 8px !important;
+            }
+            
+            #printable-content .space-y-3 > * {
+                margin-top: 0 !important;
+                margin-bottom: 4px !important;
+            }
+            
+            #printable-content .mt-6,
+            #printable-content .mt-4 {
+                margin-top: 8px !important;
+            }
+            
+            #printable-content .pt-6,
+            #printable-content .pt-4 {
+                padding-top: 6px !important;
+            }
+        }
+        
+        /* Modal print-specific styles */
+        #bookingModal .bg-gray-50,
+        #bookingModal .bg-blue-50,
+        #bookingModal .bg-green-50,
+        #bookingModal .bg-yellow-50,
+        #bookingModal .bg-red-50 {
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+        }
+        
+        /* Ensure content fits in print layout */
+        @media print {
+            #printable-content {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-analytics.js"></script>
+    
+    <!-- Firebase fallback script (non-module version) -->
+    <script src="../firebase-fallback.js"></script>
+    
+    <!-- Firebase Version Detection and Compatibility Script -->
+    <script>
+      // This script detects the Firebase version and sets up compatibility flags
+      window.firebaseCompat = {
+        isV9: false, // Default to v8
+        firebaseInitialized: false
+      };
+      
+      // Check which Firebase version is loaded
+      if (typeof firebase !== 'undefined') {
+        console.log('Firebase SDK v8 detected');
+        window.firebaseCompat.isV9 = false;
+        
+        // Check if Firebase is already initialized
+        if (firebase.apps && firebase.apps.length > 0) {
+          window.firebaseCompat.firebaseInitialized = true;
+          console.log('Firebase already initialized');
+        }
+      } else {
+        // Might be using v9
+        console.log('Firebase SDK v8 not detected, might be using v9');
+        window.firebaseCompat.isV9 = true;
+      }
+    </script>
+    
+    <script>
+      // Initialize Firebase if not already initialized
+      if (typeof firebase !== 'undefined' && (!firebase.apps || firebase.apps.length === 0)) {
+        var firebaseConfig = {
+          apiKey: "AIzaSyBAJr0JQgWRfGTmSXTK6P7Yn8fkHXG2YeE",
+          authDomain: "lms-app-2b903.firebaseapp.com",
+          projectId: "lms-app-2b903",
+          storageBucket: "lms-app-2b903.appspot.com",
+          messagingSenderId: "1046108373013",
+          appId: "1:1046108373013:web:fc366db1d92b9c4b860e1c",
+          measurementId: "G-WRMW9Z8867"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        console.log("Firebase initialized directly in Dashboard.html");
+        
+        // Make auth and db available globally for non-module scripts
+        window.firebaseAuth = firebase.auth();
+        window.firebaseDb = firebase.firestore();
+        
+        // Also create functions that mimic the AdminSide/firebase.js export style
+        // This ensures compatibility with both module and non-module code
+        window.getFirestoreDb = function() {
+          return window.firebaseDb;
+        };
+        window.getFirebaseAuth = function() {
+          return window.firebaseAuth;
+        };
+      } else {
+        console.log("Firebase already initialized or not available");
+      }
+    </script>
+    
+    <!-- User Drawer fallback script -->
+    <script src="userDrawer-fallback.js?v=1.3"></script>
+    
+    <!-- Booking History script - load this first -->
+    <script src="bookingHistory.js?v=1.3"></script>
+    
+    <!-- Ensure booking history functions are available globally -->
+    <script>
+      (function() {
+        console.log('Checking if booking history functions need to be manually exposed...');
+        
+        // Function to manually expose booking history functions
+        function exposeBookingHistoryFunctions() {
+          // Check if the functions exist but aren't exposed to the global scope
+          if (typeof loadBookingHistory === 'function' && typeof window.loadBookingHistory !== 'function') {
+            console.log('Manually exposing loadBookingHistory to window object');
+            window.loadBookingHistory = loadBookingHistory;
+          }
+          
+          if (typeof navigateToBookingDetails === 'function' && typeof window.navigateToBookingDetails !== 'function') {
+            console.log('Manually exposing navigateToBookingDetails to window object');
+            window.navigateToBookingDetails = navigateToBookingDetails;
+          }
+          
+          // Check if the functions are now available
+          console.log('After manual exposure:');
+          console.log('- window.loadBookingHistory available:', typeof window.loadBookingHistory === 'function');
+          console.log('- window.navigateToBookingDetails available:', typeof window.navigateToBookingDetails === 'function');
+        }
+        
+        // Run immediately
+        exposeBookingHistoryFunctions();
+        
+        // Also run after a short delay to ensure scripts have loaded
+        setTimeout(exposeBookingHistoryFunctions, 100);
+        setTimeout(exposeBookingHistoryFunctions, 500);
+      })();
+    </script>
+    
+    <!-- Test script to verify bookingHistory functions are available -->
+    <script src="bookingHistoryTest.js?v=1.1"></script>
+    
+    <!-- Non-module fallback for dashboard.js (will only execute if module loading fails) -->
+    <script defer src="dashboard.js?v=1.3" id="dashboard-fallback" data-module-fallback="true"></script>
+    
+    <!-- Booking data pre-processor script -->
+    <script>
+      // This script runs early to check for booking data
+      (function() {
+        console.log('Early booking data check running...');
+        
+        // Function to ensure booking data has correct approvedByAdmin flag
+        function ensureCorrectBookingFlags(bookingData) {
+          if (!bookingData) return bookingData;
+          
+          // Make a copy to avoid modifying the original object directly
+          const updatedBooking = {...bookingData};
+          
+          // For confirmed status, ensure approvedByAdmin flag is explicitly set
+          if (updatedBooking.status === 'confirmed' && updatedBooking.approvedByAdmin === undefined) {
+            console.log('Setting explicit approvedByAdmin=false for confirmed booking');
+            updatedBooking.approvedByAdmin = false;
+          }
+          
+          return updatedBooking;
+        }
+        
+        // Function to get URL parameters
+        function getURLParameter(name) {
+          const urlParams = new URLSearchParams(window.location.search);
+          return urlParams.get(name);
+        }
+        
+        // Check if status is provided in URL (from payment page)
+        const urlStatus = getURLParameter('status');
+        console.log('URL status parameter:', urlStatus);
+        
+        // Check for booking data in session storage
+        try {
+          const sessionBookingData = sessionStorage.getItem('bookingData');
+          if (sessionBookingData) {
+            console.log('Found booking data in session storage');
+            let bookingData = JSON.parse(sessionBookingData);
+            
+            // Override status from URL if provided (from payment page)
+            if (urlStatus) {
+              console.log(`Overriding booking status from URL parameter: ${urlStatus}`);
+              bookingData.status = urlStatus;
+            }
+            
+            // Ensure booking flags are correctly set
+            bookingData = ensureCorrectBookingFlags(bookingData);
+            
+            // Store globally for access by dashboard.js
+            window.currentBookingData = bookingData;
+            
+            // Display the booking info early
+            displayBookingDetails(bookingData);
+          } else {
+            console.log('No booking data found in session storage');
+          }
+        } catch (error) {
+          console.error('Error processing session storage booking data:', error);
+        }
+        
+        // Check for booking data in URL parameters
+        const urlBookingId = getURLParameter('bookingId');
+        if (urlBookingId) {
+          console.log(`Found booking ID in URL: ${urlBookingId}`);
+          
+          // The actual data fetch will be handled by dashboard.js
+          // We're just doing early UI preparation here
+        }
+        
+        // Helper function to display booking details in the UI
+        function displayBookingDetails(bookingData) {
+          try {
+            console.log('Displaying booking data in UI:', bookingData);
+            
+            // Update guest name
+            const guestNameElement = document.getElementById('guest-name');
+            if (guestNameElement) {
+              guestNameElement.textContent = bookingData.guestName || 'Guest';
+            }
+            
+            // Update booking status
+            const statusElement = document.getElementById('booking-status');
+            if (statusElement) {
+              const status = bookingData.status || 'pending';
+              let statusMessage = '';
+              
+              switch (status.toLowerCase()) {
+                case 'active':
+                  statusMessage = 'Your booking is confirmed';
+                  statusElement.style.color = '#047857'; // Green
+                  break;
+                case 'confirmed':
+                case 'approved':
+                  // Only treat as confirmed if it's explicitly been approved by admin
+                  if (bookingData.approvedByAdmin === true) {
+                    statusMessage = 'Your booking is confirmed';
+                    statusElement.style.color = '#047857'; // Green
+                  } else {
+                    statusMessage = 'Your booking is pending approval';
+                    statusElement.style.color = '#B45309'; // Amber
+                  }
+                  break;
+                case 'pending':
+                  if (bookingData.paymentStatus === 'rejected') {
+                    statusMessage = 'Your payment has been rejected';
+                    statusElement.style.color = '#DC2626'; // Red
+                  } else {
+                    statusMessage = 'Your booking is pending approval';
+                    statusElement.style.color = '#B45309'; // Amber
+                  }
+                  break;
+                case 'rejected':
+                  statusMessage = 'Your booking has been rejected';
+                  statusElement.style.color = '#DC2626'; // Red
+                  
+                  // Add rejection reason if available
+                  if (bookingData.rejectionReason) {
+                    statusMessage += `: ${bookingData.rejectionReason}`;
+                  }
+                  break;
+                case 'completed':
+                  statusMessage = 'Your stay has been completed';
+                  statusElement.style.color = '#1F2937'; // Gray
+                  break;
+                case 'cancelled':
+                  statusMessage = 'This booking has been cancelled';
+                  statusElement.style.color = '#DC2626'; // Red
+                  break;
+                default:
+                  statusMessage = `Booking status: ${status}`;
+                  statusElement.style.color = '#2563EB'; // Blue
+              }
+              
+              statusElement.textContent = statusMessage;
+            }
+            
+            // Set room details
+            const roomNumberElement = document.getElementById('room-number');
+            if (roomNumberElement) {
+              const propertyDetails = bookingData.propertyDetails || {};
+              const roomNumber = propertyDetails.roomNumber || 
+                                propertyDetails.roomNo || 
+                                propertyDetails.room || 
+                                'N/A';
+              roomNumberElement.textContent = roomNumber;
+            }
+            
+            // Set guest count
+            const guestCountElement = document.getElementById('guest-count');
+            if (guestCountElement) {
+              const guestCount = bookingData.guests || 
+                                bookingData.guestCount || 
+                                bookingData.numberOfGuests || 
+                                1;
+              guestCountElement.textContent = guestCount;
+            }
+            
+            // Format and set dates
+            function formatDate(dateString) {
+              // Handle both Date objects and ISO strings
+              if (!dateString) return 'Not specified';
+              
+              let date;
+              
+              // Handle different date formats
+              if (typeof dateString === 'string') {
+                // ISO string format
+                date = new Date(dateString);
+              } else if (dateString.seconds) {
+                // Firebase timestamp format
+                date = new Date(dateString.seconds * 1000);
+              } else if (dateString.toDate && typeof dateString.toDate === 'function') {
+                // Firestore Timestamp object
+                date = dateString.toDate();
+              } else if (dateString instanceof Date) {
+                // Already a Date object
+                date = dateString;
+              } else {
+                console.error('Unknown date format:', dateString);
+                return 'Invalid Date';
+              }
+              
+              // Check if we have a valid date
+              if (isNaN(date.getTime())) {
+                console.error('Invalid date value:', dateString);
+                return 'Invalid Date';
+              }
+              
+              try {
+                return date.toLocaleDateString('en-US', { 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                });
+              } catch (error) {
+                console.error('Error formatting date:', error);
+                return date.toLocaleDateString();
+              }
+            }
+            
+            const checkInElement = document.getElementById('check-in-date');
+            if (checkInElement && bookingData.checkIn) {
+              checkInElement.textContent = formatDate(bookingData.checkIn);
+            }
+            
+            const checkOutElement = document.getElementById('check-out-date');
+            if (checkOutElement && bookingData.checkOut) {
+              checkOutElement.textContent = formatDate(bookingData.checkOut);
+            }
+            
+            // Format and set price information
+            function formatPrice(price) {
+              if (isNaN(price)) return price;
+              return '₱' + parseFloat(price).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+            }
+            
+            const rateElement = document.getElementById('rate-per-night');
+            if (rateElement) {
+              const rate = bookingData.nightlyRate || 
+                          bookingData.rate || 
+                          bookingData.pricePerNight || 
+                          0;
+              rateElement.textContent = formatPrice(rate);
+            }
+            
+            const totalElement = document.getElementById('total-amount');
+            if (totalElement) {
+              const total = bookingData.totalPrice || 
+                           bookingData.totalAmount || 
+                           bookingData.totalCost || 
+                           0;
+              totalElement.textContent = formatPrice(total);
+            }
+            
+            console.log('Successfully displayed booking information in UI');
+          } catch (error) {
+            console.error('Error displaying booking details:', error);
+          }
+        }
+        
+        // Check URL parameters first
+        function getUrlParams() {
+          const params = {};
+          const searchParams = new URLSearchParams(window.location.search);
+          params.bookingId = searchParams.get('bookingId');
+          
+          // Also check hash params
+          if (window.location.hash && window.location.hash.includes('bookingId=')) {
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            if (!params.bookingId && hashParams.get('bookingId')) {
+              params.bookingId = hashParams.get('bookingId');
+            }
+          }
+          return params;
+        }
+        
+        // Function to wait for DOM to be ready
+        function domReady(callback) {
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', callback);
+          } else {
+            callback();
+          }
+        }
+        
+        const urlParams = getUrlParams();
+        const bookingId = urlParams.bookingId;
+        
+        // Check sessionStorage for backup data first (from payment redirect)
+        const backupData = sessionStorage.getItem('backupBookingData');
+        if (backupData) {
+          console.log('Found backup booking data in sessionStorage');
+          try {
+            const bookingData = JSON.parse(backupData);
+            // Wait for DOM to be ready before updating UI
+            domReady(() => displayBookingDetails(bookingData));
+            // Set current booking for the dashboard.js script to use later
+            window.currentBookingData = bookingData;
+          } catch (error) {
+            console.error('Error parsing backup booking data:', error);
+          }
+        }
+        
+        // Check for booking by ID in URL
+        if (bookingId) {
+          console.log('Found booking ID in URL:', bookingId);
+          
+          // Store it in localStorage for redundancy
+          localStorage.setItem('currentBookingId', bookingId);
+          localStorage.setItem('dashboard_pendingBookingId', bookingId);
+          
+          // Check for stored data in localStorage for this booking
+          const storedBooking = localStorage.getItem('currentBooking');
+          if (storedBooking) {
+            try {
+              const bookingData = JSON.parse(storedBooking);
+              // Only use if the IDs match
+              if (bookingData.id === bookingId) {
+                console.log('Found matching booking in localStorage:', bookingData);
+                domReady(() => displayBookingDetails(bookingData));
+                window.currentBookingData = bookingData;
+              }
+            } catch (error) {
+              console.error('Error parsing stored booking:', error);
+            }
+          }
+          
+          // Check if we have Firebase initialized
+          if (window.firebaseDb) {
+            console.log('Firebase is available - attempting early data fetch');
+            
+            // Try to fetch booking data early
+            window.firebaseDb.collection('everlodgebookings').doc(bookingId).get()
+              .then(doc => {
+                if (doc.exists) {
+                  const data = {
+                    id: doc.id,
+                    ...doc.data()
+                  };
+                  console.log('Early fetch successful, storing booking data', data);
+                  
+                  // Ensure booking flags are correctly set
+                  const processedData = ensureCorrectBookingFlags(data);
+                  
+                  // Store the data
+                  localStorage.setItem('currentBooking', JSON.stringify(processedData));
+                  sessionStorage.setItem('backupBookingData', JSON.stringify(processedData));
+                  
+                  // Update UI with the fetched data
+                  domReady(() => displayBookingDetails(processedData));
+                  
+                  // Make it available for later use
+                  window.currentBookingData = processedData;
+                  
+                  console.log('Early fetch successful, UI updated with booking data');
+                }
+              })
+              .catch(err => console.error('Early fetch failed:', err));
+          }
+        }
+      })();
+    </script>
+    <!-- Replace direct module import with script tag -->
+    <script>
+        // Load user drawer as a module after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Loading userDrawer module...');
+            import('../components/userDrawer.js')
+                .then(module => {
+                    console.log('userDrawer module loaded successfully');
+                    window.initializeUserDrawer = module.initializeUserDrawer;
+                    
+                    // On successful load, force correct Firebase version
+                    if (window.firebaseCompat) {
+                        // Tell module if we're using v8 or v9
+                        console.log('Setting Firebase compatibility mode to:', 
+                                    window.firebaseCompat.isV9 ? 'v9' : 'v8');
+                        
+                        if (typeof window.setFirebaseVersion === 'function') {
+                            window.setFirebaseVersion(window.firebaseCompat.isV9);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load userDrawer module:', error);
+                });
+        });
+    </script>
+
+    <style>
+        /* Essential navbar styles from rooms.html */
+        .main-header {
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            height: 70px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 110;
+            animation: fadeIn 0.5s ease-in-out;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .main-header.scrolled {
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        .logo img {
+            height: 48px;
+        }
+        
+        .nav-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            color: #374151;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .nav-button:hover, .nav-button.active {
+            background-color: #f3f4f6;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+
+        /* Menu button style - added to match Homepage */
+        .menu-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            color: #374151;
+            font-weight: 500;
+            border-radius: 0.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .menu-button:hover {
+            background-color: #f3f4f6;
+        }
+
+        /* Spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
+
+    <!-- Add style for bookings popup to ensure it has a transparent background -->
+    <style>
+        /* Ensure the bookings popup has a transparent background */
+        #bookingsPopup {
+            background-color: transparent !important;
+        }
+        
+        /* Ensure bookingHistoryContainer has transparent background */
+        #bookingHistoryContainer {
+            background-color: transparent !important;
+        }
+        
+        /* Remove any overlay background that might cause the grey screen */
+        .bg-opacity-50 {
+            --tw-bg-opacity: 0 !important;
+        }
+        
+        /* Add shadow to the drawer for better visibility */
+        #bookingsPopup .fixed.right-0 {
+            box-shadow: -2px 0 15px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="text-gray-800 overflow-y-scroll">
+    <!-- New simplified navbar -->
+    <header class="main-header fixed w-full z-[110]">
+      <nav class="container mx-auto h-full px-4 lg:px-6 flex items-center justify-between py-3">
+        <!-- Logo -->
+        <a href="../Homepage/rooms.html" class="logo flex items-center space-x-2">
+          <img src="../components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12">
+        </a>
+
+        <!-- Navigation Links -->
+        <div class="flex items-center space-x-4">
+          <a href="../Homepage/rooms.html" class="nav-button" title="Go to homepage">
+            <i class="ri-home-line"></i>
+            <span>Home</span>
+          </a>
+          <button id="loginButton" class="nav-button">
+            <i class="ri-login-box-line"></i>
+            <span>Log in</span>
+          </button>
+          <button id="userIconBtn" class="menu-button">
+            <i class="ri-menu-line"></i>
+            <i class="ri-user-line"></i>
+          </button>
+        </div>
+      </nav>
+    </header>
+    
+    <!-- Remove the drawer overlay -->
+    <!-- 
+    <div id="drawerOverlay" class="fixed inset-0 bg-black opacity-50 hidden z-40"></div>
+     -->
+    
+    <!-- User Drawer Component -->
+    <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform transition-transform duration-300 z-50 translate-x-full">
+      <div class="drawer-content p-6">
+          <!-- Content will be dynamically inserted by JavaScript -->
+          <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">User Profile</h3>
+            <button id="closeDrawerInner" class="text-gray-500 hover:text-gray-700">
+              <i class="ri-close-line text-2xl"></i>
+            </button>
+          </div>
+          <div class="py-6 text-center">
+            <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <i class="ri-user-line text-2xl text-gray-400"></i>
+            </div>
+            <p class="mb-6">Please sign in to access your profile</p>
+            <a href="../Login/index.html" class="inline-block bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition-colors">
+              Sign In
+            </a>
+            <p class="mt-4 text-xs text-gray-500">
+              Don't have an account? 
+              <a href="../Login/index.html#signup" class="text-blue-600 hover:underline">Sign Up</a>
+            </p>
+          </div>
+      </div>
+    </div>
+
+    <!-- User Drawer Overlay -->
+    <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[199999]" style="z-index: 199999 !important;"></div>
+
+    <div class="min-h-screen bg-cover bg-center bg-fixed" style="background-image: url('../components/marita-kavelashvili-ugnrXk1129g-unsplash.jpg');">
+        <div class="min-h-screen bg-black/40 backdrop-blur-[2px]">
+            <!-- Main Content -->
+            <main class="container mx-auto flex-1 p-8 pt-32">
+                <!-- Enhanced Welcome Section -->
+                <header class="mb-8 bg-white/80 backdrop-blur-md p-8 rounded-2xl shadow-lg border border-white/20">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2">Welcome, <span id="guest-name" class="text-blue-600">Guest</span></h1>
+                    <p class="text-gray-600 text-lg" id="booking-status"></p>
+                </header>
+
+                <!-- Reorganized Grid Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Enhanced Booking Info Card - Spans 2 columns -->
+                    <div class="lg:col-span-2 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border border-white/20">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 bg-blue-100 rounded-lg mr-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-gray-800">Your Stay Details</h2>
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-6">
+                            <div class="space-y-4">
+                                <div class="bg-gray-50 p-4 rounded-xl">
+                                    <p class="text-sm text-gray-500 mb-1">Room Number</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="room-number">---</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-xl">
+                                    <p class="text-sm text-gray-500 mb-1">Number of Guests</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="guest-count">---</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4">
+                                <div class="bg-gray-50 p-4 rounded-xl">
+                                    <p class="text-sm text-gray-500 mb-1">Check-in Date</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="check-in-date">---</p>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-xl">
+                                    <p class="text-sm text-gray-500 mb-1">Check-out Date</p>
+                                    <p class="text-2xl font-bold text-gray-800" id="check-out-date">---</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-6 p-4 bg-blue-50 rounded-xl">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-600">Rate per night</span>
+                                <span class="text-xl font-bold text-blue-600" id="rate-per-night">---</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-gray-600">Total Amount</span>
+                                <span class="text-2xl font-bold text-blue-600" id="total-amount">---</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4 mt-6">
+                            <button id="viewDetailsBtn" class="w-full bg-gray-800 text-white py-3 rounded-xl hover:bg-gray-900 transition-all duration-300 flex items-center justify-center" onclick="window.showBookingDetailsHandler(event)">
+                                <i class="fas fa-file-alt mr-2"></i> View Details
+                            </button>
+                            <button onclick="window.location.href='../Extend/Extend.html'" class="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-all duration-300 flex items-center justify-center">
+                                <i class="fas fa-calendar-plus mr-2"></i> Extend Stay
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Weather Card -->
+                    <div class="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border border-white/20">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 bg-yellow-100 rounded-lg mr-4">
+                                <i id="weather-icon" class="fas fa-spinner fa-spin text-2xl text-yellow-600"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Weather</h2>
+                                <p class="text-gray-500">Baguio City</p>
+                            </div>
+                        </div>
+                        <div class="text-center mb-6">
+                            <div id="current-temp" class="text-5xl font-bold text-gray-800 mb-2">--°C</div>
+                            <div id="weather-description" class="text-xl text-gray-600">Loading...</div>
+                        </div>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="bg-gray-50 p-3 rounded-xl text-center">
+                                <div class="text-sm text-gray-500 mb-1">Rain</div>
+                                <div id="rain-chance" class="text-lg font-bold text-gray-800">-- mm</div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-xl text-center">
+                                <div class="text-sm text-gray-500 mb-1">Feels Like</div>
+                                <div id="feels-like" class="text-lg font-bold text-gray-800">--°C</div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-xl text-center">
+                                <div class="text-sm text-gray-500 mb-1">Precipitation</div>
+                                <div id="precipitation" class="text-lg font-bold text-gray-800">--%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Tourist Guide - Full Width -->
+                    <div class="lg:col-span-3 bg-white/90 backdrop-blur-md rounded-2xl shadow-lg p-8 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl border border-white/20">
+                        <div class="flex items-center mb-6">
+                            <div class="p-3 bg-green-100 rounded-lg mr-4">
+                                <i class="fas fa-map-marked-alt text-2xl text-green-600"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800">Baguio Tourist Guide</h2>
+                                <p class="text-gray-500">Discover the City of Pines</p>
+                            </div>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-6">
+                            <div class="bg-gray-50 p-6 rounded-xl hover:bg-gray-100 transition-all duration-300">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Popular Attractions</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-mountain text-green-600 mr-2"></i>
+                                        Mines View Park
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-tree text-green-600 mr-2"></i>
+                                        Burnham Park
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-campground text-green-600 mr-2"></i>
+                                        Camp John Hay
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-xl hover:bg-gray-100 transition-all duration-300">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Local Markets</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-store text-green-600 mr-2"></i>
+                                        Public Market
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-moon text-green-600 mr-2"></i>
+                                        Night Market
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-shopping-bag text-green-600 mr-2"></i>
+                                        Good Shepherd
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="bg-gray-50 p-6 rounded-xl hover:bg-gray-100 transition-all duration-300">
+                                <h3 class="text-lg font-bold text-gray-800 mb-4">Food Spots</h3>
+                                <ul class="space-y-3">
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-coffee text-green-600 mr-2"></i>
+                                        Cafe by the Ruins
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-utensils text-green-600 mr-2"></i>
+                                        Good Taste
+                                    </li>
+                                    <li class="flex items-center text-gray-600">
+                                        <i class="fas fa-leaf text-green-600 mr-2"></i>
+                                        Oh My Gulay
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <a href="https://www.google.com/maps/search/tourist+spots+in+baguio" 
+                               target="_blank" 
+                               class="w-full bg-green-600 text-white py-4 rounded-xl hover:bg-green-700 transition-all duration-300 flex items-center justify-center text-lg font-semibold">
+                                <i class="fas fa-map-marker-alt mr-2"></i>
+                                Explore All Destinations on Maps
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content sections remain unchanged -->
+                <div class="mt-8 space-y-6">
+
+                    <!-- View Bill Section -->
+                    <div id="view-bill" class="content-section hidden bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-6 transform transition hover:shadow-xl border border-white/20">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">View Bill</h2>
+                        <p class="text-gray-600">Check your current bill to keep track of your expenses.</p>
+                        <button onclick="showBookingDetailsHandler(event);" class="mt-4 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition">
+                            View Details
+                        </button>
+                    </div>
+
+                    <!-- Check Out Section -->
+                    <div id="check-out" class="content-section hidden bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-6 transform transition hover:shadow-xl border border-white/20">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">Check Out</h2>
+                        <p class="text-gray-600">Ready to leave? Check out and finalize your bill.</p>
+                        <button class="mt-4 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition">
+                            Proceed to Checkout
+                        </button>
+                    </div>
+
+                    <!-- Extend Stay Section -->
+                    <div id="extend-stay" class="content-section hidden bg-white/90 backdrop-blur-md rounded-xl shadow-lg p-6 transform transition hover:shadow-xl border border-white/20">
+                        <h2 class="text-2xl font-bold mb-4 text-gray-800">Extend Stay</h2>
+                        <p class="text-gray-600">Want to stay a bit longer? Extend your booking with ease.</p>
+                        <button class="mt-4 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition">
+                            Check Availability
+                        </button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add My Bookings Modal -->
+    <div id="bookingsPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[120]">
+        <div class="fixed right-0 top-0 w-80 h-full bg-white shadow-xl overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-gray-900">My Bookings</h3>
+                    <button id="closeBookingsPopup" class="text-gray-500 hover:text-gray-700">
+                        <i class="ri-close-line text-2xl"></i>
+                    </button>
+                </div>
+                
+                <!-- Booking Tabs -->
+                <div class="flex border-b mb-6">
+                    <button class="flex-1 py-3 text-blue-600 border-b-2 border-blue-600 font-medium" data-tab="current">
+                        Current
+                    </button>
+                    <button class="flex-1 py-3 text-gray-500 font-medium" data-tab="previous">
+                        Previous
+                    </button>
+                    <button class="flex-1 py-3 text-gray-500 font-medium" data-tab="history">
+                        History
+                    </button>
+                </div>
+                
+                <!-- Bookings Content -->
+                <div id="currentBookings" class="space-y-4">
+                    <p class="text-gray-500 text-center py-16">Loading current bookings...</p>
+                </div>
+                
+                <div id="previousBookings" class="hidden space-y-4">
+                    <p class="text-gray-500 text-center py-16">Loading previous bookings...</p>
+                </div>
+
+                <div id="bookingHistoryContainer" class="hidden space-y-4">
+                    <p class="text-gray-500 text-center py-16">Loading booking history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="bookingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50" style="display: none; z-index: 9999;">
+        <!-- Modal content container with flex layout -->
+        <div class="w-full h-full flex items-center justify-center">
+            <!-- Modal content -->
+            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] relative flex flex-col">
+                <!-- Modal header -->
+                <div class="bg-blue-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+                    <h2 class="text-xl font-bold">Booking Confirmation</h2>
+                    <div class="flex flex-col items-end">
+                        <div class="flex space-x-2">
+                            <button id="printBooking" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-sm flex items-center">
+                                <i class="fas fa-print mr-1"></i> Print
+                            </button>
+                            <button id="downloadPDF" class="bg-blue-700 hover:bg-blue-800 text-white px-3 py-1 rounded text-sm flex items-center">
+                                <i class="fas fa-file-pdf mr-1"></i> PDF
+                            </button>
+                            <button id="closeModal" class="ml-2 text-white hover:text-gray-200 focus:outline-none" 
+                                    onclick="closeModal(); return false;" data-dismiss="modal">
+                                <i class="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <span class="text-xs text-blue-200 mt-1">Single-page format for printing and PDF</span>
+                    </div>
+                </div>
+                
+                <!-- Modal content scroll area -->
+                <div id="modalContent" class="p-6 overflow-y-auto flex-grow">
+                    <!-- Add a close button at the bottom for easier access -->
+                    <div class="mt-6 text-center">
+                        <button onclick="closeModal(); return false;" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal with higher z-index -->
+    <div id="settingsPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[300000]" style="z-index: 300000 !important;">
+        <div class="fixed right-0 top-0 w-96 h-full bg-white shadow-xl overflow-y-auto" style="z-index: 300001 !important;">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold">Profile Settings</h3>
+                    <button id="closeSettingsPopup" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <form id="settingsForm" class="space-y-6">
+                    <!-- Profile Picture -->
+                    <div class="flex flex-col items-center space-y-3">
+                        <div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200">
+                            <!-- Profile picture display -->
+                            <img id="profilePictureDisplay" class="w-full h-full object-cover hidden" src="" alt="Profile Picture">
+                            <!-- Default profile icon container -->
+                            <div id="profileIconContainer_settings" class="w-full h-full flex items-center justify-center">
+                                <i class="ri-user-fill text-4xl text-gray-400"></i>
+                            </div>
+                        </div>
+                        <label class="cursor-pointer text-blue-600 hover:text-blue-700 text-sm">
+                            <span>Change Photo</span>
+                            <input type="file" id="profilePictureInput" class="hidden" accept="image/*">
+                        </label>
+                    </div>
+                    
+                    <!-- Full Name -->
+                    <div>
+                        <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <input type="text" id="fullname" name="fullname" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <!-- Email (Read Only) -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                        <input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                    </div>
+                    
+                    <!-- Phone Number -->
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <!-- Email Notifications -->
+                    <div class="flex items-center">
+                        <input type="checkbox" id="emailNotifications" name="emailNotifications" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="emailNotifications" class="ml-2 block text-sm text-gray-700">Receive email notifications for booking updates</label>
+                    </div>
+                    
+                    <!-- Change Password Button -->
+                    <div>
+                        <button type="button" id="changePasswordBtn" class="w-full py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Change Password
+                        </button>
+                    </div>
+                    
+                    <!-- Save Button -->
+                    <div>
+                        <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-900 text-white py-12">
+      <div class="container mx-auto px-6 text-center">
+        <div class="mb-8">
+          <h3 class="text-3xl font-bold text-blue-500 mb-4">LodgeEase</h3>
+          <p class="text-gray-300">Aspiras palispis highway, Baguio City, Benguet, 2600 Philippines</p>
+          <p class="text-gray-300">Contact: +(63) 9129 912 6584 | lodgeease.baguio@email.com</p>
+        </div>
+        <div class="flex justify-center space-x-6">
+          <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+            <i class="fab fa-instagram"></i>
+          </a>
+          <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+            <i class="fab fa-facebook"></i>
+          </a>
+          <a href="#" class="text-2xl text-blue-400 hover:text-white transition-colors">
+            <i class="fab fa-twitter"></i>
+          </a>
+        </div>
+      </div>
+    </footer>
+    
+    <!-- Module loading script -->
+    <script type="module">
+        // Disable the fallback script since we're loading as a module
+        const fallbackScript = document.getElementById('dashboard-fallback');
+        if (fallbackScript) {
+            fallbackScript.setAttribute('data-disabled', 'true');
+            fallbackScript.removeAttribute('src');
+        }
+        
+        // Now load dashboard.js as a module
+        import('./dashboard.js?v=1.3')
+            .then(() => console.log('Dashboard module loaded successfully'))
+            .catch(error => {
+                console.error('Error loading dashboard.js module:', error);
+                // Re-enable fallback if module loading fails
+                if (fallbackScript) {
+                    fallbackScript.removeAttribute('data-disabled');
+                    fallbackScript.setAttribute('src', 'dashboard.js?v=1.3');
+                }
+            });
+    </script>
+    
+    <!-- Load the weather script -->
+    <script src="./weather.js"></script>
+    
+    <!-- View Details Button Handlers -->
+    <script>
+      // Define global formatDate function for use in showBookingDetails
+      window.formatDate = function(dateInput) {
+        if (!dateInput) return '---';
+        
+        let date;
+        
+        // Handle different date formats
+        if (typeof dateInput === 'string') {
+            // ISO string format
+            date = new Date(dateInput);
+        } else if (dateInput.seconds) {
+            // Firebase timestamp format
+            date = new Date(dateInput.seconds * 1000);
+        } else if (dateInput.toDate && typeof dateInput.toDate === 'function') {
+            // Firestore Timestamp object
+            date = dateInput.toDate();
+        } else if (dateInput instanceof Date) {
+            // Already a Date object
+            date = dateInput;
+        } else {
+            console.error('Unknown date format:', dateInput);
+            return 'Invalid Date';
+        }
+        
+        // Check if we have a valid date
+        if (isNaN(date.getTime())) {
+            console.error('Invalid date value:', dateInput);
+            return 'Invalid Date';
+        }
+        
+        try {
+            return date.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return date.toLocaleDateString();
+        }
+      };
+      
+      // Define global closeModal function to ensure it's available
+      window.closeModal = function() {
+        console.log('Global closeModal function called');
+        const modal = document.getElementById('bookingModal');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+        }
+      };
+      
+      // Handler for View Details button click
+      window.showBookingDetailsHandler = function(event) {
+        console.log('View Details button clicked!', event);
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        
+        // Try to get booking data from different sources
+        let bookingData = window.currentBookingData;
+        
+        // If no current booking data, try to get from localStorage
+        if (!bookingData) {
+            try {
+                const storedBooking = localStorage.getItem('currentBooking');
+                if (storedBooking) {
+                    bookingData = JSON.parse(storedBooking);
+                    window.currentBookingData = bookingData;
+                    console.log('Retrieved booking data from localStorage:', bookingData);
+                }
+            } catch (error) {
+                console.error('Error retrieving booking data from localStorage:', error);
+            }
+        }
+        
+        if (bookingData) {
+            console.log('Attempting to show booking details');
+            window.showBookingDetails(bookingData);
+        } else {
+            console.error('No booking data available to display');
+            alert('No booking information available to display. Please refresh the page and try again.');
+        }
+        
+        return false;
+      };
+      
+      // Function to display booking details in modal
+      window.showBookingDetails = function(booking) {
+        console.log('showBookingDetails called with booking:', booking);
+        
+        // Get the modal element
+        const modal = document.getElementById('bookingModal');
+        if (!modal) {
+            console.error('Modal element not found - cannot find #bookingModal');
+            alert('Error: Cannot find the booking details modal. Please contact support.');
+            return;
+        }
+        
+        // Get or create the modal content
+        let modalContent = document.getElementById('modalContent');
+        if (!modalContent) {
+            console.error('Modal content element not found - cannot find #modalContent');
+            alert('Error: Cannot find the modal content area. Please contact support.');
+            return;
+        }
+
+        try {
+            // Use the exact totalPrice value without modification
+            const totalAmount = parseFloat(booking.totalPrice || 0);
+            
+            // Set the content of the modal with the booking details
+            modalContent.innerHTML = `
+                <style>
+                    @media print {
+                        body { margin: 0; padding: 0; }
+                        #printable-content { padding: 0.5in; max-width: 7.5in; margin: 0 auto; }
+                        .print-section { margin-bottom: 12px; }
+                        
+                        /* Color overrides for better printing */
+                        .bg-primary-50 { background-color: #f0f7ff !important; }
+                        .text-primary { color: #2563eb !important; }
+                        .status-badge { 
+                            border: 1px solid currentColor !important;
+                            padding: 2px 6px !important;
+                        }
+                    }
+                </style>
+                <div id="printable-content" class="relative bg-white p-6 max-w-3xl mx-auto">
+                    <!-- Header with logo -->
+                    <div class="text-center mb-5">
+                        <div class="flex items-center justify-center mb-2">
+                            <img src="https://lms-app-2b903.web.app/components/LodgeEaseLogo.png" alt="LodgeEase" class="h-12 w-12 mr-2">
+                            <h1 class="text-xl font-bold text-primary text-blue-600">LodgeEase</h1>
+                        </div>
+                        <p class="text-sm text-gray-600">Aspiras Palispis Highway, Baguio City</p>
+                        <h2 class="text-xl font-bold text-gray-800 mt-3">BOOKING CONFIRMATION</h2>
+                    </div>
+                    
+                    <hr class="border-t border-gray-200 my-4">
+                    
+                    <!-- Booking Reference and Status -->
+                    <div class="mb-6">
+                        <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-2">
+                            <div class="mb-2 md:mb-0">
+                                <span class="text-gray-700 font-medium">Booking Reference:</span>
+                                <span class="font-mono font-bold ml-2">${booking.id || '---'}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-700 font-medium">Status:</span>
+                                <span class="status-badge font-medium ml-2 px-2 py-0.5 rounded ${
+                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-red-600' : 
+                                    booking.status === 'pending' ? 'text-yellow-600' : 
+                                    booking.status === 'approved' ? 'text-green-600' : 
+                                    booking.status === 'confirmed' && booking.approvedByAdmin === true ? 'text-green-600' :
+                                    booking.status === 'confirmed' ? 'text-yellow-600' : 'text-blue-600'
+                                }">
+                                    ${booking.status ? (
+                                        booking.status === 'approved' ? 'Confirmed' : 
+                                        booking.status === 'confirmed' && booking.approvedByAdmin === true ? 'Confirmed' :
+                                        booking.status === 'confirmed' ? 'Pending Approval' :
+                                        booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+                                    ) : 'Unknown'}
+                                </span>
+                            </div>
+                        </div>
+                        ${booking.paymentStatus ? `
+                        <div>
+                            <span class="text-gray-700 font-medium">Payment:</span>
+                            <span class="status-badge font-medium ml-2 px-2 py-0.5 rounded ${
+                                booking.paymentStatus === 'approved' || booking.paymentStatus === 'verified' || booking.paymentStatus === 'paid' ? 'text-green-600' : 
+                                booking.paymentStatus === 'pending' ? 'text-yellow-600' : 'text-red-600'
+                            }">
+                                ${booking.paymentStatus.charAt(0).toUpperCase() + 
+                                booking.paymentStatus.slice(1)}
+                            </span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <!-- Guest Information -->
+                        <div class="border border-gray-200 rounded p-4">
+                            <h3 class="font-semibold text-gray-800 border-b pb-2 mb-3">Guest Information</h3>
+                            <p class="font-medium">${booking.guestName || '---'}</p>
+                            <p class="text-gray-600">${booking.email || '---'}</p>
+                            <p class="text-gray-600 mt-2">Number of Guests: ${booking.guests || '---'}</p>
+                        </div>
+                        
+                        <!-- Hotel Information -->
+                        <div class="border border-gray-200 rounded p-4">
+                            <h3 class="font-semibold text-gray-800 border-b pb-2 mb-3">Hotel Information</h3>
+                            <p class="font-medium">LodgeEase Hotel</p>
+                            <p class="text-gray-600">Aspiras Palispis Highway</p>
+                            <p class="text-gray-600">Baguio City, 2600</p>
+                            <p class="text-gray-600 mt-2">+63 912 991 2658</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Stay Details -->
+                    <div class="bg-blue-50 border border-blue-100 rounded p-4 mb-6">
+                        <h3 class="font-semibold text-blue-800 border-b border-blue-200 pb-2 mb-3">Stay Details</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-white rounded p-3 shadow-sm">
+                                <p class="text-gray-600 text-sm">Check-in Date</p>
+                                <p class="font-bold text-gray-800 text-lg">${window.formatDate(booking.checkIn)}</p>
+                                <p class="text-sm text-gray-500">After 2:00 PM</p>
+                            </div>
+                            <div class="bg-white rounded p-3 shadow-sm">
+                                <p class="text-gray-600 text-sm">Check-out Date</p>
+                                <p class="font-bold text-gray-800 text-lg">${window.formatDate(booking.checkOut)}</p>
+                                <p class="text-sm text-gray-500">Before 12:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Details -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-800 border-b pb-2 mb-3">Room Details</h3>
+                        <table class="w-full border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="text-left p-2 border border-gray-200">Room Number</th>
+                                    <th class="text-left p-2 border border-gray-200">Room Type</th>
+                                    <th class="text-right p-2 border border-gray-200">Rate/Night</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="p-2 border border-gray-200 font-medium">${booking.propertyDetails ? booking.propertyDetails.roomNumber || '---' : '---'}</td>
+                                    <td class="p-2 border border-gray-200">${booking.propertyDetails ? booking.propertyDetails.roomType || '---' : '---'}</td>
+                                    <td class="p-2 border border-gray-200 text-right">₱${booking.nightlyRate ? booking.nightlyRate.toLocaleString() : '---'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Total Amount -->
+                    <div class="bg-gray-800 text-white rounded p-4 mb-6">
+                        <div class="flex justify-between items-center">
+                            <span class="font-medium">Total Amount</span>
+                            <span class="font-bold text-xl">₱${totalAmount.toLocaleString()}</span>
+                        </div>
+                    </div>
+                    
+                    <hr class="border-t border-gray-200 my-4">
+                    
+                    <!-- Footer Notes -->
+                    <div class="text-center">
+                        <p class="font-medium text-gray-800 mb-2">Please present this booking confirmation upon check-in</p>
+                        <p class="text-sm text-gray-600">Check-in time is 2:00 PM. Early check-in is subject to availability.</p>
+                        <p class="text-sm text-gray-600">Check-out time is 12:00 PM. Late check-out may incur additional charges.</p>
+                        <p class="text-sm text-gray-600 mt-2">For inquiries, contact: +63 912 991 2658</p>
+                        <div class="mt-3 text-xs text-gray-500">
+                            <p>Booking Reference: ${booking.id || 'N/A'}</p>
+                            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Bottom close button -->
+                <div class="mt-6 text-center">
+                    <button onclick="closeModal(); return false;" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Close
+                    </button>
+                </div>
+            `;
+            
+            // IMPORTANT: Show the modal
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            
+            // Set up print functionality
+            const printBooking = document.getElementById('printBooking');
+            if (printBooking) {
+                // Remove existing listeners
+                const newPrintBtn = printBooking.cloneNode(true);
+                printBooking.parentNode.replaceChild(newPrintBtn, printBooking);
+                
+                newPrintBtn.addEventListener('click', function() {
+                    const printSection = document.getElementById('printable-content');
+                    if (!printSection) return;
+                    
+                    const printWindow = window.open('', '', 'width=800,height=600');
+                    printWindow.document.write(`
+                        <!DOCTYPE html>
+                        <html>
+                            <head>
+                                <title>Booking Confirmation - ${booking.id || 'LodgeEase'}</title>
+                                <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+                                <style>
+                                    @page {
+                                        size: letter portrait;
+                                        margin: 0.5in;
+                                    }
+                                    body {
+                                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                        line-height: 1.5;
+                                        color: #333;
+                                        margin: 0;
+                                        padding: 0;
+                                    }
+                                    .container {
+                                        max-width: 7.5in;
+                                        margin: 0 auto;
+                                        padding: 0.25in;
+                                    }
+                                    table {
+                                        width: 100%;
+                                        border-collapse: collapse;
+                                        margin-bottom: 1rem;
+                                    }
+                                    th, td {
+                                        border: 1px solid #ddd;
+                                        padding: 8px;
+                                    }
+                                    th {
+                                        background-color: #f8f9fa;
+                                        text-align: left;
+                                    }
+                                    .text-right {
+                                        text-align: right;
+                                    }
+                                    .logo {
+                                        display: block;
+                                        margin: 0 auto;
+                                        height: 60px;
+                                    }
+                                    h1, h2 {
+                                        text-align: center;
+                                        margin-bottom: 0.5rem;
+                                    }
+                                    hr {
+                                        border: 0;
+                                        border-top: 1px solid #eee;
+                                        margin: 1rem 0;
+                                    }
+                                    .header {
+                                        text-align: center;
+                                        margin-bottom: 1rem;
+                                    }
+                                    .details-section {
+                                        margin-bottom: 1rem;
+                                        padding: 0.5rem;
+                                        border: 1px solid #ddd;
+                                        border-radius: 4px;
+                                    }
+                                    .details-title {
+                                        font-weight: bold;
+                                        border-bottom: 1px solid #eee;
+                                        padding-bottom: 0.25rem;
+                                        margin-bottom: 0.5rem;
+                                    }
+                                    .stay-details {
+                                        background-color: #f0f7ff;
+                                        border: 1px solid #dbeafe;
+                                    }
+                                    .total-amount {
+                                        background-color: #1f2937;
+                                        color: white;
+                                        padding: 0.5rem;
+                                        border-radius: 4px;
+                                        display: flex;
+                                        justify-content: space-between;
+                                        margin-bottom: 1rem;
+                                    }
+                                    .footer {
+                                        text-align: center;
+                                        font-size: 0.8rem;
+                                        color: #666;
+                                        margin-top: 1rem;
+                                    }
+                                    .status-badge {
+                                        border: 1px solid currentColor;
+                                        border-radius: 4px;
+                                        padding: 2px 6px;
+                                        font-weight: 500;
+                                    }
+                                    .text-green { color: #059669; }
+                                    .text-yellow { color: #d97706; }
+                                    .text-red { color: #dc2626; }
+                                    .text-blue { color: #2563eb; }
+                                </style>
+                            </head>
+                            <body onload="window.print(); window.setTimeout(function(){ window.close(); }, 500);">
+                                <div class="container">
+                                    <div class="header">
+                                        <img src="https://lms-app-2b903.web.app/components/LodgeEaseLogo.png" alt="LodgeEase" class="logo">
+                                        <h1 style="color: #2563eb;">LodgeEase</h1>
+                                        <p>Aspiras Palispis Highway, Baguio City</p>
+                                        <h2>BOOKING CONFIRMATION</h2>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <div style="margin-bottom: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <div>
+                                                <span style="font-weight: 500;">Booking Reference:</span>
+                                                <span style="font-family: monospace; font-weight: bold;">${booking.id || '---'}</span>
+                                            </div>
+                                            <div>
+                                                <span style="font-weight: 500;">Status:</span>
+                                                <span class="status-badge ${
+                                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-red' : 
+                                                    booking.status === 'pending' ? 'text-yellow' : 
+                                                    booking.status === 'approved' ? 'text-green' : 
+                                                    booking.status === 'confirmed' && booking.approvedByAdmin === true ? 'text-green' :
+                                                    booking.status === 'confirmed' ? 'text-yellow' : 'text-blue'
+                                                }">
+                                                    ${booking.status ? (
+                                                        booking.status === 'approved' ? 'Confirmed' : 
+                                                        booking.status === 'confirmed' && booking.approvedByAdmin === true ? 'Confirmed' :
+                                                        booking.status === 'confirmed' ? 'Pending Approval' :
+                                                        booking.status.charAt(0).toUpperCase() + booking.status.slice(1)
+                                                    ) : 'Unknown'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        ${booking.paymentStatus ? `
+                                        <div>
+                                            <span style="font-weight: 500;">Payment:</span>
+                                            <span class="status-badge ${
+                                                booking.paymentStatus === 'approved' || booking.paymentStatus === 'verified' || booking.paymentStatus === 'paid' ? 'text-green' : 
+                                                booking.paymentStatus === 'pending' ? 'text-yellow' : 'text-red'
+                                            }">
+                                                ${booking.paymentStatus.charAt(0).toUpperCase() + 
+                                                booking.paymentStatus.slice(1)}
+                                            </span>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                                        <div class="details-section">
+                                            <div class="details-title">Guest Information</div>
+                                            <p style="font-weight: 500;">${booking.guestName || '---'}</p>
+                                            <p>${booking.email || '---'}</p>
+                                            <p style="margin-top: 0.5rem;">Number of Guests: ${booking.guests || '---'}</p>
+                                        </div>
+                                        
+                                        <div class="details-section">
+                                            <div class="details-title">Hotel Information</div>
+                                            <p style="font-weight: 500;">LodgeEase Hotel</p>
+                                            <p>Aspiras Palispis Highway</p>
+                                            <p>Baguio City, 2600</p>
+                                            <p style="margin-top: 0.5rem;">+63 912 991 2658</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="details-section stay-details" style="margin-bottom: 1rem;">
+                                        <div class="details-title" style="color: #1e40af;">Stay Details</div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                            <div style="background-color: white; padding: 0.75rem; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                <p style="color: #6b7280; font-size: 0.875rem;">Check-in Date</p>
+                                                <p style="font-weight: bold; font-size: 1.125rem;">${window.formatDate(booking.checkIn)}</p>
+                                                <p style="font-size: 0.875rem; color: #6b7280;">After 2:00 PM</p>
+                                            </div>
+                                            <div style="background-color: white; padding: 0.75rem; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                                <p style="color: #6b7280; font-size: 0.875rem;">Check-out Date</p>
+                                                <p style="font-weight: bold; font-size: 1.125rem;">${window.formatDate(booking.checkOut)}</p>
+                                                <p style="font-size: 0.875rem; color: #6b7280;">Before 12:00 PM</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-bottom: 1rem;">
+                                        <div class="details-title">Room Details</div>
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Room Number</th>
+                                                    <th>Room Type</th>
+                                                    <th class="text-right">Rate/Night</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td style="font-weight: 500;">${booking.propertyDetails ? booking.propertyDetails.roomNumber || '---' : '---'}</td>
+                                                    <td>${booking.propertyDetails ? booking.propertyDetails.roomType || '---' : '---'}</td>
+                                                    <td class="text-right">₱${booking.nightlyRate ? booking.nightlyRate.toLocaleString() : '---'}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="total-amount">
+                                        <span style="font-weight: 500;">Total Amount</span>
+                                        <span style="font-weight: 700; font-size: 1.25rem;">₱${totalAmount.toLocaleString()}</span>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <div class="footer">
+                                        <p style="font-weight: 500; color: #333;">Please present this booking confirmation upon check-in</p>
+                                        <p>Check-in time is 2:00 PM. Early check-in is subject to availability.</p>
+                                        <p>Check-out time is 12:00 PM. Late check-out may incur additional charges.</p>
+                                        <p style="margin-top: 0.5rem;">For inquiries, contact: +63 912 991 2658</p>
+                                        <div style="margin-top: 0.75rem; font-size: 0.75rem; color: #6b7280;">
+                                            <p>Booking Reference: ${booking.id || 'N/A'}</p>
+                                            <p>Generated on: ${new Date().toLocaleDateString()}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </body>
+                        </html>
+                    `);
+                    printWindow.document.close();
+                });
+            }
+            
+            // Set up PDF download
+            const downloadPDF = document.getElementById('downloadPDF');
+            if (downloadPDF) {
+                // Remove existing listeners
+                const newDownloadBtn = downloadPDF.cloneNode(true);
+                downloadPDF.parentNode.replaceChild(newDownloadBtn, downloadPDF);
+                
+                newDownloadBtn.addEventListener('click', function() {
+                    const printSection = document.getElementById('printable-content');
+                    if (!printSection) return;
+                    
+                    const pdfOptions = {
+                        margin: [0.5, 0.5, 0.5, 0.5],
+                        filename: `booking-confirmation-${booking.id || 'default'}.pdf`,
+                        image: { type: 'jpeg', quality: 0.95 },
+                        html2canvas: { 
+                            scale: 2,
+                            useCORS: true,
+                            letterRendering: true
+                        },
+                        jsPDF: { 
+                            unit: 'in', 
+                            format: 'letter', 
+                            orientation: 'portrait'
+                        },
+                        pagebreak: { mode: 'avoid-all' }
+                    };
+                    
+                    // Create a styled version for PDF
+                    const pdfContainer = document.createElement('div');
+                    pdfContainer.innerHTML = `
+                        <style>
+                            body {
+                                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                line-height: 1.5;
+                                color: #333;
+                            }
+                            .container { max-width: 7.5in; margin: 0 auto; padding: 0.5in; }
+                            table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+                            th, td { border: 1px solid #ddd; padding: 8px; }
+                            th { background-color: #f8f9fa; text-align: left; }
+                            .text-right { text-align: right; }
+                            h1, h2 { text-align: center; margin-bottom: 0.5rem; }
+                            hr { border-top: 1px solid #eee; margin: 1rem 0; }
+                            .header { text-align: center; margin-bottom: 1rem; }
+                            .details-section { margin-bottom: 1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; }
+                            .stay-details { background-color: #f0f7ff; border: 1px solid #dbeafe; }
+                            .total-amount { background-color: #1f2937; color: white; padding: 0.5rem; border-radius: 4px; }
+                            .footer { text-align: center; font-size: 0.8rem; color: #666; margin-top: 1rem; }
+                            .status-badge { border: 1px solid currentColor; border-radius: 4px; padding: 2px 6px; font-weight: 500; }
+                            .status-pending { color: #d97706; }
+                            .status-confirmed { color: #059669; }
+                            .status-rejected { color: #dc2626; }
+                        </style>
+                        ${printSection.outerHTML}
+                    `;
+                    
+                    // Generate PDF
+                    html2pdf().from(pdfContainer).set(pdfOptions).save();
+                });
+            }
+            
+            // Set up close button handlers
+            const closeModalBtns = document.querySelectorAll('#closeModal, button[onclick*="closeModal"]');
+            closeModalBtns.forEach(btn => {
+                // Remove existing listeners
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeModal();
+                    return false;
+                });
+            });
+            
+            // Set up click outside to close
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeModal();
+                }
+            });
+        } catch (error) {
+            console.error('Error showing booking details:', error);
+            alert(`Error showing booking details: ${error.message}`);
+        }
+      };
+      
+      // Create a sample booking if no booking data is available after page loads
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            if (!window.currentBookingData) {
+                console.log('No booking data found, creating sample data');
+                const testData = {
+                    id: 'test-booking-' + Date.now(),
+                    guestName: 'Sample Guest',
+                    email: 'guest@example.com',
+                    status: 'confirmed',
+                    paymentStatus: 'verified',
+                    guests: 1,
+                    propertyDetails: {
+                        roomNumber: '01',
+                        roomType: 'Deluxe Room'
+                    },
+                    checkIn: new Date('2025-05-21').toISOString(),
+                    checkOut: new Date('2025-05-22').toISOString(),
+                    nightlyRate: 1300,
+                    totalPrice: 1300
+                };
+                
+                console.log('Created test booking data:', testData);
+                localStorage.setItem('currentBooking', JSON.stringify(testData));
+                window.currentBookingData = testData;
+            }
+        }, 1000);
+      });
+    </script>
+    
+    <!-- User Drawer Initialization Script -->
+    <script>
+      // Override the initializeUserDrawer function to ensure we pass the correct Firestore object
+      const originalInitializeUserDrawer = window.initializeUserDrawer;
+      if (typeof originalInitializeUserDrawer === 'function') {
+        window.initializeUserDrawer = function(auth, db) {
+          console.log('Wrapper initializeUserDrawer called with:', !!auth, !!db);
+          
+          // If db is a function (from AdminSide/firebase.js), call it to get the actual db object
+          let firestoreDb = db;
+          if (typeof db === 'function') {
+            try {
+              firestoreDb = db();
+              console.log('Successfully called db() function to get Firestore instance');
+            } catch (error) {
+              console.error('Error calling db() function:', error);
+              // Fall back to window.firebaseDb if available
+              if (window.firebaseDb) {
+                console.log('Falling back to window.firebaseDb');
+                firestoreDb = window.firebaseDb;
+              }
+            }
+          }
+          
+          // Call the original function with the unwrapped Firestore object
+          originalInitializeUserDrawer(auth, firestoreDb);
+        };
+        console.log('Wrapped initializeUserDrawer function to handle Firestore properly');
+      }
+    </script>
+
+    <!-- Immediate UserDrawer Init Script -->
+    <script>
+      // Try to initialize the user drawer immediately if it wasn't done by dashboard.js
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          if (!window.userDrawerInitialized) {
+            console.log('UserDrawer not initialized by dashboard.js, trying direct init...');
+            
+            // Set Firebase compatibility flag manually if available
+            if (window.setFirebaseVersion && window.firebaseCompat) {
+              window.setFirebaseVersion(window.firebaseCompat.isV9);
+              console.log('Set Firebase version flag to v' + (window.firebaseCompat.isV9 ? '9' : '8'));
+            }
+            
+            // Get Firebase instances
+            let auth = null;
+            let db = null;
+            
+            // Try different sources for Firebase instances
+            if (window.firebaseAuth) {
+              auth = window.firebaseAuth;
+            } else if (window.firebase && window.firebase.auth) {
+              auth = window.firebase.auth();
+            }
+            
+            // Be more explicit about getting a valid Firestore instance
+            try {
+              // Try global variables first
+              if (window.firebaseDb) {
+                console.log('Using window.firebaseDb');
+                db = window.firebaseDb;
+              } else if (window.firebase && window.firebase.firestore) {
+                console.log('Using window.firebase.firestore()');
+                db = window.firebase.firestore();
+              } else if (typeof getFirestoreDb === 'function') {
+                console.log('Using getFirestoreDb()');
+                db = getFirestoreDb();
+              }
+              
+              // Validate the db instance
+              if (!db || typeof db.collection !== 'function') {
+                console.log('Invalid db instance, trying to initialize Firebase directly');
+                
+                // Try to initialize Firebase directly as a last resort
+                if (typeof firebase !== 'undefined' && (!firebase.apps || !firebase.apps.length)) {
+                  console.log('Initializing Firebase directly');
+                  firebase.initializeApp({
+                    apiKey: "AIzaSyBAJr0JQgWRfGTmSXTK6P7Yn8fkHXG2YeE",
+                    authDomain: "lms-app-2b903.firebaseapp.com",
+                    projectId: "lms-app-2b903",
+                    storageBucket: "lms-app-2b903.appspot.com",
+                    messagingSenderId: "1046108373013",
+                    appId: "1:1046108373013:web:fc366db1d92b9c4b860e1c",
+                    measurementId: "G-WRMW9Z8867"
+                  });
+                  
+                  // Get auth and firestore instances
+                  auth = firebase.auth();
+                  db = firebase.firestore();
+                  
+                  // Make them available globally
+                  window.firebaseAuth = auth;
+                  window.firebaseDb = db;
+                }
+              }
+            } catch (error) {
+              console.error('Error getting Firestore instance:', error);
+            }
+            
+            if (auth && db) {
+              console.log('Got Firebase instances, initializing UserDrawer directly');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(auth, db);
+              }
+            } else {
+              console.error('Failed to get Firebase instances for direct UserDrawer init');
+            }
+          }
+        }, 1000); // Wait for 1 second to ensure dashboard.js had time to initialize
+      });
+    </script>
+
+    <!-- Auth Check Script - Ensure login button visibility is updated immediately -->
+    <script>
+      // Force auth check multiple times to ensure login button visibility is updated correctly
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Running immediate auth check for login button visibility');
+        
+        // Function to update login button visibility directly
+        function checkAndUpdateLoginVisibility() {
+          console.log('Running auth check...');
+          
+          // Try to get the current user from any available Firebase auth source
+          let currentUser = null;
+          
+          // Check different possible auth sources in order of likelihood
+          if (window.currentUser) {
+            currentUser = window.currentUser;
+            console.log('Auth from window.currentUser:', currentUser ? 'User logged in' : 'No user');
+          }
+          
+          if (!currentUser && window.firebase && window.firebase.auth) {
+            currentUser = window.firebase.auth().currentUser;
+            console.log('Auth from window.firebase:', currentUser ? 'User logged in' : 'No user');
+          }
+          
+          if (!currentUser && window.firebaseAuth) {
+            currentUser = window.firebaseAuth.currentUser;
+            console.log('Auth from window.firebaseAuth:', currentUser ? 'User logged in' : 'No user');
+          }
+          
+          if (!currentUser && window.firebaseModule && window.firebaseModule.auth) {
+            currentUser = window.firebaseModule.auth.currentUser;
+            console.log('Auth from window.firebaseModule:', currentUser ? 'User logged in' : 'No user');
+          }
+          
+          // Try more direct checks with getAuth if it exists
+          try {
+            if (!currentUser && typeof getFirebaseAuth === 'function') {
+              const auth = getFirebaseAuth();
+              if (auth) {
+                currentUser = auth.currentUser;
+                console.log('Auth from getFirebaseAuth():', currentUser ? 'User logged in' : 'No user');
+              }
+            }
+          } catch (e) {
+            console.log('Error checking getFirebaseAuth():', e);
+          }
+          
+          // Update login button visibility based on auth state
+          const loginButton = document.getElementById('loginButton');
+          const mobileLoginButton = document.getElementById('mobileLoginButton');
+          const userIconBtn = document.getElementById('userIconBtn');
+          
+          if (currentUser) {
+            console.log('User is logged in, hiding login buttons');
+            
+            if (loginButton) {
+              loginButton.classList.add('hidden');
+            }
+            
+            if (mobileLoginButton) {
+              mobileLoginButton.classList.add('hidden');
+            }
+            
+            if (userIconBtn) {
+              userIconBtn.classList.remove('hidden');
+            }
+          } else {
+            console.log('No user logged in, showing login buttons');
+            
+            if (loginButton) {
+              loginButton.classList.remove('hidden');
+            }
+            
+            if (mobileLoginButton) {
+              mobileLoginButton.classList.remove('hidden');
+            }
+            
+            if (userIconBtn) {
+              userIconBtn.classList.add('hidden');
+            }
+          }
+        }
+        
+        // Run the check immediately
+        checkAndUpdateLoginVisibility();
+        
+        // Run it again after a series of delays to ensure it runs after Firebase is fully initialized
+        setTimeout(checkAndUpdateLoginVisibility, 500);
+        setTimeout(checkAndUpdateLoginVisibility, 1000);
+        setTimeout(checkAndUpdateLoginVisibility, 2000);
+        setTimeout(checkAndUpdateLoginVisibility, 5000);
+      });
+    </script>
+
+    <!-- Fix for Bookings Popup Close Button -->
+    <script>
+      // Add an extra event listener for the bookings popup close button
+      document.addEventListener('DOMContentLoaded', function() {
+        // Wait a moment to ensure everything is loaded
+        setTimeout(function() {
+          console.log('Setting up extra bookings popup close handler');
+          
+          // Find the close button
+          const closeBtn = document.querySelector('#closeBookingsPopup');
+          if (closeBtn) {
+            console.log('Found bookings popup close button, adding backup event listener');
+            
+            // Add a direct click handler
+            closeBtn.onclick = function(e) {
+              console.log('Extra close button onclick triggered');
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // Get the bookings popup
+              const bookingsPopup = document.getElementById('bookingsPopup');
+              if (bookingsPopup) {
+                bookingsPopup.classList.add('hidden');
+                console.log('Bookings popup hidden by extra handler');
+              }
+              
+              return false;
+            };
+            
+            // Also try adding a global click handler
+            document.addEventListener('click', function(e) {
+              if (e.target && (e.target === closeBtn || closeBtn.contains(e.target) || e.target.closest('#closeBookingsPopup'))) {
+                console.log('Global document click handler caught close button click');
+                
+                // Get the bookings popup
+                const bookingsPopup = document.getElementById('bookingsPopup');
+                if (bookingsPopup) {
+                  bookingsPopup.classList.add('hidden');
+                  console.log('Bookings popup hidden by global handler');
+                }
+                
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            });
+          } else {
+            console.log('Bookings popup close button not found yet, will try again later');
+            
+            // Try again after another delay
+            setTimeout(function() {
+              const closeBtn = document.querySelector('#closeBookingsPopup');
+              if (closeBtn) {
+                console.log('Found bookings popup close button on second attempt');
+                
+                closeBtn.addEventListener('click', function(e) {
+                  console.log('Second attempt click handler triggered');
+                  
+                  // Get the bookings popup
+                  const bookingsPopup = document.getElementById('bookingsPopup');
+                  if (bookingsPopup) {
+                    bookingsPopup.classList.add('hidden');
+                    console.log('Bookings popup hidden by second attempt handler');
+                  }
+                  
+                  e.preventDefault();
+                  e.stopPropagation();
+                });
+              }
+            }, 2000);
+          }
+        }, 1000);
+      });
+    </script>
+    
+    <!-- Script to remove debug elements -->
+    <script>
+      // Function to remove debug-related elements that might be dynamically added
+      function removeDebugElements() {
+        // Debug elements we want to remove (by selector)
+        const debugSelectors = [
+          '.fixed.top-20.right-4.bg-yellow-500', // Fix Booking Status button
+          '.fixed.bottom-4.right-4.bg-red-500', // Clear Cache & Reload button
+          '.fixed.bottom-4.left-4.bg-gray-800', // Debug Tools panel
+          '[id^="debug"]', // Any element with an ID starting with "debug"
+          '[class*="debug-"]', // Any element with a class containing "debug-"
+          '[id="Debug Tools"]', // Debug tools element
+          'div#debugPanel', // Debug panel
+        ];
+        
+        // Remove any matching elements
+        debugSelectors.forEach(selector => {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(el => {
+            console.log('Removing debug element:', el);
+            el.remove();
+          });
+        });
+      }
+      
+      // Function to automatically fix booking status display
+      function fixBookingStatus() {
+        // Check if we have booking data
+        if (window.currentBookingData) {
+          // Make a copy of the booking data
+          const updatedBooking = {...window.currentBookingData};
+          
+          // Ensure approvedByAdmin is explicitly set to false for confirmed bookings
+          if (updatedBooking.status === 'confirmed' && !updatedBooking.approvedByAdmin) {
+            updatedBooking.approvedByAdmin = false;
+            
+            // Update storage
+            localStorage.setItem('currentBooking', JSON.stringify(updatedBooking));
+            
+            // Update window object
+            window.currentBookingData = updatedBooking;
+            
+            // Update UI
+            const statusElement = document.getElementById('booking-status');
+            if (statusElement) {
+              statusElement.textContent = 'Your booking is pending approval';
+              statusElement.style.color = '#B45309'; // Amber
+              console.log('Automatically fixed booking status display');
+            }
+          }
+        }
+      }
+      
+      // Run initially
+      document.addEventListener('DOMContentLoaded', function() {
+        // Run immediately
+        removeDebugElements();
+        fixBookingStatus();
+        
+        // Also run periodically to catch dynamically added elements
+        setInterval(removeDebugElements, 1000);
+        
+        // Fix booking status again after a delay (to ensure all data is loaded)
+        setTimeout(fixBookingStatus, 1000);
+      });
+    </script>
+
+    <script>
+        // Show manual reload button after 5 seconds if loading is still happening
+        setTimeout(function() {
+            const historyContainer = document.getElementById('bookingHistoryContainer');
+            const manualReloadContainer = document.getElementById('manualReloadContainer');
+            const manualReloadBtn = document.getElementById('manualReloadBtn');
+            
+            // Only show the button if the container still has the loading spinner
+            if (historyContainer && 
+                historyContainer.innerHTML.includes('Loading your booking history') && 
+                manualReloadContainer) {
+                
+                console.log('Showing manual reload button for booking history');
+                manualReloadContainer.classList.remove('hidden');
+                
+                // Add click handler to the manual reload button
+                if (manualReloadBtn) {
+                    manualReloadBtn.addEventListener('click', function() {
+                        console.log('Manual reload button clicked');
+                        
+                        // Reset the container to loading state
+                        historyContainer.innerHTML = `
+                            <div class="flex flex-col items-center justify-center py-8">
+                                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+                                <p class="text-gray-600">Reloading your booking history...</p>
+                            </div>
+                        `;
+                        
+                        // Try to call the manual reload function
+                        if (typeof window.manuallyLoadBookingHistory === 'function') {
+                            window.manuallyLoadBookingHistory();
+                        } else {
+                            // If function not available, refresh the page
+                            window.location.reload();
+                        }
+                    });
+                }
+            }
+        }, 5000);
+    </script>
+
+    <!-- Bridge script to expose Firebase instances for userDrawer-fallback.js -->
+    <script>
+      // Create a bridge to make Firebase accessible to the fallback drawer script
+      document.addEventListener('DOMContentLoaded', function() {
+        // Wait a short time to ensure Firebase module is loaded
+        setTimeout(function() {
+          try {
+            console.log('Making Firebase available to fallback script');
+            
+            // Try to find Firebase from various sources
+            if (window.firebase) {
+              // Use global Firebase object if available
+              console.log('Using window.firebase');
+              window.firebaseAuth = window.firebase.auth();
+              window.firebaseDb = window.firebase.firestore();
+            } else {
+              // Try to find Firebase from other sources
+              console.log('Looking for Firebase in other window objects');
+              
+              // Check for Firebase in script-loaded global variables
+              if (typeof auth !== 'undefined') {
+                window.firebaseAuth = auth;
+                console.log('Found auth in global scope');
+              }
+              
+              if (typeof db !== 'undefined') {
+                window.firebaseDb = db;
+                console.log('Found db in global scope');
+              }
+            }
+            
+            // Force initialize user drawer when Firebase is available
+            if (typeof window.initializeUserDrawer === 'function') {
+              if (window.firebaseAuth && window.firebaseDb) {
+                console.log('Initializing user drawer with found Firebase instances');
+                window.initializeUserDrawer(window.firebaseAuth, window.firebaseDb);
+              } else {
+                console.log('Initializing user drawer without Firebase instances');
+                window.initializeUserDrawer(null, null);
+              }
+            }
+          } catch (error) {
+            console.error('Error setting up Firebase bridge:', error);
+          }
+        }, 500);
+      });
+    </script>
+
+    <!-- Add this immediately after the last script -->
+    <script>
+      // Direct event handler for user icon button
+      document.addEventListener('DOMContentLoaded', function() {
+        const userIconButton = document.getElementById('userIconBtn');
+        if (userIconButton) {
+          userIconButton.addEventListener('click', function() {
+            // Check for current auth state from different sources
+            console.log('User icon clicked, checking auth state');
+            let currentUser = null;
+            
+            // Try different methods to get the current user
+            if (window.firebase && window.firebase.auth) {
+              currentUser = window.firebase.auth().currentUser;
+              console.log('Auth from window.firebase:', currentUser ? currentUser.email : 'No user');
+            }
+            
+            // Try the firebaseAuth from our bridge
+            if (!currentUser && window.firebaseAuth) {
+              currentUser = window.firebaseAuth.currentUser;
+              console.log('Auth from window.firebaseAuth:', currentUser ? currentUser.email : 'No user');
+            }
+            
+            // Try the firebaseModule from our bridge
+            if (!currentUser && window.firebaseModule && window.firebaseModule.auth) {
+              currentUser = window.firebaseModule.auth.currentUser;
+              console.log('Auth from window.firebaseModule:', currentUser ? currentUser.email : 'No user');
+            }
+            
+            // Force re-initialize the drawer with the current auth if needed
+            if (typeof window.initializeUserDrawer === 'function' && 
+                (window.firebaseAuth || window.firebaseModule?.auth)) {
+              console.log('Forcing drawer re-initialization with current auth');
+              window.initializeUserDrawer(
+                window.firebaseAuth || window.firebaseModule.auth, 
+                window.firebaseDb || window.firebaseModule.db
+              );
+            }
+            
+            // Open the drawer
+            const userDrawer = document.getElementById('userDrawer');
+            const drawerOverlay = document.getElementById('drawerOverlay');
+            if (userDrawer) {
+              userDrawer.classList.remove('translate-x-full');
+              if (drawerOverlay) drawerOverlay.classList.remove('hidden');
+            }
+            
+            // If user is logged in, force update the drawer content
+            if (currentUser) {
+              console.log('User is authenticated, updating drawer content');
+              setTimeout(() => {
+                try {
+                  if (typeof window.updateDrawerContent === 'function') {
+                    window.updateDrawerContent(currentUser);
+                  }
+                } catch (error) {
+                  console.error('Error updating drawer content on click:', error);
+                }
+              }, 100);
+            }
+          });
+        }
+        
+        // Add handler for overlay to close drawer
+        const drawerOverlay = document.getElementById('drawerOverlay');
+        if (drawerOverlay) {
+          drawerOverlay.addEventListener('click', function() {
+            const userDrawer = document.getElementById('userDrawer');
+            if (userDrawer) {
+              userDrawer.classList.add('translate-x-full');
+              drawerOverlay.classList.add('hidden');
+            }
+          });
+        }
+      });
+    </script>
+
+    <!-- Immediate UserDrawer Init Script -->
+    <script>
+      // Force initialize the user drawer immediately
+      document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          try {
+            console.log('Forcing direct initialization of user drawer');
+            
+            // Try to find Firebase from various sources
+            if (window.firebase) {
+              // Use global Firebase object if available
+              console.log('Using window.firebase for immediate initialization');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(
+                  window.firebase.auth(), 
+                  window.firebase.firestore()
+                );
+              }
+            } else if (window.firebaseAuth && window.firebaseDb) {
+              // Use bridge Firebase instances
+              console.log('Using bridge Firebase instances for immediate initialization');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(window.firebaseAuth, window.firebaseDb);
+              }
+            } else {
+              console.log('No Firebase instances found, initializing without them');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(null, null);
+              }
+            }
+          } catch (e) {
+            console.error('Error in immediate UserDrawer init:', e);
+          }
+        }, 300);
+      });
+    </script>
+
+    <script src="userDrawer-fallback.js?v=1.3"></script>
+    
+    <!-- Immediate UserDrawer Init Script -->
+    <script>
+      // Force initialize the user drawer immediately
+      if (!window.userDrawerInitialized) {
+        console.log('UserDrawer not initialized by dashboard.js, trying direct init...');
+        setTimeout(function() {
+          try {
+            // Try to find Firebase instances from various sources
+            if (window.firebaseAuth && window.firebaseDb) {
+              console.log('Found Firebase from window globals, initializing UserDrawer');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(window.firebaseAuth, window.firebaseDb);
+              }
+            } else if (window.firebase && window.firebase.auth && window.firebase.firestore) {
+              // Try using global Firebase object
+              console.log('Using global Firebase object');
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(window.firebase.auth(), window.firebase.firestore());
+              }
+            } else {
+              console.error('Firebase not found, trying fallback initialization');
+              // Last resort - try to initialize without Firebase
+              if (typeof window.initializeUserDrawer === 'function') {
+                window.initializeUserDrawer(null, null);
+              }
+            }
+          } catch (e) {
+            console.error('Error in immediate UserDrawer init:', e);
+          }
+        }, 300);
+      }
+    </script>
+
+    <!-- Inner close button handler -->
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Add event listener for inner close button
+        const closeInnerBtn = document.getElementById('closeDrawerInner');
+        if (closeInnerBtn) {
+          closeInnerBtn.addEventListener('click', function() {
+            const userDrawer = document.getElementById('userDrawer');
+            const drawerOverlay = document.getElementById('drawerOverlay');
+            if (userDrawer) {
+              userDrawer.classList.add('translate-x-full');
+            }
+            if (drawerOverlay) {
+              drawerOverlay.classList.add('hidden');
+            }
+          });
+        }
+      });
+    </script>
+</body>
+</html>

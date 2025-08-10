@@ -1,0 +1,89 @@
+/* Styling for charts in chat messages */
+.chart-container {
+    margin-top: 15px;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    padding: 10px;
+    position: relative;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 300px !important;
+    margin: 0 auto;
+    display: block;
+}
+
+.chart-error {
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    color: #dc3545;
+    font-size: 14px;
+    border-radius: 8px;
+}
+
+.chart-container::after {
+    content: 'Lodge Ease Analytics';
+    position: absolute;
+    bottom: 5px;
+    right: 10px;
+    font-size: 10px;
+    opacity: 0.5;
+    color: #6c757d;
+}
+
+.visualization-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: flex-end;
+}
+
+.visualization-actions button {
+    background-color: #f0f2f5;
+    border: 1px solid #e3e5e8;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: #1e3c72;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.visualization-actions button:hover {
+    background-color: #e3e5e8;
+}
+
+.visualization-actions button i {
+    font-size: 10px;
+}
+
+@media (max-width: 768px) {
+    .chart-container {
+        height: 250px !important;
+    }
+    
+    .chart-container canvas {
+        height: 220px !important;
+    }
+}
+
+/* Animation for chart load */
+@keyframes chartFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chart-container {
+    animation: chartFadeIn 0.5s ease-out forwards;
+}

@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Long-term Stay Management - LodgeEase</title>
+    <link rel="icon" type="image/x-icon" href="../images/LodgeEaseLogo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="../firebase.js"></script>
+    <script type="module" src="../AInalysis/auth-check.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../Dashboard/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+    <!-- Add PageLogger and Sidebar initialization -->
+    <script type="module">
+        import { initializeFirebase } from '../firebase.js';
+        // Removed PageLogger import as it's not used here
+        import { Sidebar } from '../components/sidebar.js'; // Import Sidebar
+        import { getPreferLongTermSetting } from '../js/settingsLoader.js'; // Import settings loader
+
+        // Firebase initialization logic
+        let firebaseInitialized = false;
+        const initializeFirebasePromise = initializeFirebase().then(() => {
+            firebaseInitialized = true;
+            console.log('Firebase initialized successfully for Long Term Management page.');
+        }).catch(error => {
+            console.error('Error initializing Firebase for Long Term Management page:', error);
+        });
+
+        // Sidebar initialization logic
+        const sidebar = new Sidebar();
+        const sidebarHTML = sidebar.generateSidebar();
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Insert sidebar HTML
+            const appElement = document.getElementById('app');
+            if (appElement) {
+                appElement.insertAdjacentHTML('beforebegin', sidebarHTML);
+            } else {
+                console.error('App element #app not found for sidebar injection');
+                return; // Stop if container not found
+            }
+
+            // Wait for Firebase initialization
+            await initializeFirebasePromise;
+            if (!firebaseInitialized) {
+                console.error("Cannot initialize sidebar: Firebase failed to initialize.");
+                sidebar.init(); // Initialize with default if Firebase fails
+                return;
+            }
+
+            // Fetch setting and initialize sidebar
+            try {
+                const preferLongTerm = await getPreferLongTermSetting();
+                sidebar.init(preferLongTerm);
+                console.log('Sidebar initialized and injected with setting:', preferLongTerm);
+            } catch (error) {
+                console.error('Error initializing sidebar with setting:', error);
+                sidebar.init(); // Initialize with default on error
+            }
+        });
+    </script>
+</head>
+<body>
+    <!-- Sidebar will be injected here -->
+    <div id="app">
+        <!-- Static Sidebar removed -->
+        <!-- <aside class="sidebar">
+            <div class="logo-container">
+                <img src="../images/LodgeEaseLogo.png" alt="Lodge Ease Logo" class="logo">
+                <h2>Lodge Ease</h2>
+            </div>
+            <ul>
+                <li><a href="../Dashboard/Dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="../Room Management/room_management.html"><i class="fas fa-bed"></i> Room Management</a></li>
+                <li><a href="../Requests/booking_requests.html"><i class="fas fa-clock"></i> Booking Requests</a></li>
+                <li><a href="../Billing/billing.html"><i class="fas fa-money-bill-wave"></i> Billing</a></li>
+                <li><a href="../Reports/reports.html"><i class="fas fa-chart-line"></i> Reports</a></li>
+                <li><a href="../BusinessAnalytics/business_analytics.html"><i class="fas fa-chart-pie"></i> Business Analytics</a></li>
+                <li><a href="../ActivityLog/activity_log.html"><i class="fas fa-history"></i> Activity Log</a></li>
+                <li><a href="../Settings/settings.html"><i class="fas fa-cog"></i> Settings</a></li>
+                <li><a href="../LongTerm/longterm_management.html" class="active"><i class="fas fa-home"></i> Long-term Stays</a></li>
+                <li><a href="../AInalysis/AInalysis.html"><i class="fas fa-robot"></i> ChatBot</a></li>
+            </ul>
+            
+            <div class="auth-buttons">
+                <button v-if="isAuthenticated" @click="handleLogout" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside> -->
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Alert Container for notifications -->
+            <div id="alertContainer" class="fixed top-4 right-4 z-50 w-96"></div>
+
+            <div id="loadingScreen" class="flex items-center justify-center h-screen">
+                <div class="text-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                    <p class="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+
+            <div id="mainContent" class="hidden">
+                <!-- Dashboard Header -->
+                <header class="dashboard-header">
+                    <h1>Long-term Stay Management</h1>
+                    <div class="header-actions flex gap-2">
+                        <div class="search-container flex items-center relative">
+                            <i class="fas fa-search absolute left-3 text-gray-400"></i>
+                            <input type="text" id="searchTenants" placeholder="Search tenants..." class="search-input pl-10">
+                        </div>
+                        <button class="add-tenant-btn flex items-center gap-2 px-2 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">
+                            <i class="fas fa-plus"></i> Add New Tenant
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Unified Metrics Dashboard -->
+                <section class="metrics-dashboard">
+                    <div class="metric-card">
+                        <i class="fas fa-users"></i>
+                        <div class="metric-content">
+                            <h3>Active Tenants</h3>
+                            <p class="metric-value">0</p>
+                            <span class="metric-period">Current</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-clock"></i>
+                        <div class="metric-content">
+                            <h3>Pending Payments</h3>
+                            <p class="metric-value">0</p>
+                            <span class="metric-period">This Month</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <div class="metric-content">
+                            <h3>Monthly Revenue</h3>
+                            <p class="metric-value">₱0</p>
+                            <span class="metric-period">This Month</span>
+                        </div>
+                    </div>
+                    <div class="metric-card">
+                        <i class="fas fa-percentage"></i>
+                        <div class="metric-content">
+                            <h3>Occupancy Rate</h3>
+                            <p class="metric-value">0%</p>
+                            <span class="metric-period">Current</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <div class="chart-container revenue-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-chart-line"></i> Revenue Trends
+                                <button class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                    <div class="chart-container occupancy-chart">
+                        <div class="chart-header">
+                            <h3>
+                                <i class="fas fa-bed"></i> Occupancy Statistics
+                                <button class="chart-info-btn" title="Show chart information">
+                                    <i class="fas fa-info-circle"></i>
+                                </button>
+                            </h3>
+                        </div>
+                        <canvas id="occupancyChart"></canvas>
+                    </div>
+                </section>
+
+                <!-- Tenants Table -->
+                <section class="recent-bookings">
+                    <div class="section-header">
+                        <h2><i class="fas fa-users"></i> Current Tenants</h2>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <div class="bg-white rounded-lg shadow overflow-hidden">
+                            <div class="p-4 border-b">
+                                <h2 class="text-xl font-semibold">Current Tenants</h2>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Room</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Period</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monthly Rent</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Status</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <!-- Tenant rows will be inserted here dynamically -->
+                                        <tr>
+                                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                                Loading tenants...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Payment Record Modal -->
+    <div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden modal">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">Record Monthly Payment</h3>
+                <p class="text-sm text-center mt-1">Tenant: <span id="paymentTenantName" class="font-medium">-</span></p>
+                <div class="mt-4 px-3">
+                    <form id="paymentForm">
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Payment Amount</label>
+                            <input id="paymentAmount" type="number" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Payment Date</label>
+                            <input id="paymentDate" type="date" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Payment Method</label>
+                            <select id="paymentMethod" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="Cash">Cash</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                                <option value="GCash">GCash</option>
+                                <option value="Credit Card">Credit Card</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center justify-between mt-6">
+                            <button type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 modal-close-btn">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Record Payment</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Tenant Modal -->
+    <div id="tenantModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden modal">
+        <div class="relative top-10 mx-auto p-5 border w-3/4 max-w-3xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 id="tenantModalTitle" class="text-lg leading-6 font-medium text-gray-900 text-center">Add New Tenant</h3>
+                <div class="mt-4">
+                    <form id="tenantForm" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Personal Information -->
+                            <div class="space-y-4">
+                                <h4 class="font-medium text-gray-600">Personal Information</h4>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Name</label>
+                                    <input name="tenantName" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                                    <input name="tenantEmail" type="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Phone</label>
+                                    <input name="tenantPhone" type="tel" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                </div>
+                            </div>
+
+                            <!-- Room Details -->
+                            <div class="space-y-4">
+                                <h4 class="font-medium text-gray-600">Room Details</h4>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Room Number</label>
+                                    <input name="roomNumber" type="text" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Room Type</label>
+                                    <select name="roomType" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                        <option value="Standard">Standard</option>
+                                        <option value="Deluxe">Deluxe</option>
+                                        <option value="Suite">Suite</option>
+                                        <option value="Family">Family</option>
+                                        <option value="Studio">Studio Apartment</option>
+                                        <option value="Premium">Premium</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Monthly Rent (₱)</label>
+                                    <input name="monthlyRent" type="number" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contract Details -->
+                        <div class="space-y-4">
+                            <h4 class="font-medium text-gray-600">Contract Details</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Start Date</label>
+                                    <input name="startDate" type="date" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">End Date</label>
+                                    <input name="endDate" type="date" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                                <div>
+                                    <label class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
+                                    <input name="dueDate" type="date" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-gray-700 text-sm font-bold mb-2">Payment Status</label>
+                                <select name="paymentStatus" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Paid">Paid</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-6">
+                            <button type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 modal-close-btn">Cancel</button>
+                            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">Save Tenant</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tenant Details Modal -->
+    <div id="tenantDetailsModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden modal">
+        <div class="relative top-10 mx-auto p-5 border w-3/4 max-w-3xl shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex justify-between">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Tenant Details</h3>
+                    <button class="modal-close-btn text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mt-4 space-y-6">
+                    <!-- Tenant Info -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-600 mb-3">Personal Information</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Name</p>
+                                <p id="detailsTenantName" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Email</p>
+                                <p id="detailsTenantEmail" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Phone</p>
+                                <p id="detailsTenantPhone" class="font-medium">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Room Info -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-600 mb-3">Room Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Room Number</p>
+                                <p id="detailsRoomNumber" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Room Type</p>
+                                <p id="detailsRoomType" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Monthly Rent</p>
+                                <p id="detailsMonthlyRent" class="font-medium">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contract Info -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-600 mb-3">Contract Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-sm text-gray-600">Start Date</p>
+                                <p id="detailsStartDate" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">End Date</p>
+                                <p id="detailsEndDate" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Due Date</p>
+                                <p id="detailsDueDate" class="font-medium">-</p>
+                            </div>
+                            <div>
+                                <p class="text-sm text-gray-600">Payment Status</p>
+                                <p id="detailsPaymentStatus" class="font-medium">-</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment History -->
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-600 mb-3">Payment History</h4>
+                        <div id="paymentHistoryContainer" class="overflow-x-auto">
+                            <div class="text-gray-500 text-center">No payment history found</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Only keep margin and padding settings from Dashboard.html */
+        .sidebar ul {
+            margin-top: 2rem;
+        }
+        
+        .sidebar ul li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar ul li a {
+            padding: 0.75rem 1rem;
+        }
+        
+        .sidebar ul li a i {
+            margin-right: 0.75rem;
+        }
+        
+        /* Add our custom styles */
+        .modal {
+            z-index: 100;
+        }
+    </style>
+    
+    <script type="module" src="tenantService.js"></script>
+    <script type="module" src="longterm_management.js"></script>
+</body>
+</html>

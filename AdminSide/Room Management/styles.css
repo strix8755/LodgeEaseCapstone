@@ -1,0 +1,2346 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    color: #333;
+    background-color: #f5f6fa;
+}
+
+#app {
+    width: 100%;
+    min-height: 100vh;
+}
+
+/* Initial Loading Screen */
+.initial-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    transition: opacity 0.3s ease-out;
+}
+
+.initial-loading-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.initial-loading-spinner {
+    width: 80px;
+    height: 80px;
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #1e3c72;
+    border-radius: 50%;
+    animation: initial-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+.loading-logo {
+    width: 120px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.loading-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18px;
+    color: #1e3c72;
+    margin-top: 10px;
+}
+
+@keyframes initial-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100vh;
+    background-color: #2c3e50; /* Changed from rgba to solid color */
+    color: white;
+    padding: 20px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 0 10px;
+}
+
+.logo {
+    width: 60px;
+    height: 40px;
+    margin-right: 10px;
+}
+
+.sidebar h2 {
+    font-size: 20px;
+    color: white;
+}
+
+/* Navigation */
+.sidebar ul {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.sidebar ul li {
+    margin-bottom: 15px;
+}
+
+.sidebar ul li a {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s;
+}
+
+.sidebar ul li a:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar ul li a.active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.sidebar ul li a i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
+}
+
+/* Main Content Area */
+.main-content {
+    padding: 20px;
+    margin-left: 250px; /* Same as sidebar width */
+    width: calc(100% - 250px); /* Full remaining width */
+    min-height: 100vh;
+    background-color: #f5f6fa;
+}
+
+/* Page Header */
+.page-header {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-title {
+    font-size: 28px;
+    margin: 0;
+    color: #333;
+}
+
+.header-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+/* Search Container */
+.search-container {
+    position: relative;
+}
+
+.search-container input {
+    width: 300px;
+    padding: 10px 35px 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #1e3c72;
+}
+
+.search-icon {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+}
+
+#clear-search {
+    position: absolute;
+    right: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 5px;
+    display: none;
+}
+
+.suggestions-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: none;
+    z-index: 1000;
+}
+
+/* Primary Button */
+.primary-button {
+    background-color: #1e3c72;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.primary-button:hover {
+    background-color: #2a4d8f;
+}
+
+.primary-button i {
+    font-size: 16px;
+}
+
+/* Table Styles */
+.table-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.rooms-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0;
+    padding: 15px;
+    overflow-x: auto;
+    display: table;
+}
+
+.rooms-table th,
+.rooms-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.rooms-table th {
+    background-color: #1e3c72;
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 15px 12px;
+}
+
+.rooms-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 50px auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 24px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #666;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #1e3c72;
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+/* Loading Spinner */
+.spinner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+}
+
+.spinner i {
+    font-size: 40px;
+    color: #1e3c72;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.available {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.occupied {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status-badge.maintenance {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* Action Buttons */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 6px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #1e3c72;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background-color: #1e3c72;
+    color: white;
+}
+
+.view-btn {
+    background-color: #e3f2fd;
+}
+
+.status-btn {
+    background-color: #fff3cd;
+}
+
+.delete-btn {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.delete-btn:hover {
+    background-color: #dc2626;
+    color: white;
+}
+
+/* Add spacing between action buttons */
+.actions {
+    display: flex;
+    gap: 4px;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .main-content {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    .header-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .search-container input {
+        width: 100%;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20px auto;
+    }
+}
+
+/* Add these styles to your existing CSS */
+.booking-details {
+    padding: 20px;
+}
+
+.detail-section {
+    margin-bottom: 25px;
+}
+
+.detail-section h3 {
+    color: #1e3c72;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+}
+
+.detail-section p {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+
+.detail-section strong {
+    color: #2c3e50;
+    min-width: 140px;
+    display: inline-block;
+}
+
+.modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Add these styles for the updated table */
+.guest-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.guest-name {
+    font-weight: 500;
+}
+
+.guest-contact {
+    color: #666;
+    font-size: 0.85em;
+}
+
+.date-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.9em;
+}
+
+.date-info div {
+    white-space: nowrap;
+}
+
+.rooms-table td {
+    vertical-align: middle;
+    padding: 12px 15px;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.status-badge.pending {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.status-badge.confirmed {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status-badge.checked-in {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status-badge.checked-out {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+.status-badge.cancelled {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.action-btn {
+    padding: 6px;
+    margin: 0 2px;
+    border: none;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #1e3c72;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn:hover {
+    background-color: #1e3c72;
+    color: white;
+}
+
+.view-btn {
+    background-color: #e3f2fd;
+}
+
+.status-btn {
+    background-color: #fff3cd;
+}
+
+/* Add Room Modal Styles */
+.add-room-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.cancel-btn {
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+.submit-btn {
+    background-color: #1e3c72;
+    color: white;
+}
+
+.btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Add Room Form Styles */
+.form-group select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+}
+
+.form-group select:focus {
+    border-color: #1e3c72;
+    outline: none;
+}
+
+.form-group select option {
+    padding: 0.5rem;
+}
+
+/* Required field indicator */
+.form-group:not(.optional) label:after {
+    content: "*";
+    color: #dc3545;
+    margin-left: 4px;
+}
+
+.form-group label[for="description"]:after {
+    content: "";
+}
+
+/* Image Upload Styles */
+.image-upload-container {
+    border: 2px dashed #ddd;
+    border-radius: 4px;
+    padding: 20px;
+    text-align: center;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.image-upload-container:hover {
+    border-color: #1e3c72;
+    background-color: #f1f4f9;
+}
+
+.image-input {
+    display: none;
+}
+
+.image-upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.image-upload-label i {
+    font-size: 2rem;
+    color: #1e3c72;
+}
+
+.image-upload-label small {
+    color: #666;
+}
+
+.image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.image-preview {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(220, 53, 69, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.remove-image:hover {
+    background: rgb(220, 53, 69);
+}
+
+.image-help-text {
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+}
+
+/* Manual Booking Styles */
+.manual-booking-form {
+    padding: 1rem;
+}
+
+.form-section {
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.form-section h3 {
+    color: #1e3c72;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.payment-summary {
+    background-color: white;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+}
+
+.summary-row:last-child {
+    border-bottom: none;
+}
+
+.summary-row.total {
+    font-weight: bold;
+    color: #1e3c72;
+    border-top: 2px solid #eee;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+}
+
+/* Button group styles */
+.button-group {
+    display: flex;
+    gap: 1rem;
+}
+
+.booking-button {
+    background-color: #28a745;
+}
+
+.booking-button:hover {
+    background-color: #218838;
+}
+
+/* Form validation styles */
+.form-group input:invalid,
+.form-group select:invalid {
+    border-color: #dc3545;
+}
+
+.form-group input:focus:invalid,
+.form-group select:focus:invalid {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .button-group {
+        flex-direction: column;
+    }
+
+    .modal-content {
+        width: 95%;
+        margin: 20px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* Auth Buttons Styles */
+.auth-buttons {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    right: 0;
+    padding: 0 20px;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.auth-buttons {
+    display: flex;
+    gap: 20px;
+    padding: 10px;
+}
+
+.auth-buttons button,
+.auth-buttons a {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.logout-btn {
+    background-color: #ff4757;
+    color: white;
+}
+
+.logout-btn:hover {
+    background-color: #ff6b81;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2);
+}
+
+.auth-buttons i {
+    font-size: 16px;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .auth-buttons {
+        padding: 0 10px;
+    }
+
+    .logout-btn, .login-btn {
+        padding: 10px;
+    }
+
+    .auth-buttons span {
+        display: none;
+    }
+
+    .auth-buttons i {
+        margin: 0;
+    }
+}
+
+/* Client Rooms Section */
+.section-divider {
+    margin: 40px 0 20px 0;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 20px;
+}
+
+.section-divider h2 {
+    font-size: 1.5rem;
+    color: #1e3c72;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+
+.client-rooms-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.client-room-card {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.client-room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+.image-container {
+    position: relative;
+    height: 160px;
+}
+
+.image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.price-tag {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(30, 60, 114, 0.9);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.room-details {
+    padding: 15px;
+}
+
+.room-details h3 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+    color: #1e3c72;
+}
+
+.location {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+.room-type {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.amenity-tag {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+}
+
+.mb-4 {
+    margin-bottom: 1rem;
+}
+
+.amenities-input {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.amenities-input input {
+    flex-grow: 1;
+}
+
+.selected-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.selected-amenities .amenity-tag {
+    display: flex;
+    align-items: center;
+    background: #e5e7eb;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.remove-amenity {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 0.7rem;
+    margin-left: 5px;
+}
+
+.remove-amenity:hover {
+    color: #ef4444;
+}
+
+/* Client Room Button Styles */
+.client-room-button {
+    background-color: #2563eb;
+}
+
+.client-room-button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Client Rooms Modal Styles */
+.client-rooms-modal {
+    max-width: 80%;
+    width: 1000px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.client-rooms-modal .header-actions {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    padding: 10px 0;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+@media (max-width: 768px) {
+    .client-rooms-modal {
+        max-width: 95%;
+        width: 95%;
+    }
+}
+
+/* Add these styles at the end of your file */
+
+/* Client Rooms Modal Styles */
+.client-rooms-modal {
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Lodge Card Styling */
+.lodge-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.lodge-card {
+    background-color: white;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.lodge-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+.lodge-image {
+    position: relative;
+    height: 200px;
+    background-color: #f0f0f0;
+    overflow: hidden;
+}
+
+.lodge-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lodge-image img.image-error {
+    opacity: 0.5;
+}
+
+/* Placeholder for images that failed to load */
+.image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    color: #999;
+    font-size: 14px;
+}
+
+/* Add more specific targeting for no-image case */
+.lodge-image:has(img[src^="data:image"]) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f0f0f0;
+}
+
+/* Ensure image controls remain visible even when image fails */
+.lodge-image .actions-overlay,
+.lodge-image .html-file-tag,
+.lodge-image .ribbon {
+    z-index: 5;
+}
+
+.lodge-content {
+    padding: 1rem;
+}
+
+.lodge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.lodge-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.lodge-rating {
+    display: flex;
+    align-items: center;
+    color: #FF9800;
+    font-weight: 500;
+}
+
+.lodge-rating i {
+    margin-right: 0.25rem;
+}
+
+.lodge-location {
+    display: flex;
+    align-items: center;
+    color: #666;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+.lodge-location i {
+    margin-right: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.lodge-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.detail {
+    display: flex;
+    align-items: center;
+    color: #555;
+    font-size: 0.875rem;
+}
+
+.detail i {
+    margin-right: 0.375rem;
+    color: #666;
+}
+
+.lodge-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.amenity {
+    background-color: #f0f7ff;
+    color: #3182ce;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.more-amenities {
+    background-color: #edf2f7;
+    color: #718096;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+}
+
+.lodge-price {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2c5282;
+    margin-bottom: 0.5rem;
+}
+
+.price-qualifier {
+    font-size: 0.875rem;
+    color: #718096;
+    font-weight: normal;
+}
+
+.lodge-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid #edf2f7;
+    font-size: 0.875rem;
+}
+
+.actions-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.admin-action-btn {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.admin-action-btn:hover {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.ribbon {
+    position: absolute;
+    top: 20px;
+    left: -30px;
+    background: #2c5282;
+    color: white;
+    padding: 5px 30px;
+    transform: rotate(-45deg);
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.image-count {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+/* Empty state styling */
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #718096;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 1.5rem;
+    color: #4a5568;
+}
+
+/* Pagination controls */
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.pagination-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #f7fafc;
+    border: 1px solid #e2e8f0;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background-color: #edf2f7;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination-info {
+    font-size: 0.875rem;
+    color: #4a5568;
+}
+
+.button-group {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Fix for incorrect image display */
+.lodge-image img[src=""] {
+    display: none;
+}
+
+.lodge-image img[src="null"],
+.lodge-image img[src="undefined"] {
+    display: none;
+}
+
+.lodge-image:has(img[src=""]),
+.lodge-image:has(img[src="null"]),
+.lodge-image:has(img[src="undefined"]) {
+    background-image: url('../images/default-room.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+/* Add these styles to support the new room display */
+.room-source-tabs {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.room-source-tabs button {
+    position: relative;
+    min-width: 120px;
+}
+
+.room-source-tabs button:hover {
+    background-color: #e9ecef;
+}
+
+.line-through {
+    text-decoration: line-through;
+}
+
+/* Style adjustments for the ribbons */
+.ribbon {
+    position: absolute;
+    top: 20px;
+    left: -30px;
+    color: white;
+    padding: 5px 30px;
+    transform: rotate(-45deg);
+    font-size: 12px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 10;
+}
+
+/* Lodge Form Styles */
+.lodge-form-content {
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.add-lodge-form .form-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.add-lodge-form .form-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #2563eb;
+}
+
+.add-lodge-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.add-lodge-form .form-group {
+    margin-bottom: 16px;
+}
+
+.add-lodge-form .input-with-prefix {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.add-lodge-form .input-prefix {
+    position: absolute;
+    left: 12px;
+    pointer-events: none;
+    color: #6b7280;
+}
+
+.add-lodge-form .input-with-prefix input {
+    padding-left: 24px;
+}
+
+.add-lodge-form .form-help-text {
+    display: block;
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.add-lodge-form .coordinate-helper {
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.add-lodge-form .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.add-lodge-form .amenity-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-lodge-form .amenity-checkbox:hover {
+    background-color: #f3f4f6;
+}
+
+.add-lodge-form .amenity-checkbox input {
+    margin-right: 8px;
+}
+
+/* Lodge preview styles */
+.lodge-preview-container {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 16px;
+    background-color: #f9fafb;
+}
+
+.lodge-card.preview {
+    width: 320px;
+    margin: 0 auto;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: white;
+}
+
+.lodge-card.preview:hover {
+    transform: translateY(-5px);
+}
+
+.best-value-badge {
+    position: absolute;
+    top: 12px;
+    left: 0;
+    background-color: #10b981;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 5px 10px;
+    z-index: 10;
+}
+
+.promo-tag {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to right, rgba(16, 185, 129, 0.9), rgba(16, 185, 129, 0.8));
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 10px;
+    font-size: 12px;
+}
+
+.promo-tag-label {
+    font-weight: bold;
+}
+
+.promo-tag-price {
+    font-weight: bold;
+}
+
+.favorite-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.amenity-tag {
+    background-color: #f3f4f6;
+    color: #4b5563;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.image-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.image-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.image-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.remove-image {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.main-image-badge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(37, 99, 235, 0.8);
+    color: white;
+    font-size: 10px;
+    text-align: center;
+    padding: 2px 0;
+}
+
+/* Make the form scrollable on smaller screens */
+@media (max-height: 800px) {
+    .lodge-form-content {
+        max-height: 80vh;
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .add-lodge-form .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .add-lodge-form .amenities-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+    
+    .lodge-preview-container {
+        padding: 10px;
+    }
+}
+
+/* Client Rooms Modal Styles */
+.client-rooms-modal {
+    max-width: 90vw;
+    width: 1200px;
+}
+
+.lodge-list-item {
+    transition: transform 0.2s ease;
+}
+
+.lodge-list-item:hover {
+    transform: translateY(-2px);
+}
+
+.lodge-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Remove these PostgreSQL Integration Styles */
+.storage-toggle {
+    margin-bottom: 16px;
+}
+
+.storage-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background-color: #f8fafc;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.storage-toggle-btn.active {
+    background-color: #ebf4ff;
+    color: #3b82f6;
+    border-color: #93c5fd;
+    font-weight: 500;
+}
+
+.storage-toggle-btn:hover {
+    background-color: #f1f5f9;
+}
+
+.upload-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background-color: #3b82f6;
+    transition: width 0.3s ease;
+}
+
+.image-preview {
+    position: relative;
+    overflow: hidden;
+}
+
+.postgres-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background-color: rgba(79, 70, 229, 0.8);
+    color: white;
+    font-size: 8px;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.firebase-badge {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background-color: rgba(246, 173, 85, 0.8);
+    color: white;
+    font-size: 8px;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+/* PostgreSQL Image Display in Client Rooms */
+.pg-image-container {
+    position: relative;
+}
+
+.pg-image-container::after {
+    content: 'PG';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background-color: rgba(79, 70, 229, 0.8);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Firebase Image Display */
+.fb-image-container {
+    position: relative;
+}
+
+.fb-image-container::after {
+    content: 'FB';
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background-color: rgba(246, 173, 85, 0.8);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+/* Add Room Button Styles */
+.add-room-button {
+    background-color: #2563eb;
+}
+
+.add-room-button:hover {
+    background-color: #1d4ed8;
+}
+
+/* Room form modal specific styles */
+.amenities-grid {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+/* Highlight selected lodge in dropdown */
+#selectLodge option:checked {
+    background-color: #1e3c72;
+    color: white;
+}
+
+/* Enhance the form-section style for better visual hierarchy */
+.form-section h3 {
+    color: #2563eb;
+    font-weight: 600;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 16px;
+}
+
+/* HTML file tag styles */
+.html-file-tag {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(59, 130, 246, 0.8);
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.lodge-file {
+    display: flex;
+    align-items: center;
+    color: #3b82f6;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Style for the lodges browser-based storage badge */
+.storage-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 10;
+    color: white;
+}
+
+.storage-badge.html {
+    background-color: rgba(14, 165, 233, 0.8);
+}
+
+.storage-badge.firestore {
+    background-color: rgba(249, 115, 22, 0.8);
+}
+
+.delete-action-btn {
+    background-color: rgba(220, 38, 38, 0.7);
+    margin-left: 4px;
+}
+
+.delete-action-btn:hover {
+    background-color: rgba(220, 38, 38, 0.9);
+}
+
+/* Enhance the actions overlay */
+.actions-overlay {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+/* Ensure buttons in list view have appropriate spacing */
+.lodge-list-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Date Filter Styles */
+.date-filter-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0 15px;
+}
+
+.date-filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e3c72;
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.date-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 25px;
+    font-size: 14px;
+    width: 150px;
+}
+
+.date-input:focus {
+    outline: none;
+    border-color: #1e3c72;
+}
+
+.date-separator {
+    color: #666;
+    font-size: 14px;
+}
+
+.filter-btn, .reset-btn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+}
+
+.filter-btn {
+    background-color: #1e3c72;
+    color: white;
+    border-color: #1e3c72;
+}
+
+.reset-btn {
+    background-color: #f1c40f;
+    color: #2c3e50;
+    border-color: #f1c40f;
+}
+
+.filter-btn:hover {
+    background-color: #2a5298;
+}
+
+.reset-btn:hover {
+    background-color: #e6b800;
+}
+
+/* Make date filter responsive */
+@media (max-width: 768px) {
+    .date-filter {
+        flex-direction: column;
+        gap: 5px;
+        margin: 10px 0;
+    }
+
+    .date-input {
+        width: 100%;
+    }
+}
+
+/* Modal styles for Add Room to Lodge */
+.add-room-form {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.add-room-form .form-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.add-room-form .form-section h3 {
+    margin-bottom: 1rem;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.add-room-form .form-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.add-room-form .form-group {
+    flex: 1;
+}
+
+.add-room-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.add-room-form input,
+.add-room-form select,
+.add-room-form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.add-room-form .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+}
+
+.form-help-text {
+    display: block;
+    margin-top: 0.25rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+
+/* Date Navigation Styles */
+.date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f8f9fa;
+    padding: 15px 20px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.date-navigation .current-date {
+    font-size: 1.5rem;
+    margin: 0 20px;
+    color: #345995;
+    font-weight: 600;
+    min-width: 300px;
+    text-align: center;
+}
+
+.date-nav-btn {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #345995;
+    font-size: 1.1rem;
+}
+
+.date-nav-btn:hover {
+    background-color: #345995;
+    color: white;
+    transform: scale(1.05);
+}
+
+.today-btn {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 20px;
+    padding: 8px 16px;
+    margin-left: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: #345995;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.today-btn:hover {
+    background-color: #345995;
+    color: white;
+}
+
+.today-btn i {
+    margin-right: 5px;
+}
+
+.action-btn.view-btn {
+    background-color: #4a90e2;
+}
+
+.action-btn.status-btn {
+    background-color: #f5a623;
+}
+
+.action-btn.delete-btn {
+    background-color: #e74c3c;
+}
+
+/* Booking Edit Form Styles */
+.booking-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.booking-edit-form .form-section {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.booking-edit-form .form-group {
+    margin-bottom: 12px;
+}
+
+.booking-edit-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.booking-edit-form input,
+.booking-edit-form select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.booking-edit-form input:focus,
+.booking-edit-form select:focus {
+    border-color: #4a90e2;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.booking-edit-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.booking-edit-form .btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.booking-edit-form .cancel-btn {
+    background-color: #e0e0e0;
+    color: #333;
+}
+
+.booking-edit-form .submit-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.booking-edit-form .cancel-btn:hover {
+    background-color: #d0d0d0;
+}
+
+.booking-edit-form .submit-btn:hover {
+    background-color: #218838;
+}
+
+.booking-edit-form .submit-btn:disabled {
+    background-color: #95d5a7;
+    cursor: not-allowed;
+}
+
+.button-group {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.secondary-button {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.secondary-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Readonly and disabled field styles for edit modal */
+.readonly-field,
+.disabled-field {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    border-color: #e9ecef !important;
+}
+
+.readonly-field:focus,
+.disabled-field:focus {
+    border-color: #e9ecef !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.disabled-label {
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+}
+
+/* Radio buttons disabled styling */
+input[type="radio"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input[type="radio"]:disabled + label {
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+}
+
+/* Select disabled styling */
+select:disabled {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    border-color: #e9ecef !important;
+}
+
+/* Add visual indicator for editable fields in edit mode */
+.booking-edit-form .form-group input:not(.readonly-field):not(.disabled-field),
+.booking-edit-form .form-group select:not(.disabled-field) {
+    border-left: 3px solid #28a745;
+}
+
+/* Highlight editable fields with green border */
+.booking-edit-form input[type="date"]:not(.readonly-field),
+.booking-edit-form input[type="time"]:not(.readonly-field) {
+    border-left: 4px solid #28a745;
+    background-color: #f8fff9;
+}
+
+.booking-edit-form input[type="date"]:not(.readonly-field):focus,
+.booking-edit-form input[type="time"]:not(.readonly-field):focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Add tooltip for readonly fields */
+.readonly-field,
+.disabled-field {
+    position: relative;
+}
+
+.readonly-field::before,
+.disabled-field::before {
+    content: "Read-only";
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    color: #999;
+    background: #fff;
+    padding: 2px 5px;
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.readonly-field:hover::before,
+.disabled-field:hover::before {
+    opacity: 1;
+}
+

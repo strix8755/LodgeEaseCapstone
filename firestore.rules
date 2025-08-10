@@ -1,0 +1,278 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Modified helper function for admin check
+    function isAdmin() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Add missing hasRole function
+    function hasRole(role) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    function isValidDate(field) {
+      return field is timestamp && 
+        field <= request.time && 
+        field.toMillis() > 1609459200000; // After 2021-01-01
+    }
+    
+    function hasRequiredFields(data, required) {
+      return data.keys().hasAll(required) && 
+        data.keys().hasOnly(required.concat(['updatedAt', 'createdAt', 'metadata']));
+    }
+
+    function isValidString(field) {
+      return field is string && field.size() > 0 && field.size() <= 500;
+    }
+
+    function isValidEmail(email) {
+      return email.matches('^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$');
+    }
+
+    function isValidUsername(username) {
+      return username.matches('^[a-zA-Z0-9_]{3,20}$');
+    }
+
+    function isValidAnalyticsData(data) {
+      return isValidDate(data.createdAt) && 
+        (!data.keys().hasAny(['updatedAt']) || isValidDate(data.updatedAt)) &&
+        hasRequiredFields(data, ['type', 'data', 'status']) &&
+        data.type in ['booking', 'revenue', 'occupancy', 'customer', 'system'] &&
+        data.status in ['active', 'archived', 'processing'];
+    }
+
+    function isWithinRateLimit(path) {
+      let recentAttempts = getCountFromPath(path);
+      return recentAttempts <= 100;
+    }
+
+    function getCountFromPath(path) {
+      return get(/databases/$(database)/documents/system/ratelimits).data.counts[path] || 0;
+    }
+
+    // Add new helper function for email validation
+    function isValidEmailRequest(data) {
+      return data.keys().hasAll(['bookingDetails', 'recipientEmail']) &&
+             isValidEmail(data.recipientEmail) &&
+             data.bookingDetails.keys().hasAll(['bookingId', 'checkIn', 'checkOut']);
+    }
+
+    // Add specific rules for booking request collections
+    match /paymentVerificationRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /modificationRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /cancellationRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /paymentHistory/{historyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Add specific rule for everlodgebookings collection
+    match /everlodgebookings/{bookingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Enhanced security rules for collections
+    // Modified analytics rules to be more permissive during development
+    match /analytics/{document=**} {
+      allow read: if isAuthenticated();  // Allow any authenticated user to read
+      allow write: if isAdmin() && 
+        request.resource.data.keys().hasAll(['type', 'data', 'timestamp']) &&
+        request.resource.data.type in ['roomTypes', 'occupancy', 'bookings', 'satisfaction'];
+    }
+
+    // Add rules for analytics collections
+    match /sales/{document=**} {
+      allow read: if isAuthenticated() && hasRole('admin');
+      allow write: if isAuthenticated() && hasRole('admin');
+    }
+
+    match /customers/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /metrics/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /forecasts/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Real-time Analytics with enhanced security
+    match /analytics/_realtime/{docId} {
+      allow read: if isAdmin() && isWithinRateLimit('realtime_read');
+      allow write: if isAdmin() && 
+        (!resource.data.exists() || 
+         request.time.toMillis() - resource.data.lastUpdate.toMillis() > 60000) &&
+        isWithinRateLimit('realtime_write');
+    }
+
+    // Add rules for analytics queries
+    match /analyticsQueries/{queryId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Modified Users Collection rules
+    match /users/{userId} {
+      // Allow username availability check without authentication
+      allow read: if true;  // Temporarily allow all reads for debugging
+      
+      // Allow initial user creation without admin check
+      allow create: if request.auth != null &&
+                   request.auth.uid == userId &&
+                   request.resource.data.keys().hasAll(['email', 'username', 'role']) &&
+                   request.resource.data.role == 'admin';  // Only allow admin role during creation
+      
+      allow update: if isAdmin() ||
+        (request.auth.uid == userId && 
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['username', 'fullname', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // Modified Activity Logs to allow registration logs
+    match /activityLogs/{logId} {
+      allow read: if request.auth != null;
+      // Allow create during registration
+      allow create: if request.auth != null &&
+                   request.resource.data.userId == request.auth.uid &&
+                   request.resource.data.keys().hasAll(['actionType', 'timestamp']) &&
+                   request.resource.data.actionType in ['login', 'registration', 'logout'];
+      allow update, delete: if false;
+    }
+
+    // Rooms Collection with enhanced validation
+    match /rooms/{roomId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.data.keys().hasAll(['roomNumber', 'type', 'status', 'floor']) &&
+        request.resource.data.type is string &&
+        (request.resource.data.type in ['Standard', 'Deluxe', 'Suite', 'Family']) &&  // Add valid room types
+        request.resource.data.status in ['Available', 'Occupied', 'Maintenance'] &&
+        request.resource.data.floor is string &&
+        request.resource.data.roomNumber is string;
+    }
+
+    // Bookings Collection with enhanced validation
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (
+        isAdmin() || resource.data.userId == request.auth.uid
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.keys().hasAll([
+          'checkIn',
+          'checkOut',
+          'guestName',
+          'email',
+          'contactNumber',
+          'status',
+          'propertyDetails',
+          'nightlyRate',
+          'totalPrice',
+          'userId'
+        ]) &&
+        request.resource.data.propertyDetails.keys().hasAll([
+          'roomType',
+          'roomNumber',
+          'floorLevel',
+          'name',
+          'location'
+        ]);
+      
+      allow update: if isAdmin() ||
+        (resource.data.userId == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'paymentStatus', 'updatedAt']));
+    }
+
+    // Rate limiting collection
+    match /ratelimits/{limitId} {
+      allow read: if isAdmin();
+      allow write: if false;  // Only updateable through backend
+    }
+
+    // System Configuration with versioning
+    // Modified system collection rules
+    match /system/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Allow read/write access to collection metadata
+    match /{collection}/_config {
+      allow read, write: if request.auth != null;
+    }
+
+    // Add rules for analytics aggregation
+    match /analyticsAggregates/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.data.keys().hasAll(['lastUpdated', 'data']) &&
+        request.resource.data.data is map;
+    }
+
+    // Add specific rule for room type analytics
+    match /analytics/roomTypes {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.data.keys().hasAll(['distribution', 'lastUpdated']) &&
+        request.resource.data.distribution is map;
+    }
+
+    // Add specific rule for occupancy analytics
+    match /analytics/occupancy {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && 
+        request.resource.data.keys().hasAll(['trends', 'lastUpdated']) &&
+        request.resource.data.trends is list;
+    }
+
+    // Simplified email rules - only require user authentication
+    match /emailNotifications/{emailId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /emailTemplates/{templateId} {
+      allow read, write: if request.auth != null;
+    }
+
+    match /emailQueue/{queueId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Add rules for all collections used in analytics - keep this as fallback
+    match /{collection}/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
