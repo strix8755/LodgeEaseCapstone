@@ -1,4 +1,4 @@
-import { db, auth, app } from '../firebase.js';
+import { db, auth, app, signOut } from '../firebase.js';
 import { 
     collection, 
     getDocs, 
@@ -14,7 +14,6 @@ import {
     deleteField,
     setDoc
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { PageLogger } from '../js/pageLogger.js';
 import { ActivityLogger } from '../ActivityLog/activityLogger.js';
 // Import rate calculation module with updated rates
@@ -1837,15 +1836,15 @@ new Vue({
             this.$forceUpdate();
         },
 
-        // async handleLogout() {
-        //     try {
-        //         await signOut(auth);
-        //         window.location.href = '../Login/index.html';
-        //     } catch (error) {
-        //         console.error('Error signing out:', error);
-        //         alert('Error signing out. Please try again.');
-        //     }
-        // },
+        async handleLogout() {
+            try {
+                await signOut();
+                window.location.href = '../Login/index.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out. Please try again.');
+            }
+        },
 
         checkAuthState() {
             auth().onAuthStateChanged(async (user) => {

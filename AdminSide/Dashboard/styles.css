@@ -369,75 +369,60 @@ th {
     font-size: 0.875rem;
 }
 
-/* Add these styles if they're not already present */
-.auth-buttons {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    padding: 0 20px;
+/* Logout Button Styles - positioned as last navigation item */
+.logout-item {
+    margin-top: 20px; /* Add some space above the logout button */
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Optional separator line */
+    padding-top: 20px; /* Add padding above the logout button */
 }
 
 .logout-btn {
     width: 100%;
-    padding: 12px;
+    padding: 12px 15px;
     border: none;
     border-radius: 6px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-}
-
-.logout-btn {
     background-color: #dc3545;
     color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
 }
-
 
 .logout-btn:hover {
     background-color: #c82333;
+    transform: none; /* Remove transform to prevent floating effect */
+    box-shadow: none; /* Remove shadow to prevent floating effect */
 }
 
-.auth-buttons {
-    display: flex;
-    gap: 20px;
-    padding: 10px;
+.logout-btn i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
 }
 
-.auth-buttons button,
-.auth-buttons a {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-decoration: none;
-}
+/* Responsive adjustments for logout button */
+@media (max-width: 768px) {
+    .logout-item {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    
+    .logout-btn {
+        padding: 10px 15px;
+    }
 
-.logout-btn {
-    background-color: #ff4757;
-    color: white;
-}
+    .logout-btn span {
+        display: none;
+    }
 
-.logout-btn:hover {
-    background-color: #ff6b81;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 71, 87, 0.2);
-}
-
-.auth-buttons i {
-    font-size: 16px;
+    .logout-btn i {
+        margin: 0;
+    }
 }
 
 .chart-container {

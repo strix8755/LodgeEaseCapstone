@@ -1,10 +1,11 @@
 // Import Firebase dependencies and other necessary modules
-import { db, auth } from '../firebase.js';
+import { db, auth, signOut } from '../firebase.js';
 import { collection, query, where, getDocs, Timestamp, orderBy, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { checkAuth } from '../AInalysis/auth-check.js';
 import { chartDataService } from './chartDataService.js';
 import { EverLodgeDataService } from '../shared/everLodgeDataService.js';
+import { occupancyService } from '../shared/occupancyCalculationService.js';
 
 // Add support for Ever Lodge bookings collection
 const EVER_LODGE_COLLECTION = 'everlodgebookings';
@@ -353,15 +354,16 @@ checkAuth().then(user => {
             }
         },
         methods: {
-            // async handleLogout() {
-            //     try {
-            //         await signOut(auth);
-            //         this.isAuthenticated = false;
-            //         window.location.href = '../Login/index.html';
-            //     } catch (error) {
-            //         console.error('Error signing out:', error);
-            //     }
-            // },
+            async handleLogout() {
+                try {
+                    await signOut();
+                    this.isAuthenticated = false;
+                    window.location.href = '../Login/index.html';
+                } catch (error) {
+                    console.error('Error signing out:', error);
+                    alert('Error signing out. Please try again.');
+                }
+            },
             formatCurrency(value) {
                 if (isNaN(value) || value === null) return '₱0.00';
                 return '₱' + Number(value).toLocaleString('en-US', {
@@ -1924,97 +1926,30 @@ async function fetchAnalyticsData(establishment, dateRange) {
     }
 }
 
-// Calculate current day occupancy rate (matches Dashboard logic)
+// Calculate current day occupancy rate using unified service
 function calculateCurrentOccupancy(data) {
-    try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start of today
-        
-        if (!data.bookings || !Array.isArray(data.bookings)) {
-            return 0;
-        }
-        
-        // Use the same logic as Dashboard: count unique occupied rooms for today
-        const occupiedRoomsSet = new Set();
-        const totalRooms = 36; // Same as Dashboard
-        
-        data.bookings.forEach(booking => {
-            try {
-                // Parse check-in and check-out dates
-                const checkIn = booking.checkIn instanceof Date ? 
-                    booking.checkIn : 
-                    (booking.checkIn?.toDate?.() || new Date(booking.checkIn));
-                    
-                const checkOut = booking.checkOut instanceof Date ? 
-                    booking.checkOut : 
-                    (booking.checkOut?.toDate?.() || new Date(booking.checkOut));
-                
-                if (!checkIn || !checkOut) return;
-                
-                // Same active status filtering as Dashboard
-                const activeStatuses = ['occupied', 'checked-in', 'confirmed', 'active', 'pending'];
-                const hasActiveStatus = activeStatuses.includes(booking.status?.toLowerCase());
-                
-                // Check if today falls between check-in and check-out
-                const isCurrentlyActive = checkIn <= today && checkOut >= today;
-                
-                if (hasActiveStatus && isCurrentlyActive) {
-                    // Count unique rooms only (same as Dashboard)
-                    if (booking.propertyDetails?.roomNumber) {
-                        occupiedRoomsSet.add(booking.propertyDetails.roomNumber);
-                    }
-                }
-            } catch (error) {
-                console.warn('Error processing booking for current occupancy:', error);
-            }
-        });
-        
-        const occupiedRoomsCount = occupiedRoomsSet.size;
-        const currentOccupancyRate = (occupiedRoomsCount / totalRooms) * 100;
-        
-        console.log(`Business Analytics current occupancy: ${occupiedRoomsCount} rooms / ${totalRooms} total = ${currentOccupancyRate.toFixed(1)}%`);
-        console.log(`Business Analytics occupied rooms: [${Array.from(occupiedRoomsSet).sort().join(', ')}]`);
-        
-        // Additional debugging to match Dashboard
-        const activeBookingsForToday = [];
-        data.bookings.forEach(booking => {
-            try {
-                const checkIn = booking.checkIn instanceof Date ? 
-                    booking.checkIn : 
-                    (booking.checkIn?.toDate?.() || new Date(booking.checkIn));
-                    
-                const checkOut = booking.checkOut instanceof Date ? 
-                    booking.checkOut : 
-                    (booking.checkOut?.toDate?.() || new Date(booking.checkOut));
-                
-                if (!checkIn || !checkOut) return;
-                
-                const activeStatuses = ['occupied', 'checked-in', 'confirmed', 'active', 'pending'];
-                const hasActiveStatus = activeStatuses.includes(booking.status?.toLowerCase());
-                const isCurrentlyActive = checkIn <= today && checkOut >= today;
-                
-                if (hasActiveStatus && isCurrentlyActive) {
-                    activeBookingsForToday.push(booking);
-                }
-            } catch (error) {
-                // Silent catch for debugging loop
-            }
-        });
-        
-        if (activeBookingsForToday.length === 0) {
-            console.log('❌ Business Analytics: No active bookings found for today');
-        } else {
-            console.log(`✅ Business Analytics: ${activeBookingsForToday.length} active bookings for today`);
-            activeBookingsForToday.forEach(booking => {
-                console.log(`  ${booking.id}: room=${booking.propertyDetails?.roomNumber}, status=${booking.status}`);
-            });
-        }
-        
-        return currentOccupancyRate;
-    } catch (error) {
-        console.error('Error calculating current occupancy:', error);
+    console.log("Business Analytics: Using unified occupancy calculation service");
+    
+    if (!data || !data.bookings || !Array.isArray(data.bookings)) {
+        console.warn('Business Analytics: Invalid bookings data for occupancy calculation');
         return 0;
     }
+    
+    // Use the unified occupancy calculation service
+    const occupancyData = occupancyService.calculateCurrentOccupancy(data.bookings);
+    
+    console.log(`Business Analytics: Unified service occupancy rate: ${occupancyData.occupancyRateFormatted}`);
+    console.log(`Business Analytics: Occupied rooms: ${occupancyData.occupiedRooms}`);
+    console.log(`Business Analytics: Available rooms: ${occupancyData.availableRooms}`);
+    console.log(`Business Analytics: Occupied room numbers: [${occupancyData.occupiedRoomNumbers.join(', ')}]`);
+    console.log(`Business Analytics: Active bookings today: ${occupancyData.activeBookingsToday}`);
+    
+    // Validate the occupancy data consistency
+    if (!occupancyService.validateOccupancyData(occupancyData)) {
+        console.warn('Business Analytics: Occupancy data validation failed - check for inconsistencies');
+    }
+    
+    return occupancyData.occupancyRate;
 }
 
 // Add enhanced metrics calculations

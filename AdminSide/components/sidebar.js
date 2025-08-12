@@ -17,9 +17,9 @@ export class Sidebar {
         this.setActiveLink();
         
         // Add logout functionality
-        const logoutBtn = document.querySelector('.sidebar .logout-btn'); // Be more specific
+        const logoutBtn = document.querySelector('.sidebar .logout-btn'); // Updated selector for new structure
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', this.handleLogout);
+            logoutBtn.addEventListener('click', this.handleLogout.bind(this));
         }
 
         // Adjust visibility based on preferLongTerm setting
@@ -66,7 +66,7 @@ export class Sidebar {
     }
 
     generateSidebar() {
-        // Keep the generated HTML the same, visibility is handled in init()
+        // Restructured HTML with logout button as part of the navigation list
         return `
         <aside class="sidebar">
             <div class="logo-container">
@@ -84,14 +84,13 @@ export class Sidebar {
                 <li><a href="../Settings/settings.html"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
                 <li><a href="../LongTerm/longterm_management.html"><i class="fas fa-home"></i> <span>Long-term Stays</span></a></li>
                 <li><a href="../AInalysis/AInalysis.html"><i class="fas fa-robot"></i> <span>ChatBot</span></a></li>
+                <li class="logout-item">
+                    <button class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> 
+                        <span>Logout</span>
+                    </button>
+                </li>
             </ul>
-            
-            <div class="auth-buttons">
-                <button class="logout-btn">
-                    <i class="fas fa-sign-out-alt"></i> 
-                    <span>Logout</span>
-                </button>
-            </div>
         </aside>
         `;
     }

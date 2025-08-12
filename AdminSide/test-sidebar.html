@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sidebar Test - Lodge Ease</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+            background-color: #f5f6fa;
+        }
+
+        /* App Container */
+        .app {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 250px;
+            background-color: rgba(44, 62, 80, 0.9);
+            color: white;
+            padding: 0;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            overflow: hidden;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            width: 60px;
+            height: 40px;
+            margin-right: 10px;
+            background: #1e3c72;
+            border-radius: 4px;
+        }
+
+        .sidebar h2 {
+            font-size: 20px;
+            color: white;
+        }
+
+        /* Navigation */
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            margin-top: 20px;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 15px;
+        }
+
+        .sidebar ul li a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: background-color 0.3s;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar ul li a.active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .sidebar ul li a i {
+            margin-right: 12px;
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Auth Buttons Styles */
+        .auth-buttons {
+            flex-shrink: 0;
+            padding: 0;
+            margin-top: auto;
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background-color: #dc3545;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .logout-btn:hover {
+            background-color: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .auth-buttons i {
+            font-size: 16px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+            height: 100vh;
+            overflow-y: auto;
+            background-color: #ecf0f1;
+        }
+
+        .zoom-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1001;
+        }
+
+        .zoom-btn {
+            margin: 0 5px;
+            padding: 8px 16px;
+            background: #1e3c72;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .zoom-btn:hover {
+            background: #2a5298;
+        }
+
+        /* Content for demonstration */
+        .demo-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .demo-content h1 {
+            color: #1e3c72;
+            margin-bottom: 20px;
+        }
+
+        .demo-content p {
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+            
+            .sidebar-content {
+                padding: 15px;
+            }
+            
+            .main-content {
+                margin-left: 200px;
+            }
+            
+            .logout-btn {
+                padding: 10px;
+                font-size: 12px;
+            }
+
+            .sidebar ul li a span {
+                display: none;
+            }
+            
+            .logout-btn span {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="sidebar-content">
+                <div class="logo-container">
+                    <div class="logo"></div>
+                    <h2>Lodge Ease</h2>
+                </div>
+                <nav class="sidebar-nav">
+                    <ul>
+                        <li><a href="#dashboard"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+                        <li><a href="#rooms"><i class="fas fa-bed"></i> <span>Room Management</span></a></li>
+                        <li><a href="#requests"><i class="fas fa-clock"></i> <span>Booking Requests</span></a></li>
+                        <li><a href="#billing"><i class="fas fa-money-bill-wave"></i> <span>Billing</span></a></li>
+                        <li><a href="#reports" class="active"><i class="fas fa-chart-line"></i> <span>Reports</span></a></li>
+                        <li><a href="#analytics"><i class="fas fa-chart-pie"></i> <span>Business Analytics</span></a></li>
+                        <li><a href="#activity"><i class="fas fa-history"></i> <span>Activity Log</span></a></li>
+                        <li><a href="#settings"><i class="fas fa-cog"></i> <span>Settings</span></a></li>
+                        <li><a href="#longterm"><i class="fas fa-home"></i> <span>Long-term Stays</span></a></li>
+                        <li><a href="#chatbot"><i class="fas fa-robot"></i> <span>ChatBot</span></a></li>
+                    </ul>
+                </nav>
+                
+                <div class="auth-buttons">
+                    <button class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> 
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="zoom-controls">
+                <h4>Test Zoom Levels:</h4>
+                <button class="zoom-btn" onclick="setZoom(0.8)">80%</button>
+                <button class="zoom-btn" onclick="setZoom(0.9)">90%</button>
+                <button class="zoom-btn" onclick="setZoom(1.0)">100%</button>
+                <button class="zoom-btn" onclick="setZoom(1.1)">110%</button>
+                <button class="zoom-btn" onclick="setZoom(1.25)">125%</button>
+                <button class="zoom-btn" onclick="setZoom(1.5)">150%</button>
+                <button class="zoom-btn" onclick="setZoom(1.75)">175%</button>
+                <button class="zoom-btn" onclick="setZoom(2.0)">200%</button>
+            </div>
+
+            <div class="demo-content">
+                <h1>Sidebar Logout Button Position Test</h1>
+                <p><strong>Instructions:</strong> Use the zoom controls in the top-right corner to test different zoom levels.</p>
+                
+                <p>The logout button should now remain fixed at the bottom of the sidebar navigation, right after the "ChatBot" menu item, regardless of zoom level.</p>
+
+                <h3>Key Improvements Made:</h3>
+                <ul>
+                    <li><strong>Flexbox Layout:</strong> The sidebar now uses flexbox with the logout button positioned at the bottom using <code>margin-top: auto</code></li>
+                    <li><strong>Fixed Structure:</strong> The logout button is no longer absolutely positioned, preventing zoom-related displacement</li>
+                    <li><strong>Responsive Design:</strong> The layout adapts properly on smaller screens</li>
+                    <li><strong>Consistent Styling:</strong> Applied the same structure across all CSS files in the project</li>
+                </ul>
+
+                <p>Try zooming in and out using the controls above. Notice how the logout button stays consistently positioned right below the ChatBot menu item, maintaining its relative position within the sidebar structure.</p>
+
+                <p>This solution ensures that:</p>
+                <ul>
+                    <li>The logout button doesn't float or move when zooming</li>
+                    <li>It maintains proper spacing from other navigation elements</li>
+                    <li>The sidebar content remains scrollable if needed</li>
+                    <li>Responsive behavior is maintained on mobile devices</li>
+                </ul>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function setZoom(level) {
+            document.body.style.zoom = level;
+        }
+
+        // Add click functionality to logout button
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            alert('Logout button clicked! Position remains stable at all zoom levels.');
+        });
+    </script>
+</body>
+</html>

@@ -105,45 +105,63 @@ h1, h2, h3, h4 {
     text-align: center;
 }
 
-/* Auth Buttons Styles from Reports/styles.css */
-.auth-buttons {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    right: 0;
-    padding: 0 20px;
-    /* Removed Flexbox properties from previous edit */
-    /* flex-shrink: 0; */
+/* Logout Button Styles - positioned as last navigation item */
+.logout-item {
+    margin-top: 20px; /* Add some space above the logout button */
+    border-top: 1px solid rgba(255, 255, 255, 0.2); /* Optional separator line */
+    padding-top: 20px; /* Add padding above the logout button */
 }
 
 .logout-btn {
     width: 100%;
-    padding: 12px;
+    padding: 12px 15px;
     border: none;
     border-radius: 6px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
+    background-color: #dc3545;
+    color: white;
     cursor: pointer;
     transition: all 0.3s ease;
-    text-decoration: none;
-    background-color: #dc3545; /* Keep this color */
-    color: white;
-    /* font-family: 'Roboto', sans-serif; */ /* Inherited */
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
 }
 
 .logout-btn:hover {
-    background-color: #c82333; /* Keep this hover color */
+    background-color: #c82333;
+    transform: none; /* Remove transform to prevent floating effect */
+    box-shadow: none; /* Remove shadow to prevent floating effect */
 }
 
-/* Ensure icons are styled if needed */
-.auth-buttons i {
-    font-size: 16px;
+.logout-btn i {
+    margin-right: 12px;
+    font-size: 18px;
+    width: 20px;
+    text-align: center;
 }
 
-/* Responsive Sidebar/Auth from Reports/styles.css */
+/* Responsive adjustments for logout button */
+@media (max-width: 768px) {
+    .logout-item {
+        margin-top: 15px;
+        padding-top: 15px;
+    }
+    
+    .logout-btn {
+        padding: 10px 15px;
+    }
+
+    .logout-btn span {
+        display: none;
+    }
+
+    .logout-btn i {
+        margin: 0;
+    }
+}
+
+/* Responsive Sidebar from Reports/styles.css */
 @media (max-width: 768px) {
     .sidebar {
         width: 70px;
@@ -155,9 +173,6 @@ h1, h2, h3, h4 {
     .nav-text { /* From Reports CSS */
         display: none;
     }
-    .auth-buttons span { /* Add this if span exists */
-        display: none;
-    }
 
     .sidebar ul li a /* , .nav-link */ { /* Combine if .nav-link used */
         justify-content: center;
@@ -167,18 +182,6 @@ h1, h2, h3, h4 {
     .sidebar ul li a i /* , .nav-link i */ { /* Combine if .nav-link used */
         margin: 0;
     }
-
-    /* Auth button specific responsive */
-    .auth-buttons {
-        padding: 0 10px;
-    }
-    .logout-btn /* , .login-btn */ { /* Combine if .login-btn exists */
-        padding: 10px;
-    }
-    .auth-buttons i {
-        margin: 0;
-    }
-
     /* Adjust main content margin */
     .main-content {
         margin-left: 70px;

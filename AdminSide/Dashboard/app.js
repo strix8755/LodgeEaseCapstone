@@ -1,8 +1,9 @@
 // Import Firebase modules
-import { db, auth } from '../firebase.js';
+import { db, auth, signOut } from '../firebase.js';
 import { collection, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc, Timestamp, where, addDoc, getFirestore, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getChartData } from './chartData.js';
+import { occupancyService } from '../shared/occupancyCalculationService.js';
 
 // Vue app for the dashboard
 const app = new Vue({
@@ -205,15 +206,15 @@ const app = new Vue({
         }
     },
     methods: {
-        // async handleLogout() {
-        //     try {
-        //         await signOut(auth);
-        //         window.location.href = '../Login/index.html';
-        //     } catch (error) {
-        //         console.error('Error signing out:', error);
-        //         alert('Error signing out. Please try again.');
-        //     }
-        // },
+        async handleLogout() {
+            try {
+                await signOut();
+                window.location.href = '../Login/index.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out. Please try again.');
+            }
+        },
 
         async checkAuthState() {
             return new Promise((resolve) => {
@@ -873,7 +874,7 @@ const app = new Vue({
 
         async calculateDashboardMetrics() {
             try {
-                console.log("Calculating dashboard metrics...");
+                console.log("Calculating dashboard metrics using unified occupancy service...");
 
                 // Create consistent date objects for comparison
                 const today = new Date();
@@ -933,21 +934,6 @@ const app = new Vue({
 
                 console.log(`Today's new bookings: ${this.todayCheckIns}`);
 
-                // Calculate available rooms based on actual bookings
-                const totalRooms = 36;
-                const occupiedRooms = this.allBookings.filter(booking => {
-                    const checkIn = parseDate(booking.checkIn);
-                    const checkOut = parseDate(booking.checkOut);
-                    
-                    if (!checkIn || !checkOut) return false;
-                    
-                    const isActive = booking.status !== 'cancelled' && booking.status !== 'completed';
-                    return checkIn <= today && checkOut >= today && isActive;
-                }).length;
-                
-                this.availableRooms = totalRooms - occupiedRooms;
-                console.log(`Available rooms: ${this.availableRooms} (${occupiedRooms} occupied out of ${totalRooms} total)`);
-
                 // Calculate total bookings for current month (based on creation date)
                 const currentMonth = today.getMonth();
                 const currentYear = today.getFullYear();
@@ -986,90 +972,24 @@ const app = new Vue({
                 this.stats.currentMonthRevenue = this.formatCurrency(currentMonthRevenue);
                 console.log(`Current month revenue: ${this.stats.currentMonthRevenue}`);
 
-                // Calculate occupancy rate with improved accuracy
-                // Consider occupied rooms that have checked in and have not checked out yet
-                console.log("Calculating occupancy rate...");
-                console.log("Status values to consider for active bookings:", ["occupied", "checked-in", "confirmed", "pending", "active"]);
+                // Use unified occupancy calculation service
+                console.log("Dashboard: Using unified occupancy calculation service");
+                const occupancyData = occupancyService.calculateCurrentOccupancy(this.allBookings);
                 
-                // Check and log each booking's date and status
-                this.allBookings.forEach(booking => {
-                    const checkIn = parseDate(booking.checkIn);
-                    const checkOut = parseDate(booking.checkOut);
-                    
-                    if (checkIn && checkOut) {
-                        console.log(`Booking ${booking.id}: checkIn=${checkIn.toISOString()}, checkOut=${checkOut.toISOString()}, status=${booking.status}`);
-                    } else {
-                        console.log(`Booking ${booking.id}: Invalid check-in/check-out dates, status=${booking.status}`);
-                    }
-                });
+                // Update stats with occupancy data from unified service
+                this.stats.occupancyRate = occupancyData.occupancyRateFormatted;
+                this.availableRooms = occupancyData.availableRooms;
                 
-                // Calculate occupancy rate based on unique occupied rooms
-                const occupiedRoomsSet = new Set();
-                const activeBookings = [];
+                console.log(`Dashboard: Unified occupancy calculation complete`);
+                console.log(`Dashboard: Occupancy rate: ${occupancyData.occupancyRateFormatted}`);
+                console.log(`Dashboard: Available rooms: ${occupancyData.availableRooms}`);
+                console.log(`Dashboard: Occupied rooms: ${occupancyData.occupiedRooms}`);
+                console.log(`Dashboard: Occupied room numbers: [${occupancyData.occupiedRoomNumbers.join(', ')}]`);
                 
-                this.allBookings.forEach(booking => {
-                    const checkIn = parseDate(booking.checkIn);
-                    const checkOut = parseDate(booking.checkOut);
-                    
-                    if (!checkIn || !checkOut) {
-                        console.log(`Skipping booking ${booking.id} due to invalid dates`);
-                        return;
-                    }
-                    
-                    // Accept more status values for active bookings
-                    const activeStatuses = ['occupied', 'checked-in', 'confirmed', 'active', 'pending'];
-                    const hasActiveStatus = activeStatuses.includes(booking.status?.toLowerCase());
-                    
-                    // Check if today falls between check-in and check-out
-                    const isCurrentlyActive = checkIn <= today && checkOut >= today;
-                    
-                    const isActiveBooking = hasActiveStatus && isCurrentlyActive;
-                    
-                    if (isActiveBooking) {
-                        activeBookings.push(booking);
-                        // Count unique rooms only
-                        if (booking.propertyDetails?.roomNumber) {
-                            occupiedRoomsSet.add(booking.propertyDetails.roomNumber);
-                            console.log(`✓ Active booking ${booking.id}: room=${booking.propertyDetails.roomNumber}, status=${booking.status}`);
-                        } else {
-                            console.log(`⚠ Active booking ${booking.id} has no room number: status=${booking.status}`);
-                        }
-                    }
-                });
-
-                console.log(`Found ${activeBookings.length} active bookings occupying ${occupiedRoomsSet.size} unique rooms`);
-                
-                // List the occupied rooms for debugging
-                console.log(`Occupied rooms: [${Array.from(occupiedRoomsSet).sort().join(', ')}]`);
-                
-                // Additional debugging: show which bookings are active today
-                if (activeBookings.length === 0) {
-                    console.log('❌ No active bookings found for today. Debugging all bookings:');
-                    this.allBookings.forEach(booking => {
-                        const checkIn = parseDate(booking.checkIn);
-                        const checkOut = parseDate(booking.checkOut);
-                        const hasValidDates = checkIn && checkOut;
-                        const isInDateRange = hasValidDates ? (checkIn <= today && checkOut >= today) : false;
-                        const activeStatuses = ['occupied', 'checked-in', 'confirmed', 'active', 'pending'];
-                        const hasActiveStatus = activeStatuses.includes(booking.status?.toLowerCase());
-                        
-                        console.log(`  Booking ${booking.id}: status=${booking.status}, hasActiveStatus=${hasActiveStatus}, checkIn=${checkIn?.toISOString()}, checkOut=${checkOut?.toISOString()}, isInDateRange=${isInDateRange}, room=${booking.propertyDetails?.roomNumber || 'N/A'}`);
-                    });
-                } else {
-                    console.log('✅ Active bookings for today:');
-                    activeBookings.forEach(booking => {
-                        console.log(`  ${booking.id}: room=${booking.propertyDetails?.roomNumber}, status=${booking.status}`);
-                    });
+                // Validate the occupancy data consistency
+                if (!occupancyService.validateOccupancyData(occupancyData)) {
+                    console.warn('Dashboard: Occupancy data validation failed - check for inconsistencies');
                 }
-
-                const occupiedRoomsCount = occupiedRoomsSet.size;
-                const occupancyRate = (occupiedRoomsCount / totalRooms) * 100;
-                this.stats.occupancyRate = occupancyRate.toFixed(1) + '%';
-                console.log(`Occupancy rate calculation: (${occupiedRoomsCount} occupied rooms / ${totalRooms} total rooms) * 100 = ${occupancyRate.toFixed(1)}%`);
-                
-                // Update available rooms to be consistent with occupancy calculation
-                this.availableRooms = totalRooms - occupiedRoomsCount;
-                console.log(`Available rooms: ${this.availableRooms} (${occupiedRoomsCount} occupied out of ${totalRooms} total)`);
                 
                 // Force a UI update after all metrics have been calculated
                 this.$forceUpdate();

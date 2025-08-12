@@ -1,6 +1,6 @@
-import { auth, db } from '../firebase.js';
+import { auth, db, signOut } from '../firebase.js';
 import { doc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 // Configure Vue for production
@@ -257,15 +257,15 @@ new Vue({
             }
         },
         
-        // async handleLogout() {
-        //     try {
-        //         await signOut(auth);
-        //         window.location.href = '../Login/index.html';
-        //     } catch (error) {
-        //         console.error('Error signing out:', error);
-        //         this.showErrorAlert('Error signing out: ' + error.message);
-        //     }
-        // },
+        async handleLogout() {
+            try {
+                await signOut();
+                window.location.href = '../Login/index.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                this.showErrorAlert('Error signing out: ' + error.message);
+            }
+        },
 
         showSuccessAlert(message = 'Operation completed successfully') {
             this.successMessage = message;

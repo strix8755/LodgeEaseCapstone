@@ -114,14 +114,15 @@ new Vue({
         });
     },
     methods: {
-        // async handleLogout() {
-        //     try {
-        //         await signOut();
-        //         window.location.href = '../Login/index.html';
-        //     } catch (error) {
-        //         console.error('Logout error:', error);
-        //     }
-        // }
+        async handleLogout() {
+            try {
+                await signOut();
+                window.location.href = '../Login/index.html';
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Error signing out. Please try again.');
+            }
+        }
     }
 });
 

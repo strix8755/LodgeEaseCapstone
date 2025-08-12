@@ -1,6 +1,7 @@
 import { 
     auth, 
     db,
+    signOut
 } from '../firebase.js';
 import { 
     getFirestore,
@@ -18,7 +19,7 @@ import {
     limit,
     startAfter
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { PageLogger } from "../js/pageLogger.js";
 
 new Vue({
@@ -260,15 +261,15 @@ new Vue({
             }
         },
 
-        // async handleLogout() {
-        //     try {
-        //         await signOut(auth());
-        //         window.location.href = '../Login/index.html';
-        //     } catch (error) {
-        //         console.error('Error signing out:', error);
-        //         alert('Error signing out. Please try again.');
-        //     }
-        // },
+        async handleLogout() {
+            try {
+                await signOut();
+                window.location.href = '../Login/index.html';
+            } catch (error) {
+                console.error('Error signing out:', error);
+                alert('Error signing out. Please try again.');
+            }
+        },
 
         async fetchBookings() {
             try {
