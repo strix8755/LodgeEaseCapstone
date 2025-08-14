@@ -225,26 +225,26 @@
                     </p>
                 </div>
                 
-                <!-- Sales Forecast Metric Card -->
+                <!-- Seasonal Trends Metric Card -->
                 <div class="metric-card secondary">
                     <div class="metric-header">
-                        <h3>Sales Forecast</h3>
-                        <span class="time-period">Next 3 Months</span>
+                        <h3>Seasonal Score</h3>
+                        <span class="time-period">Current month</span>
                     </div>
-                    <button class="info-button" aria-label="More information about Sales Forecast">
+                    <button class="info-button" aria-label="More information about Seasonal Trends">
                         <i class="fas fa-info"></i>
                     </button>
                     <div class="tooltip">
                         <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
-                        <strong>Calculation:</strong> Uses machine learning algorithms analyzing historical sales patterns, seasonal trends, booking lead times, and market conditions to project next 3 months revenue.<br><br>
-                        <strong>Accuracy:</strong> Typically 85-95% accurate for 30-90 day forecasts. Accuracy decreases for longer periods due to market volatility and external factors.<br><br>
-                        <strong>Insights:</strong> Positive growth indicates strong forward bookings and market position. Negative projections suggest need for immediate marketing intervention or pricing adjustments.<br><br>
-                        <strong>Action Items:</strong> Use for budget planning, staff scheduling, inventory management. If forecast is low, launch marketing campaigns, adjust rates, or target new customer segments immediately.
+                        <strong>Calculation:</strong> Analyzes 12-month historical data to identify seasonal patterns in occupancy, bookings, and revenue. Measures variance between peak and low seasons.<br><br>
+                        <strong>Score Range:</strong> 0-100 where higher scores indicate stronger seasonal patterns. 80+ suggests highly seasonal business, 40-80 moderate seasonality, below 40 indicates consistent year-round performance.<br><br>
+                        <strong>Insights:</strong> High seasonality scores help identify peak booking periods and low-demand windows. Use this to optimize pricing strategies and marketing campaigns throughout the year.<br><br>
+                        <strong>Action Items:</strong> Plan marketing campaigns for low seasons, adjust pricing during peak periods, schedule maintenance during slow seasons, and develop off-season promotional packages to smooth demand curves.
                     </div>
-                    <p class="value">{{ formatCurrency(metrics.forecastedSales) }}</p>
-                    <p class="trend positive">
-                        <i class="fas fa-chart-line"></i>
-                        {{ metrics.forecastGrowth.toFixed(1) }}% growth
+                    <p class="value">{{ performanceIndicators.seasonalityScore.toFixed(0) }}%</p>
+                    <p class="trend" :class="performanceIndicators.seasonalityScore > 70 ? 'positive' : performanceIndicators.seasonalityScore > 40 ? 'neutral' : 'negative'">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ performanceIndicators.seasonalityScore > 70 ? 'High Seasonality' : performanceIndicators.seasonalityScore > 40 ? 'Moderate Seasonality' : 'Low Seasonality' }}
                     </p>
                 </div>
             </div>
@@ -276,15 +276,16 @@
                     </button>
                     <div class="tooltip">
                         <button class="tooltip-close" aria-label="Close tooltip">&times;</button>
-                        This chart shows historical sales data with forecasted values for upcoming months. Blue bars represent actual revenue, while yellow bars show predicted future sales based on seasonal trends and historical performance.
+                        <strong>Purpose:</strong> Displays comprehensive revenue data over time, showing actual sales performance and predictive forecasting for strategic business planning from the everlodgebookings collection.<br><br>
+                        <strong>Data Components:</strong> Includes all revenue streams - room rates, service charges, taxes, additional amenities, and booking fees. Combines historical actuals with machine learning-powered forecasts.<br><br>
+                        <strong>Visualization Elements:</strong> Blue bars represent confirmed historical revenue, while yellow/gold bars show AI-generated sales predictions based on seasonal patterns, booking trends, and market conditions.<br><br>
+                        <strong>Forecasting Accuracy:</strong> Predictions are typically 85-95% accurate for 30-90 day forecasts. Accuracy decreases for longer periods due to market volatility and external factors.<br><br>
+                        <strong>Business Intelligence:</strong> Track revenue growth trends, identify seasonal peaks and valleys, monitor forecast vs. actual performance, and spot early warning signs of revenue decline.<br><br>
+                        <strong>Strategic Applications:</strong> Budget planning, cash flow management, staff scheduling, marketing campaign timing, pricing strategy optimization, and capacity planning decisions.<br><br>
+                        <strong>Action Items:</strong> Use forecasts for proactive decision-making - launch marketing campaigns during predicted low periods, adjust pricing during high-demand forecasts, and plan operational changes based on revenue projections.
                     </div>
                     <div class="chart-container">
                         <canvas id="revenueChart"></canvas>
-                        <div class="debug-info">
-                            <div>Chart Status: <span id="revenue-chart-status">Loading...</span></div>
-                            <div>Data Points: <span id="revenue-data-points">0</span></div>
-                            <div>Last Update: <span id="revenue-last-update">Never</span></div>
-                        </div>
                         <div v-if="loading.charts" class="loading-overlay">
                             <div class="loading-spinner">
                                 <i class="fas fa-spinner fa-spin"></i>

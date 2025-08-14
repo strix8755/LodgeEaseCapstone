@@ -690,7 +690,7 @@ checkAuth().then(user => {
                         }
                     ];
                     
-                    // Add forecast dataset if we have forecast data
+                    // Add forecast dataset if we have forecast data - REMOVED FORECAST BARS, KEEPING ONLY TREND LINE
                     if (forecastData.length > 0) {
                         // Create a combined array with nulls for actual data points and values for forecast points
                         const forecastDataPoints = combinedLabels.map(month => {
@@ -698,21 +698,12 @@ checkAuth().then(user => {
                             return forecastPoint ? forecastPoint.amount : null;
                         });
                         
-                        datasets.push({
-                            label: 'Forecast Sales (₱)',
-                            data: forecastDataPoints,
-                            backgroundColor: 'rgba(255, 193, 7, 0.65)',
-                            borderColor: 'rgba(255, 193, 7, 0.9)',
-                            borderWidth: 1,
-                            borderRadius: 8,
-                            barPercentage: 0.75,
-                            categoryPercentage: 0.8,
-                            type: 'bar',
-                            order: 0,
-                            hoverBackgroundColor: 'rgba(255, 193, 7, 0.85)',
-                            hoverBorderColor: 'rgba(255, 193, 7, 1)',
-                            hoverBorderWidth: 2
-                        });
+                        // Ensure forecast data points have values to display
+                        console.log('Forecast data points:', forecastDataPoints);
+                        console.log('Combined labels:', combinedLabels);
+                        console.log('Forecast data:', forecastData);
+                        
+                        // FORECAST BARS REMOVED - Only keeping trend line
                         
                         // Add a line connecting actual to forecast
                         if (revenueData.length > 0 && forecastDataPoints.some(p => p !== null)) {
@@ -726,18 +717,21 @@ checkAuth().then(user => {
                             
                             // Add trend line dataset
                             datasets.push({
-                                label: 'Trend',
+                                label: 'Trend Line',
                                 data: lineData,
                                 type: 'line',
                                 borderColor: 'rgba(255, 99, 132, 0.8)',
                                 borderWidth: 2,
-                                pointRadius: 0,
-                                pointHoverRadius: 5,
-                                tension: 0.4,
+                                pointRadius: 4,
+                                pointHoverRadius: 6,
+                                pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+                                pointBorderColor: 'rgba(255, 99, 132, 1)',
+                                tension: 0.3,
                                 fill: false,
                                 order: 0,
                                 hoverBorderWidth: 3,
-                                hoverBorderColor: 'rgba(255, 99, 132, 1)'
+                                hoverBorderColor: 'rgba(255, 99, 132, 1)',
+                                spanGaps: false
                             });
                         }
                         
@@ -1243,8 +1237,12 @@ checkAuth().then(user => {
                 }
 
                 try {
+                    // Log the input data for debugging
+                    console.log('Historical data for forecasting:', historicalData);
+                    
                     // Extract the numerical values for forecasting
                     const values = historicalData.map(item => item.amount);
+                    console.log('Extracted values for forecasting:', values);
                     
                     // Calculate statistics about the historical data
                     const avgHistoricalValue = values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -1257,9 +1255,11 @@ checkAuth().then(user => {
                     
                     // Generate future month labels (3 months into the future)
                     const futureMonths = this.generateFutureMonths(lastMonth, 3);
+                    console.log('Future months generated:', futureMonths);
                     
                     // Perform the forecast calculation
                     const forecast = this.calculateForecast(values, 3);
+                    console.log('Raw forecast values:', forecast);
                     
                     // Additional validation: ensure total forecast isn't more than 2x total historical
                     const totalForecast = forecast.reduce((sum, v) => sum + v, 0);
@@ -1279,10 +1279,13 @@ checkAuth().then(user => {
                     );
                     
                     // Format the results
-                    return futureMonths.map((month, index) => ({
+                    const result = futureMonths.map((month, index) => ({
                         month,
                         amount: adjustedForecast[index]
                     }));
+                    
+                    console.log('Final forecast result:', result);
+                    return result;
                 } catch (error) {
                     console.error('Error forecasting sales:', error);
                     return [];
@@ -1629,12 +1632,41 @@ checkAuth().then(user => {
                             console.warn('⚠️ No bookings found in the last 30 days');
                         }
                         
+                        // Calculate forecast sales if we have monthly sales data
+                        if (chartData.sales && chartData.sales.monthly && chartData.sales.monthly.length > 0) {
+                            const forecastData = this.forecastSales(chartData.sales.monthly);
+                            if (forecastData && forecastData.length > 0) {
+                                // Sum up the forecast values for the next 3 months
+                                this.metrics.forecastedSales = forecastData.reduce((sum, item) => sum + (item.amount || 0), 0);
+                                
+                                // Calculate forecast growth percentage
+                                const lastMonthSales = chartData.sales.monthly[chartData.sales.monthly.length - 1]?.amount || 0;
+                                if (lastMonthSales > 0) {
+                                    const avgMonthlyForecast = this.metrics.forecastedSales / forecastData.length;
+                                    this.metrics.forecastGrowth = ((avgMonthlyForecast - lastMonthSales) / lastMonthSales) * 100;
+                                    this.metrics.forecastGrowth = Math.max(-50, Math.min(200, this.metrics.forecastGrowth)); // Cap growth
+                                }
+                                
+                                console.log('✅ Forecast calculated:', {
+                                    forecastedSales: this.metrics.forecastedSales,
+                                    forecastGrowth: this.metrics.forecastGrowth,
+                                    forecastData: forecastData
+                                });
+                            } else {
+                                console.warn('⚠️ No forecast data generated');
+                            }
+                        } else {
+                            console.warn('⚠️ No monthly sales data available for forecasting');
+                        }
+                        
                         // Log the final metrics for debugging
                         console.log('Final metrics after validation:', {
                             totalSales: this.metrics.totalSales,
                             totalBookings: this.metrics.totalBookings,
                             averageOccupancy: this.metrics.averageOccupancy,
-                            avgSalesPerBooking: this.metrics.avgSalesPerBooking
+                            avgSalesPerBooking: this.metrics.avgSalesPerBooking,
+                            forecastedSales: this.metrics.forecastedSales,
+                            forecastGrowth: this.metrics.forecastGrowth
                         });
                         
                         // Render the charts with the loaded data

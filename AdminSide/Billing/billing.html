@@ -237,18 +237,6 @@
                                     <button @click="viewBill(bill)" class="action-btn view-btn" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button 
-                                        @click="openEditModal(bill)" 
-                                        class="action-btn edit-btn" 
-                                        :title="canEditBill(bill) ? 'Edit Billing' : 'Cannot edit bills from dates older than today'"
-                                        :disabled="!canEditBill(bill)"
-                                        :class="{ 'disabled': !canEditBill(bill) }"
-                                    >
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button @click="deleteBill(bill)" class="action-btn delete-btn" title="Delete Bill">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </td>
                             </tr>
                         </tbody>

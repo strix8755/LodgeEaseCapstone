@@ -2423,6 +2423,48 @@ input[type="radio"]:disabled + label {
     cursor: not-allowed !important;
 }
 
+/* Radio button alignment and styling */
+.radio-options {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.radio-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #1e3c72;
+}
+
+.radio-option label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    margin: 0;
+    line-height: 16px;
+    vertical-align: top;
+}
+
+.radio-option input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.radio-option input[type="radio"]:disabled + label {
+    cursor: not-allowed;
+    color: #6c757d;
+}
+
 /* Select disabled styling */
 select:disabled {
     background-color: #f8f9fa !important;
