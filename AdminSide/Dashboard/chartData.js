@@ -93,12 +93,29 @@ function getDefaultDataset() {
             }]
         },
         roomType: {
-            labels: Object.keys(defaultRoomTypes),
+            labels: ['Deluxe Rooms', 'Standard Rooms'],
             datasets: [{
-                label: 'Bookings by Room Type',
-                data: Object.values(defaultRoomTypes),
-                backgroundColor: generateColors(Object.keys(defaultRoomTypes).length)
-            }]
+                label: 'Room Distribution',
+                data: [18, 18],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',   // Deluxe - Red
+                    'rgba(54, 162, 235, 0.7)'    // Standard - Blue
+                ]
+            }],
+            occupancyData: {
+                deluxe: { 
+                    total: 18, 
+                    occupied: 0, 
+                    available: 18,
+                    occupancyRate: '0.0'
+                },
+                standard: { 
+                    total: 18, 
+                    occupied: 0, 
+                    available: 18,
+                    occupancyRate: '0.0'
+                }
+            }
         },
         bookingTrends: {
             labels: labels,
@@ -194,31 +211,101 @@ function formatOccupancyData(bookings) {
 }
 
 function formatRoomTypeData(bookings) {
-    const roomTypeCounts = {};
+    // Define total rooms available for each type
+    const TOTAL_DELUXE_ROOMS = 18;
+    const TOTAL_STANDARD_ROOMS = 18;
+    
+    // Get current date range (today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    console.log('Calculating room occupancy for:', today.toDateString());
+    console.log(`Processing ${bookings.length} bookings for occupancy calculation`);
+    
+    // Count currently occupied rooms by type (active bookings for today)
+    let occupiedDeluxe = 0;
+    let occupiedStandard = 0;
+    let processedBookings = 0;
+    let activeBookingsToday = 0;
     
     bookings.forEach(booking => {
-        // Extract room type from booking, defaulting to 'Standard' if not found
-        let roomType = 'Standard';
+        processedBookings++;
         
-        if (booking.propertyDetails && booking.propertyDetails.roomType) {
-            roomType = booking.propertyDetails.roomType;
-        } else if (booking.roomType) {
-            roomType = booking.roomType;
+        // Only count confirmed/active bookings
+        if (!booking.status || booking.status === 'cancelled') {
+            return;
         }
         
-        roomTypeCounts[roomType] = (roomTypeCounts[roomType] || 0) + 1;
+        const checkIn = parseDate(booking.checkIn);
+        const checkOut = parseDate(booking.checkOut);
+        
+        if (!checkIn || !checkOut) return;
+        
+        // Check if booking is active today
+        const isActiveToday = checkIn <= today && checkOut > today;
+        
+        if (isActiveToday) {
+            activeBookingsToday++;
+            
+            // Extract room type from booking
+            let roomType = 'Standard'; // Default to Standard
+            
+            if (booking.propertyDetails && booking.propertyDetails.roomType) {
+                roomType = booking.propertyDetails.roomType;
+            } else if (booking.roomType) {
+                roomType = booking.roomType;
+            }
+            
+            // Count occupied rooms by type
+            if (roomType.toLowerCase().includes('deluxe')) {
+                occupiedDeluxe++;
+            } else {
+                occupiedStandard++;
+            }
+        }
     });
     
-    // Ensure we have at least one room type
-    if (Object.keys(roomTypeCounts).length === 0) {
-        roomTypeCounts['Standard'] = 0;
-    }
-
-    console.log('Room type distribution:', roomTypeCounts);
+    // Calculate available rooms
+    const availableDeluxe = TOTAL_DELUXE_ROOMS - occupiedDeluxe;
+    const availableStandard = TOTAL_STANDARD_ROOMS - occupiedStandard;
     
+    console.log('Room occupancy calculation completed:', {
+        processedBookings,
+        activeBookingsToday,
+        deluxe: { 
+            total: TOTAL_DELUXE_ROOMS, 
+            occupied: occupiedDeluxe, 
+            available: availableDeluxe,
+            occupancyRate: ((occupiedDeluxe / TOTAL_DELUXE_ROOMS) * 100).toFixed(1) + '%'
+        },
+        standard: { 
+            total: TOTAL_STANDARD_ROOMS, 
+            occupied: occupiedStandard, 
+            available: availableStandard,
+            occupancyRate: ((occupiedStandard / TOTAL_STANDARD_ROOMS) * 100).toFixed(1) + '%'
+        }
+    });
+    
+    // Return data for pie chart showing total rooms distribution
     return {
-        labels: Object.keys(roomTypeCounts),
-        data: Object.values(roomTypeCounts)
+        labels: ['Deluxe Rooms', 'Standard Rooms'],
+        data: [TOTAL_DELUXE_ROOMS, TOTAL_STANDARD_ROOMS],
+        occupancyData: {
+            deluxe: { 
+                total: TOTAL_DELUXE_ROOMS, 
+                occupied: occupiedDeluxe, 
+                available: availableDeluxe,
+                occupancyRate: ((occupiedDeluxe / TOTAL_DELUXE_ROOMS) * 100).toFixed(1)
+            },
+            standard: { 
+                total: TOTAL_STANDARD_ROOMS, 
+                occupied: occupiedStandard, 
+                available: availableStandard,
+                occupancyRate: ((occupiedStandard / TOTAL_STANDARD_ROOMS) * 100).toFixed(1)
+            }
+        }
     };
 }
 
@@ -340,10 +427,14 @@ export async function getChartData() {
                 roomType: {
                     labels: roomTypeData.labels,
                     datasets: [{
-                        label: 'Bookings by Room Type',
+                        label: 'Room Distribution',
                         data: roomTypeData.data,
-                        backgroundColor: generateColors(roomTypeData.labels.length)
-                    }]
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',   // Deluxe - Red
+                            'rgba(54, 162, 235, 0.7)'    // Standard - Blue
+                        ]
+                    }],
+                    occupancyData: roomTypeData.occupancyData
                 },
                 bookingTrends: {
                     labels: bookingTrends.labels,

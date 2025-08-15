@@ -237,6 +237,9 @@
                                     <button @click="viewBill(bill)" class="action-btn view-btn" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
+                                    <button @click="editBill(bill)" class="action-btn edit-btn" title="Edit Expenses">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -246,22 +249,6 @@
                     <div class="pagination-controls">
                         <div class="pagination-info">
                             Showing {{ paginatedBills.length ? ((currentPage - 1) * itemsPerPage) + 1 : 0 }} to {{ Math.min(currentPage * itemsPerPage, finalFilteredBills.length) }} of {{ finalFilteredBills.length }} bills
-                        </div>
-                        <div class="pagination-buttons">
-                            <button 
-                                @click="changePage(currentPage - 1)" 
-                                :disabled="currentPage === 1"
-                                class="pagination-btn"
-                            >
-                                Previous
-                            </button>
-                            <button 
-                                @click="changePage(currentPage + 1)" 
-                                :disabled="currentPage === totalPages"
-                                class="pagination-btn"
-                            >
-                                Next
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -369,7 +356,8 @@
         <div id="viewBillModal" class="modal" v-show="showViewModal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 v-if="isEditMode">Edit Billing Details</h2>
+                    <h2 v-if="isEditMode && isExpenseOnlyEdit">Edit Additional Expenses</h2>
+                    <h2 v-else-if="isEditMode">Edit Billing Details</h2>
                     <h2 v-else>View Billing Details</h2>
                     <span class="close" @click="closeViewModal">&times;</span>
                 </div>
@@ -386,11 +374,11 @@
                         
                         <div class="form-group">
                             <label for="editCustomerName">Customer Name:</label>
-                            <input type="text" id="editCustomerName" v-model="editingBill.customerName" :disabled="!isEditMode" required>
+                            <input type="text" id="editCustomerName" v-model="editingBill.customerName" :disabled="!isEditMode || isExpenseOnlyEdit" required>
                         </div>
                         
                         <!-- Duration selector for hourly rates (Edit) -->
-                        <div class="form-group" v-if="isEditMode && editingBill.bookingType === 'hourly'">
+                        <div class="form-group" v-if="isEditMode && editingBill.bookingType === 'hourly' && !isExpenseOnlyEdit">
                             <label for="editDuration">Duration (Hours):</label>
                             <input type="number" id="editDuration" v-model="editingBill.duration" min="1" required @change="updateBookingTypeAndPricing">
                             <label for="editHourlyPrice" class="mt-2">Hourly Price (₱):</label>
@@ -401,15 +389,15 @@
                             <div class="form-group">
                                 <label for="editBillDate">Check-in:</label>
                                 <div class="date-time-container">
-                                    <input type="date" id="editBillDate" v-model="editingBill.date" :disabled="!isEditMode" required @change="updateBookingTypeAndPricing">
-                                    <input type="time" id="editBillTime" v-model="editingBill.checkInTime" :disabled="!isEditMode" @change="updateBookingTypeAndPricing">
+                                    <input type="date" id="editBillDate" v-model="editingBill.date" :disabled="!isEditMode || isExpenseOnlyEdit" required @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="editBillTime" v-model="editingBill.checkInTime" :disabled="!isEditMode || isExpenseOnlyEdit" @change="updateBookingTypeAndPricing">
                                 </div>
                             </div>
                             <div class="form-group" v-if="editingBill.bookingType !== 'hourly' || !isEditMode">
                                 <label for="editBillCheckOut">Check-out:</label>
                                 <div class="date-time-container">
-                                    <input type="date" id="editBillCheckOut" v-model="editingBill.checkOut" :disabled="!isEditMode" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
-                                    <input type="time" id="editBillCheckOutTime" v-model="editingBill.checkOutTime" :disabled="!isEditMode" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                    <input type="date" id="editBillCheckOut" v-model="editingBill.checkOut" :disabled="!isEditMode || isExpenseOnlyEdit" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
+                                    <input type="time" id="editBillCheckOutTime" v-model="editingBill.checkOutTime" :disabled="!isEditMode || isExpenseOnlyEdit" :required="isEditMode && editingBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
                                 </div>
                             </div>
                         </div>
@@ -425,11 +413,11 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="editRoomNumber">Room Number:</label>
-                                <input type="text" id="editRoomNumber" v-model="editingBill.roomNumber" :disabled="!isEditMode" required>
+                                <input type="text" id="editRoomNumber" v-model="editingBill.roomNumber" :disabled="!isEditMode || isExpenseOnlyEdit" required>
                             </div>
                             <div class="form-group">
                                 <label for="editRoomType">Room Type:</label>
-                                <input type="text" id="editRoomType" v-model="editingBill.roomType" :disabled="!isEditMode">
+                                <input type="text" id="editRoomType" v-model="editingBill.roomType" :disabled="!isEditMode || isExpenseOnlyEdit">
                             </div>
                         </div>
                         
@@ -468,13 +456,13 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="editBaseCost">Base Room Cost:</label>
-                                <input type="number" id="editBaseCost" v-model="editingBill.baseCost" :disabled="!isEditMode" step="0.01" :readonly="isEditMode">
-                                <small v-if="isEditMode">(Automatically calculated based on booking type)</small>
+                                <input type="number" id="editBaseCost" v-model="editingBill.baseCost" :disabled="!isEditMode || isExpenseOnlyEdit" step="0.01" :readonly="isEditMode">
+                                <small v-if="isEditMode && !isExpenseOnlyEdit">(Automatically calculated based on booking type)</small>
                             </div>
                         </div>
                         <div class="form-group">
                             <label for="editStatus">Status:</label>
-                            <select id="editStatus" v-model="editingBill.status" :disabled="!isEditMode">
+                            <select id="editStatus" v-model="editingBill.status" :disabled="!isEditMode || isExpenseOnlyEdit">
                                 <option value="pending">Pending</option>
                                 <option value="unpaid">Unpaid</option>
                                 <option value="paid">Paid</option>
@@ -483,6 +471,9 @@
                         </div>
                         <div class="expenses-section">
                             <h3>Additional Expenses</h3>
+                            <div v-if="isExpenseOnlyEdit" class="help-text expense-note">
+                                <i class="fas fa-info-circle"></i> Only additional expenses can be modified in this edit mode.
+                            </div>
                             <div v-for="(expense, index) in editingBill.expenses" :key="index" class="expense-item">
                                 <input type="text" v-model="expense.description" placeholder="Description" :disabled="!isEditMode" required>
                                 <input type="number" v-model="expense.amount" placeholder="Amount" step="0.01" :disabled="!isEditMode" required>

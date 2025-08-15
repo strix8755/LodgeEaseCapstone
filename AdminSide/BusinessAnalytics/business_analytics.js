@@ -1632,41 +1632,12 @@ checkAuth().then(user => {
                             console.warn('⚠️ No bookings found in the last 30 days');
                         }
                         
-                        // Calculate forecast sales if we have monthly sales data
-                        if (chartData.sales && chartData.sales.monthly && chartData.sales.monthly.length > 0) {
-                            const forecastData = this.forecastSales(chartData.sales.monthly);
-                            if (forecastData && forecastData.length > 0) {
-                                // Sum up the forecast values for the next 3 months
-                                this.metrics.forecastedSales = forecastData.reduce((sum, item) => sum + (item.amount || 0), 0);
-                                
-                                // Calculate forecast growth percentage
-                                const lastMonthSales = chartData.sales.monthly[chartData.sales.monthly.length - 1]?.amount || 0;
-                                if (lastMonthSales > 0) {
-                                    const avgMonthlyForecast = this.metrics.forecastedSales / forecastData.length;
-                                    this.metrics.forecastGrowth = ((avgMonthlyForecast - lastMonthSales) / lastMonthSales) * 100;
-                                    this.metrics.forecastGrowth = Math.max(-50, Math.min(200, this.metrics.forecastGrowth)); // Cap growth
-                                }
-                                
-                                console.log('✅ Forecast calculated:', {
-                                    forecastedSales: this.metrics.forecastedSales,
-                                    forecastGrowth: this.metrics.forecastGrowth,
-                                    forecastData: forecastData
-                                });
-                            } else {
-                                console.warn('⚠️ No forecast data generated');
-                            }
-                        } else {
-                            console.warn('⚠️ No monthly sales data available for forecasting');
-                        }
-                        
                         // Log the final metrics for debugging
                         console.log('Final metrics after validation:', {
                             totalSales: this.metrics.totalSales,
                             totalBookings: this.metrics.totalBookings,
                             averageOccupancy: this.metrics.averageOccupancy,
-                            avgSalesPerBooking: this.metrics.avgSalesPerBooking,
-                            forecastedSales: this.metrics.forecastedSales,
-                            forecastGrowth: this.metrics.forecastGrowth
+                            avgSalesPerBooking: this.metrics.avgSalesPerBooking
                         });
                         
                         // Render the charts with the loaded data
@@ -2399,7 +2370,14 @@ function calculateMovingAverage(values, window) {
 
 // Tooltip system now handled entirely by CSS - simple positioning outside metric cards
 
-// TOOLTIP SYSTEM - Clean Rebuild - No Movement Issues
+// TOOLTIP SYSTEM - Enhanced for Scrollability and Zoom Support
+// Features:
+// - Scrollable content with visual indicators
+// - Keyboard navigation support (Arrow keys, Page Up/Down, Home/End, Escape)
+// - Responsive sizing based on content length and screen size
+// - Enhanced close button with hover effects
+// - Proper overflow handling for long text content
+// - Auto-detection of scrollable content with visual cues
 function initializeTooltips() {
     console.log('Initializing clean tooltip system...');
     
@@ -2482,13 +2460,17 @@ function initializeTooltips() {
                                 background-color: rgba(0, 0, 0, 0.5);
                                 z-index: 9998;
                                 display: none;
+                                pointer-events: auto;
                             `;
                             document.body.appendChild(overlay);
                             
-                            // Click overlay to close
-                            overlay.addEventListener('click', () => {
-                                console.log('Overlay clicked - closing tooltips');
-                                closeAllTooltips();
+                            // Click overlay to close, but don't interfere with tooltip scrolling
+                            overlay.addEventListener('click', (e) => {
+                                // Only close if clicking the overlay, not the tooltip
+                                if (e.target === overlay) {
+                                    console.log('Overlay clicked - closing tooltips');
+                                    closeAllTooltips();
+                                }
                             });
                         }
                         
@@ -2509,48 +2491,83 @@ function initializeTooltips() {
                             padding: 24px !important;
                             border-radius: 16px !important;
                             box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 8px 25px rgba(0,0,0,0.4) !important;
-                            width: 750px !important;
-                            max-width: 95vw !important;
+                            width: 600px !important;
+                            max-width: 90vw !important;
                             height: auto !important;
-                            overflow: visible !important;
+                            max-height: 80vh !important;
+                            min-height: 200px !important;
+                            overflow-y: auto !important;
+                            overflow-x: hidden !important;
+                            word-wrap: break-word !important;
+                            word-break: break-word !important;
+                            -webkit-hyphens: auto !important;
+                            hyphens: auto !important;
                             font-size: 14px !important;
                             line-height: 1.6 !important;
-                            z-index: 9999 !important;
+                            z-index: 10000 !important;
                             display: block !important;
                             text-align: left !important;
                             border: 2px solid rgba(116, 185, 255, 0.3) !important;
                             opacity: 1 !important;
                             visibility: visible !important;
-                            backdrop-filter: blur(8px) !important;
+                            pointer-events: auto !important;
                             -webkit-backdrop-filter: blur(8px) !important;
+                            backdrop-filter: blur(8px) !important;
                         `;
-                        
-                        // Keep original content without scroll container
-                        // No modifications needed - content displays fully without scroll view
                         
                         document.body.appendChild(tooltipClone);
                         console.log('Tooltip clone added to body');
+                        
+                        // Focus the tooltip to ensure it can receive scroll events
+                        tooltipClone.setAttribute('tabindex', '0');
+                        tooltipClone.focus();
+                        
+                        // Ensure mouse wheel scrolling works properly
+                        tooltipClone.addEventListener('wheel', (e) => {
+                            e.stopPropagation();
+                            // Allow natural scrolling behavior
+                        }, { passive: true });
+                        
+                        // Prevent tooltip clicks from closing the tooltip
+                        tooltipClone.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                        });
                         
                         // Set up close button
                         const closeBtn = tooltipClone.querySelector('.tooltip-close');
                         if (closeBtn) {
                             closeBtn.style.cssText = `
                                 position: absolute !important;
-                                top: 8px !important;
-                                right: 8px !important;
-                                background: #555 !important;
+                                top: 12px !important;
+                                right: 12px !important;
+                                background: rgba(220, 53, 69, 0.9) !important;
                                 color: white !important;
                                 border: none !important;
-                                width: 24px !important;
-                                height: 24px !important;
+                                width: 28px !important;
+                                height: 28px !important;
                                 font-size: 16px !important;
+                                font-weight: bold !important;
                                 cursor: pointer !important;
                                 display: flex !important;
                                 align-items: center !important;
                                 justify-content: center !important;
-                                border-radius: 0px !important;
-                                z-index: 10000 !important;
+                                border-radius: 50% !important;
+                                z-index: 10001 !important;
+                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+                                transition: all 0.2s ease !important;
+                                pointer-events: auto !important;
                             `;
+                            
+                            // Add hover effect
+                            closeBtn.addEventListener('mouseenter', () => {
+                                closeBtn.style.background = 'rgba(220, 53, 69, 1) !important';
+                                closeBtn.style.transform = 'scale(1.1) !important';
+                            });
+                            
+                            closeBtn.addEventListener('mouseleave', () => {
+                                closeBtn.style.background = 'rgba(220, 53, 69, 0.9) !important';
+                                closeBtn.style.transform = 'scale(1) !important';
+                            });
                             
                             closeBtn.addEventListener('click', (e) => {
                                 e.stopPropagation();
@@ -2564,6 +2581,9 @@ function initializeTooltips() {
                         
                         button.classList.add('active');
                         console.log(`Button ${index + 1} marked as active`);
+                        
+                        // Add keyboard support
+                        document.addEventListener('keydown', handleTooltipKeydown);
                     }
                 });
                 
@@ -2583,60 +2603,82 @@ function initializeTooltips() {
                 overlay.style.display = 'none';
                 console.log('Overlay hidden');
             }
+            
             if (activeTooltip) {
                 activeTooltip.remove();
                 console.log('Active tooltip removed');
             }
             
-            // No custom styles to remove since we're not using scroll containers
+            // Remove active state from all buttons
+            infoButtons.forEach(btn => btn.classList.remove('active'));
             
-            // Remove active state from buttons
-            document.querySelectorAll('.info-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            // Remove keyboard event listener
+            document.removeEventListener('keydown', handleTooltipKeydown);
             
-            // Hide original tooltips
-            document.querySelectorAll('.tooltip').forEach(tooltip => {
-                tooltip.style.display = 'none';
-                tooltip.classList.remove('show');
-            });
-            
-            console.log('All tooltips closed and styles cleaned up');
+            console.log('All tooltips closed');
         };
         
-        // Close on escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                console.log('Escape pressed');
-                closeAllTooltips();
+        // Keyboard event handler for tooltips
+        function handleTooltipKeydown(event) {
+            const activeTooltip = document.getElementById('active-tooltip');
+            if (!activeTooltip) return;
+            
+            switch(event.key) {
+                case 'Escape':
+                    event.preventDefault();
+                    closeAllTooltips();
+                    break;
+                case 'ArrowUp':
+                    event.preventDefault();
+                    activeTooltip.scrollBy(0, -50);
+                    break;
+                case 'ArrowDown':
+                    event.preventDefault();
+                    activeTooltip.scrollBy(0, 50);
+                    break;
+                case 'PageUp':
+                    event.preventDefault();
+                    activeTooltip.scrollBy(0, -activeTooltip.clientHeight * 0.8);
+                    break;
+                case 'PageDown':
+                    event.preventDefault();
+                    activeTooltip.scrollBy(0, activeTooltip.clientHeight * 0.8);
+                    break;
+                case 'Home':
+                    event.preventDefault();
+                    activeTooltip.scrollTop = 0;
+                    break;
+                case 'End':
+                    event.preventDefault();
+                    activeTooltip.scrollTop = activeTooltip.scrollHeight;
+                    break;
             }
-        });
-        
+        }
         console.log('✅ Clean tooltip system initialization complete!');
         
     } catch (error) {
         console.error('Error initializing tooltips:', error);
     }
-    
-    // Test function
-    window.testTooltipSystem = function() {
-        console.log('=== CLEAN TOOLTIP TEST ===');
-        const buttons = document.querySelectorAll('.info-button');
-        
-        if (buttons.length > 0) {
-            console.log('Clicking first button...');
-            buttons[0].click();
-            
-            setTimeout(() => {
-                console.log('Closing tooltip...');
-                closeAllTooltips();
-            }, 3000);
-        } else {
-            console.log('No buttons found for testing');
-        }
-        console.log('=== END TEST ===');
-    };
 }
+
+// Test function
+window.testTooltipSystem = function() {
+    console.log('=== CLEAN TOOLTIP TEST ===');
+    const buttons = document.querySelectorAll('.info-button');
+    
+    if (buttons.length > 0) {
+        console.log('Clicking first button...');
+        buttons[0].click();
+        
+        setTimeout(() => {
+            console.log('Closing tooltip...');
+            closeAllTooltips();
+        }, 3000);
+    } else {
+        console.log('No buttons found for testing');
+    }
+    console.log('=== END TEST ===');
+};
 
 // Initialize tooltips when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {

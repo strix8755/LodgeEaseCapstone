@@ -114,7 +114,7 @@ const app = new Vue({
             },
             rooms: {
                 title: 'Room Distribution Chart',
-                text: 'The doughnut chart shows the distribution of room types and their relative occupancy. Each segment represents a different room type, with the size indicating the proportion of rooms. Hover over segments to see detailed statistics including sales generation per room type.'
+                text: 'The pie chart shows the distribution between Deluxe and Standard rooms in your hotel. Each segment represents the total number of rooms of that type. Hover over each segment to see detailed occupancy information including occupied rooms, available rooms, and current occupancy rates for real-time room management insights.'
             },
             sales: {
                 title: 'Sales Analysis Chart',
@@ -1261,6 +1261,10 @@ const app = new Vue({
         },
 
         createChartInstances(revenueCtx, occupancyCtx, roomTypeCtx, bookingTrendsCtx, salesCtx, chartData) {
+            // Store occupancy data globally for tooltip access
+            window.roomOccupancyData = chartData.roomType?.occupancyData || null;
+            console.log('Stored room occupancy data:', window.roomOccupancyData);
+            
             // Create Revenue Chart
             this.revenueChart = new Chart(revenueCtx, {
                 type: 'line',
@@ -1574,34 +1578,42 @@ const app = new Vue({
             });
             
             // Create Room Type Chart
+            const roomTypeData = chartData.roomType || {
+                labels: ['Deluxe Rooms', 'Standard Rooms'],
+                datasets: [{
+                    label: 'Room Distribution',
+                    data: [18, 18],
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',   // Deluxe - Red
+                        'rgba(54, 162, 235, 0.7)'    // Standard - Blue
+                    ],
+                    hoverBackgroundColor: [
+                        'rgba(255, 99, 132, 0.9)',
+                        'rgba(54, 162, 235, 0.9)'
+                    ],
+                    borderWidth: 2,
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#ffffff'
+                }],
+                occupancyData: {
+                    deluxe: { 
+                        total: 18, 
+                        occupied: 0, 
+                        available: 18,
+                        occupancyRate: '0.0'
+                    },
+                    standard: { 
+                        total: 18, 
+                        occupied: 0, 
+                        available: 18,
+                        occupancyRate: '0.0'
+                    }
+                }
+            };
+
             this.roomTypeChart = new Chart(roomTypeCtx, {
                 type: 'pie',
-                data: chartData.roomType || {
-                    labels: [],
-                    datasets: [{
-                        label: 'Bookings by Room Type',
-                        data: [],
-                        backgroundColor: [
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)',
-                            'rgba(153, 102, 255, 0.7)',
-                            'rgba(255, 159, 64, 0.7)'
-                        ],
-                        hoverBackgroundColor: [
-                            'rgba(255, 99, 132, 0.9)',
-                            'rgba(54, 162, 235, 0.9)',
-                            'rgba(255, 206, 86, 0.9)',
-                            'rgba(75, 192, 192, 0.9)',
-                            'rgba(153, 102, 255, 0.9)',
-                            'rgba(255, 159, 64, 0.9)'
-                        ],
-                        borderWidth: 2,
-                        hoverBorderWidth: 3,
-                        hoverBorderColor: '#ffffff'
-                    }]
-                },
+                data: roomTypeData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
@@ -1615,34 +1627,93 @@ const app = new Vue({
                             }
                         },
                         tooltip: {
-                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            enabled: true,
+                            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#ffffff',
+                            borderWidth: 1,
                             titleFont: {
-                                size: 14
+                                size: 16,
+                                weight: 'bold'
                             },
                             bodyFont: {
-                                size: 13
+                                size: 14
                             },
-                            padding: 12,
+                            padding: 16,
+                            cornerRadius: 8,
+                            displayColors: false,
                             callbacks: {
+                                title: function(context) {
+                                    return context[0].label;
+                                },
                                 label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.formattedValue;
-                                    const dataset = context.dataset;
-                                    const total = dataset.data.reduce((acc, curr) => acc + curr, 0);
-                                    const percentage = Math.round((context.raw / total) * 100);
+                                    const roomType = context.label;
+                                    const totalRooms = context.parsed;
+                                    const occupancyData = window.roomOccupancyData;
                                     
-                                    return `${label}: ${value} (${percentage}%)`;
+                                    console.log('Tooltip - Room type:', roomType);
+                                    console.log('Tooltip - Available occupancy data:', occupancyData);
+                                    
+                                    let occupancy;
+                                    if (roomType === 'Deluxe Rooms' && occupancyData && occupancyData.deluxe) {
+                                        occupancy = occupancyData.deluxe;
+                                    } else if (roomType === 'Standard Rooms' && occupancyData && occupancyData.standard) {
+                                        occupancy = occupancyData.standard;
+                                    } else {
+                                        // Fallback if occupancy data is not available
+                                        console.warn('Occupancy data not found for:', roomType, 'Available data:', occupancyData);
+                                        return [
+                                            `Total Rooms: ${totalRooms}`,
+                                            'Real-time data unavailable'
+                                        ];
+                                    }
+                                    
+                                    console.log('Using occupancy data:', occupancy);
+                                    
+                                    // Create detailed tooltip information
+                                    const occupancyRate = parseFloat(occupancy.occupancyRate);
+                                    const status = occupancyRate > 80 ? 'High Occupancy' : 
+                                                 occupancyRate > 50 ? 'Moderate Occupancy' : 'Low Occupancy';
+                                    
+                                    return [
+                                        `Total Rooms: ${totalRooms}`,
+                                        `🟢 Available: ${occupancy.available} rooms`,
+                                        `🔴 Occupied: ${occupancy.occupied} rooms`,
+                                        `📊 Occupancy Rate: ${occupancy.occupancyRate}%`,
+                                        `📈 Status: ${status}`
+                                    ];
                                 },
                                 afterLabel: function(context) {
-                                    // Just an example - this would need to be populated with real data
-                                    const roomTypes = ['Deluxe', 'Standard', 'Suite', 'Family', 'Executive', 'Budget'];
-                                    const revenues = [120000, 95000, 180000, 150000, 210000, 75000];
+                                    const roomType = context.label;
+                                    const occupancyData = window.roomOccupancyData;
                                     
-                                    const index = context.dataIndex % roomTypes.length;
-                                    return [
-                                        `Avg. Rate: ₱${(revenues[index] / 30).toFixed(0)}/night`,
-                                        `Revenue: ₱${revenues[index].toLocaleString()}`
-                                    ];
+                                    let occupancy;
+                                    if (roomType === 'Deluxe Rooms' && occupancyData && occupancyData.deluxe) {
+                                        occupancy = occupancyData.deluxe;
+                                    } else if (roomType === 'Standard Rooms' && occupancyData && occupancyData.standard) {
+                                        occupancy = occupancyData.standard;
+                                    } else {
+                                        return '';
+                                    }
+                                    
+                                    // Add management insights
+                                    const insights = [];
+                                    const occupancyRate = parseFloat(occupancy.occupancyRate);
+                                    
+                                    if (occupancy.available === 0) {
+                                        insights.push('⚠️ Fully Booked');
+                                    } else if (occupancy.available <= 2) {
+                                        insights.push('⚠️ Limited Availability');
+                                    } else if (occupancy.available >= Math.floor(occupancy.total * 0.7)) {
+                                        insights.push('✅ High Availability');
+                                    }
+                                    
+                                    if (occupancyRate > 90) {
+                                        insights.push('💰 Peak Revenue Opportunity');
+                                    }
+                                    
+                                    return insights.length > 0 ? ['', ...insights] : '';
                                 }
                             }
                         }

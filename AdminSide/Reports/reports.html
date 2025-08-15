@@ -619,17 +619,6 @@
                     </div>
                 </div>
             </section>
-
-            <!-- Debug controls - only visible in development -->
-            <div class="debug-panel" style="margin: 15px 0; padding: 10px; border: 1px dashed #ccc; background: #f9f9f9; display: none;">
-                <h4 style="margin-top: 0;">Debug Controls</h4>
-                <button onclick="document.querySelector('.app').__vue__.initTooltips(); console.log('Manual tooltip initialization triggered');" style="padding: 5px 10px; margin-right: 10px;">
-                    Reinitialize Tooltips
-                </button>
-                <button onclick="document.querySelector('.debug-panel').style.display = 'none';" style="padding: 5px 10px;">
-                    Hide Debug Panel
-                </button>
-            </div>
         </main>
 
         <!-- Owner PIN Modal -->
@@ -683,14 +672,6 @@
                     }
                 }
             });
-            
-            // Show debug panel if in development (moved from inline script)
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                setTimeout(function() {
-                    const debugPanel = document.querySelector('.debug-panel');
-                    if (debugPanel) debugPanel.style.display = 'block';
-                }, 1000);
-            }
         });
     </script>
 </body>

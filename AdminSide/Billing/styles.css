@@ -944,6 +944,27 @@ tbody tr:hover {
     color: #444;
 }
 
+/* Help text for expense-only edit mode */
+.help-text {
+    background-color: #e8f4fd;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 12px;
+    color: #0c5460;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.help-text i {
+    color: #17a2b8;
+}
+
+.help-text.expense-note {
+    margin-bottom: 15px;
+}
+
 .expense-item {
     display: flex;
     gap: 10px;

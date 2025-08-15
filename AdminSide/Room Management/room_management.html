@@ -196,9 +196,6 @@
                                 <button @click="editBooking(booking)" class="action-btn edit-btn" title="Edit Booking">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button @click="deleteBooking(booking)" class="action-btn delete-btn" title="Delete Booking">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </td>
                         </tr>
                     </tbody>
@@ -625,13 +622,6 @@
                                     <button @click.stop="viewHomepageLodge(lodge)" class="admin-action-btn" title="View details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <!-- Add data attributes for better selection -->
-                                    <button @click.stop="deleteLodge(lodge)" 
-                                            class="admin-action-btn delete-action-btn" 
-                                            :data-lodge-id="lodge.id"
-                                            title="Delete lodge">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
                                 </div>
                                 
                                 <!-- Client-side overlay elements (matching rooms.html) -->
@@ -734,11 +724,6 @@
                             <div class="lodge-list-actions p-4 flex flex-col justify-center">
                                 <button @click="viewHomepageLodge(lodge)" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 mb-2">
                                     <i class="fas fa-eye mr-1"></i> View
-                                </button>
-                                <button @click="deleteLodge(lodge)" 
-                                        class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
-                                        :data-lodge-id="lodge.id">
-                                    <i class="fas fa-trash mr-1"></i> Delete
                                 </button>
                             </div>
                         </div>

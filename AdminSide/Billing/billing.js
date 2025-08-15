@@ -134,6 +134,7 @@ new Vue({
             currentDate: new Date(),
             view: 'all',
             isEditMode: false,
+            isExpenseOnlyEdit: false, // Add flag for expense-only editing
             
             // Constants for billing calculations
             REMOTE_BOOKING_FEE: 50, // PHP
@@ -736,14 +737,17 @@ new Vue({
         },
         
         editBill(bill) {
-            console.log('Edit bill function called', bill);
-            // Deep copy to avoid modifying the original
-            this.editingBill = JSON.parse(JSON.stringify(bill));
+            console.log('Edit bill function called for expenses only', bill);
             
-            // Ensure expenses array exists
-            if (!this.editingBill.expenses) {
-                this.editingBill.expenses = [];
-            }
+            // Create a deep copy of the bill but set restricted edit mode
+            this.editingBill = {
+                ...bill,
+                expenses: bill.expenses ? [...bill.expenses] : [],
+                bookingType: bill.bookingType || 'standard',
+                duration: bill.duration || 3,
+                hasTvRemote: bill.hasTvRemote || false,
+                hourlyPrice: bill.hourlyPrice || 0
+            };
             
             // Format date and time for proper display in form inputs
             if (bill.date) {
@@ -775,8 +779,9 @@ new Vue({
             console.log('Edit bill - Using ID:', this.currentBillId);
             
             this.showViewModal = true;
-            this.isEditMode = true;
-            console.log('Edit mode enabled:', this.isEditMode);
+            this.isEditMode = true; // Enable edit mode specifically for expenses
+            this.isExpenseOnlyEdit = true; // Add flag for expense-only editing
+            console.log('Expense-only edit mode enabled:', this.isEditMode);
         },
         
         closeViewModal() {
@@ -784,6 +789,7 @@ new Vue({
             this.editingBill = null;
             this.currentBillId = null;
             this.isEditMode = false;
+            this.isExpenseOnlyEdit = false; // Reset expense-only edit flag
         },
         addEditExpense() {
             if (!this.editingBill.expenses) this.editingBill.expenses = [];

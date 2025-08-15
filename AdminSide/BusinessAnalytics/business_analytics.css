@@ -176,6 +176,7 @@ h1, h2, h3, h4 {
     flex-direction: column;
     align-items: center;
     text-align: center;
+    z-index: 150;
 }
 
 .metric-card:hover {
@@ -263,6 +264,8 @@ h1, h2, h3, h4 {
     height: 450px;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 150;
 }
 
 .chart-card:hover {
@@ -379,7 +382,7 @@ h1, h2, h3, h4 {
     gap: 10px;
 }
 
-/* Info Button */
+/* Info Button Base Styles */
 .info-button {
     position: absolute;
     width: 24px;
@@ -394,26 +397,27 @@ h1, h2, h3, h4 {
     transition: all 0.2s ease;
     font-size: 12px;
     border: none;
-    z-index: 1000;
+    z-index: 200;
 }
 
+/* Metric Card Info Button - Bottom Right */
 .metric-card .info-button {
     bottom: 12px;
     right: 12px;
 }
 
+.metric-card .info-button:hover {
+    background-color: var(--accent-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+/* Chart Card Info Button - Top Right */
 .chart-card .info-button {
     top: 12px;
     right: 12px;
     opacity: 1;
     visibility: visible;
-}
-
-.info-button:hover,
-.metric-card .info-button:hover {
-    background-color: var(--accent-color);
-    color: white;
-    transform: scale(1.1);
 }
 
 .chart-card .info-button:hover {
@@ -422,7 +426,63 @@ h1, h2, h3, h4 {
     transform: scale(1.05);
 }
 
-/* Tooltip System */
+/* Data Source Banner Styling */
+.data-source-banner {
+    background-color: #e6f7ff !important;
+    border-left: 4px solid #1890ff !important;
+    margin-bottom: 20px !important;
+    padding: 20px 30px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    max-width: none !important;
+    position: relative !important;
+    z-index: 100 !important;
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.15) !important;
+    border: 1px solid rgba(24, 144, 255, 0.2) !important;
+    animation: bannerSlideIn 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+.data-source-banner:hover {
+    box-shadow: 0 6px 16px rgba(24, 144, 255, 0.2) !important;
+    transform: translateY(-1px);
+}
+
+@keyframes bannerSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.data-source-banner h2 {
+    margin: 0 !important;
+    color: #096dd9 !important;
+    font-size: 20px !important;
+    font-weight: 600 !important;
+}
+
+.data-source-banner p {
+    margin: 8px 0 0 !important;
+    color: #555 !important;
+    font-size: 14px !important;
+}
+
+.data-source-banner i {
+    margin-right: 10px !important;
+    font-size: 18px !important;
+}
+
+/* Hide any global info buttons that might appear outside of cards */
+body > .info-button:not(.metric-card .info-button):not(.chart-card .info-button),
+.main-content > .info-button:not(.metric-card .info-button):not(.chart-card .info-button) {
+    display: none !important;
+}
+
 .tooltip {
     position: fixed;
     top: 50%;
@@ -431,8 +491,9 @@ h1, h2, h3, h4 {
     z-index: 2147483647;
     width: 450px;
     max-width: 90vw;
-    height: 350px;
-    max-height: 70vh;
+    height: auto;
+    max-height: 80vh;
+    min-height: 200px;
     background: linear-gradient(135deg, rgba(30, 39, 46, 0.98), rgba(45, 52, 54, 0.98));
     color: #ffffff;
     padding: 24px;
@@ -446,11 +507,16 @@ h1, h2, h3, h4 {
     pointer-events: none;
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     overflow-y: auto;
+    overflow-x: hidden;
     word-wrap: break-word;
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    hyphens: auto;
     box-shadow: 
         0 20px 60px rgba(0, 0, 0, 0.7),
         0 10px 25px rgba(0, 0, 0, 0.5),
         0 3px 10px rgba(116, 185, 255, 0.15);
+    -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
 }
 
@@ -466,23 +532,119 @@ h1, h2, h3, h4 {
     margin-top: 0;
 }
 
+/* Tooltip Close Button Enhancement */
+.tooltip-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.tooltip-close:hover {
+    background: rgba(220, 53, 69, 0.8);
+    transform: scale(1.1);
+}
+
+/* Tooltip content styling for better readability */
+.tooltip br {
+    margin-bottom: 8px;
+    display: block;
+    content: "";
+}
+
+/* Enhanced spacing for tooltip text */
+#active-tooltip strong {
+    color: #ffd700;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: block;
+    margin: 16px 0 8px 0;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+    padding-bottom: 4px;
+}
+
+#active-tooltip strong:first-child {
+    margin-top: 0;
+}
+
+/* Better spacing for tooltip paragraphs */
+#active-tooltip {
+    line-height: 1.7;
+}
+
 /* Scrollbar for tooltip */
 .tooltip::-webkit-scrollbar {
-    width: 8px;
+    width: 12px;
 }
 
 .tooltip::-webkit-scrollbar-track {
     background: rgba(255,255,255,0.1);
-    border-radius: 4px;
+    border-radius: 6px;
+    margin: 8px 0;
 }
 
 .tooltip::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
-    border-radius: 4px;
+    background: rgba(255,255,255,0.4);
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
 }
 
 .tooltip::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.6);
+    background-clip: content-box;
+}
+
+.tooltip::-webkit-scrollbar-thumb:active {
+    background: rgba(255,255,255,0.8);
+    background-clip: content-box;
+}
+
+/* Enhanced scrollbar for active tooltip */
+#active-tooltip {
+    outline: none; /* Remove focus outline */
+    scroll-behavior: smooth;
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: rgba(116, 185, 255, 0.6) rgba(255,255,255,0.15); /* Firefox */
+}
+
+#active-tooltip::-webkit-scrollbar {
+    width: 14px;
+}
+
+#active-tooltip::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.15);
+    border-radius: 7px;
+    margin: 8px 0;
+}
+
+#active-tooltip::-webkit-scrollbar-thumb {
+    background: rgba(116, 185, 255, 0.6);
+    border-radius: 7px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+#active-tooltip::-webkit-scrollbar-thumb:hover {
+    background: rgba(116, 185, 255, 0.8);
+    background-clip: content-box;
+}
+
+#active-tooltip::-webkit-scrollbar-thumb:active {
+    background: rgba(116, 185, 255, 1);
+    background-clip: content-box;
 }
 
 /* Header Controls */
@@ -662,8 +824,9 @@ h1, h2, h3, h4 {
     .tooltip {
         width: 420px;
         max-width: calc(100vw - 30px);
-        height: 320px;
-        max-height: 65vh;
+        height: auto;
+        max-height: 75vh;
+        min-height: 250px;
         font-size: 0.86rem;
         padding: 20px;
     }
@@ -694,6 +857,20 @@ h1, h2, h3, h4 {
     .main-content {
         margin-left: 70px;
         width: calc(100% - 70px);
+    }
+    
+    /* Data Source Banner Mobile Styling */
+    .data-source-banner {
+        padding: 15px 20px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .data-source-banner h2 {
+        font-size: 18px !important;
+    }
+    
+    .data-source-banner p {
+        font-size: 13px !important;
     }
 
     .chart-card {
@@ -751,50 +928,56 @@ h1, h2, h3, h4 {
     .tooltip {
         width: 350px;
         max-width: calc(100vw - 20px);
-        height: 280px;
-        max-height: 60vh;
+        height: auto;
+        max-height: 70vh;
+        min-height: 200px;
         font-size: 0.84rem;
         padding: 18px;
     }
     
-    .info-button {
-        width: 26px;
-        height: 26px;
-        font-size: 13px;
-    }
-
-    .metric-card .info-button {
-        width: 28px;
-        height: 28px;
-    }
-    
+    /* Info Button Responsive Sizing for tablets */
+    .metric-card .info-button,
     .chart-card .info-button {
         width: 28px;
         height: 28px;
+        font-size: 13px;
     }
 }
 
 @media (max-width: 480px) {
     .tooltip {
-        width: 450px;
-        max-width: 98vw;
+        width: 300px;
+        max-width: 95vw;
+        height: auto;
+        max-height: 65vh;
+        min-height: 180px;
         font-size: 0.8rem;
         padding: 18px;
     }
     
-    .info-button {
-        width: 22px;
-        height: 22px;
-        font-size: 12px;
-    }
-
-    .metric-card .info-button {
-        width: 26px;
-        height: 26px;
+    /* Data Source Banner Mobile Small Styling */
+    .data-source-banner {
+        padding: 12px 15px !important;
+        margin-bottom: 12px !important;
     }
     
+    .data-source-banner h2 {
+        font-size: 16px !important;
+    }
+    
+    .data-source-banner p {
+        font-size: 12px !important;
+    }
+    
+    .data-source-banner i {
+        font-size: 16px !important;
+    }
+    
+    /* Info Button Responsive Sizing for mobile */
+    .metric-card .info-button,
     .chart-card .info-button {
         width: 26px;
         height: 26px;
+        font-size: 11px;
     }
 }
