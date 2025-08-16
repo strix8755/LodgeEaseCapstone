@@ -116,13 +116,21 @@
         <!-- Main Content -->
         <main class="main-content">
             <div class="data-source-banner">
-                <h2>
-                    <i class="fas fa-database"></i>
-                    Ever Lodge Analytics - Using everlodgebookings Collection
-                </h2>
-                <p>
-                    All analytics displayed on this page are calculated from the everlodgebookings collection data.
-                </p>
+                <div class="banner-content">
+                    <div>
+                        <h2>
+                            <i class="fas fa-database"></i>
+                            Ever Lodge Analytics - Using everlodgebookings Collection
+                        </h2>
+                        <p>
+                            All analytics displayed on this page are calculated from the everlodgebookings collection data.
+                        </p>
+                    </div>
+                    <button @click="refreshData" class="refresh-button" title="Refresh Analytics Data">
+                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': loading.data }"></i>
+                        <span>Refresh</span>
+                    </button>
+                </div>
             </div>
             
             <div v-if="error" class="error-message">{{ error }}</div>

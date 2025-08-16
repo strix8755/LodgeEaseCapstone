@@ -47,12 +47,25 @@ async function logRoomActivity(actionType, details) {
     }
 }
 
-// Update the deleteRoom function
-async function deleteRoom(roomId) {
+// Update the deleteRoom function with 24-hour time limit
+async function deleteRoom(roomId, createdAt) {
     try {
         const user = auth().currentUser;
         if (!user) {
             alert('Please log in to delete rooms');
+            return;
+        }
+
+        // Check if the room is within 24-hour deletion window
+        const now = new Date();
+        const roomCreatedAt = createdAt instanceof Date ? createdAt : 
+                             createdAt?.toDate ? createdAt.toDate() : 
+                             new Date(createdAt);
+        const timeDifference = now - roomCreatedAt;
+        const hoursDifference = timeDifference / (1000 * 60 * 60); // Convert to hours
+
+        if (hoursDifference > 24) {
+            alert('Delete action is only available within 24 hours of room creation. This room was created more than 24 hours ago.');
             return;
         }
 
@@ -65,9 +78,39 @@ async function deleteRoom(roomId) {
         const roomData = roomDoc.data();
         const roomDetails = `${roomData.propertyDetails.name} - Room ${roomData.propertyDetails.roomNumber} (${roomData.propertyDetails.roomType})`;
 
-        // Confirm deletion
-        if (!confirm(`Are you sure you want to delete ${roomDetails}?`)) {
+        // Calculate remaining time for deletion
+        const remainingHours = Math.max(0, 24 - hoursDifference);
+        const remainingHoursText = remainingHours.toFixed(1);
+
+        // Confirm deletion with time remaining info
+        if (!confirm(`Are you sure you want to delete ${roomDetails}?\n\nNote: Delete action will be unavailable in ${remainingHoursText} hours.`)) {
             return;
+        }
+
+        // Check for existing bookings for this room
+        const bookingsQuery = query(
+            collection(db(), 'everlodgebookings'),
+            where('propertyDetails.roomNumber', '==', roomData.propertyDetails.roomNumber)
+        );
+        const bookingsSnapshot = await getDocs(bookingsQuery);
+
+        if (!bookingsSnapshot.empty) {
+            const activeBookings = bookingsSnapshot.docs.filter(doc => {
+                const booking = doc.data();
+                return booking.status !== 'cancelled' && booking.status !== 'completed';
+            });
+
+            if (activeBookings.length > 0) {
+                if (!confirm(`This room has ${activeBookings.length} active booking(s). Deleting the room will also delete these bookings. Do you want to continue?`)) {
+                    return false;
+                }
+
+                // Delete related bookings completely
+                for (const bookingDoc of activeBookings) {
+                    await deleteDoc(doc(db(), 'everlodgebookings', bookingDoc.id));
+                    console.log(`Deleted booking ${bookingDoc.id} for room ${roomData.propertyDetails.roomNumber}`);
+                }
+            }
         }
 
         // Delete the room
@@ -76,16 +119,20 @@ async function deleteRoom(roomId) {
         // Log the deletion activity
         await activityLogger.logActivity(
             'room_deletion',
-            `Room deleted: ${roomDetails}`,
+            `Room deleted: ${roomDetails} (${remainingHoursText} hours remaining in deletion window)`,
             'Room Management'
         );
 
         // Show success message
         alert('Room deleted successfully');
 
+        // Refresh the data
+        return true;
+
     } catch (error) {
         console.error('Error deleting room:', error);
         alert('Error deleting room: ' + error.message);
+        return false;
     }
 }
 
@@ -134,6 +181,9 @@ new Vue({
         originalCheckIn: null,
         originalCheckOut: null,
         bypassAdminCheck: true, // Set to true to bypass admin check
+        allClientLodges: [], // For client rooms modal
+        viewMode: 'grid', // For client rooms view mode
+        deleteTimeTimer: null, // Timer for updating delete availability
     },
     computed: {
         filteredBookings() {
@@ -584,6 +634,54 @@ new Vue({
                 this.manualBooking.roomNumber !== '';
             // Note: checkOutDate is not required
         },
+
+        // Check if room can be deleted (within 24 hours)
+        canDeleteRoom() {
+            return (booking) => {
+                if (!booking.createdAt) return false;
+                
+                const now = new Date();
+                const createdAt = booking.createdAt instanceof Date ? booking.createdAt : 
+                                 booking.createdAt?.toDate ? booking.createdAt.toDate() : 
+                                 new Date(booking.createdAt);
+                const timeDifference = now - createdAt;
+                const hoursDifference = timeDifference / (1000 * 60 * 60);
+                
+                return hoursDifference <= 24;
+            };
+        },
+
+        // Get remaining delete time in hours
+        getRemainingDeleteTime() {
+            return (booking) => {
+                if (!booking.createdAt) return 0;
+                
+                const now = new Date();
+                const createdAt = booking.createdAt instanceof Date ? booking.createdAt : 
+                                 booking.createdAt?.toDate ? booking.createdAt.toDate() : 
+                                 new Date(booking.createdAt);
+                const timeDifference = now - createdAt;
+                const hoursDifference = timeDifference / (1000 * 60 * 60);
+                
+                return Math.max(0, 24 - hoursDifference);
+            };
+        },
+
+        // Format remaining time in user-friendly format
+        formatRemainingTime() {
+            return (booking) => {
+                const remainingHours = this.getRemainingDeleteTime(booking);
+                
+                if (remainingHours === 0) return "Expired";
+                if (remainingHours >= 24) return "24h 0m";
+                
+                const hours = Math.floor(remainingHours);
+                const minutes = Math.floor((remainingHours - hours) * 60);
+                
+                if (hours === 0) return `${minutes}m`;
+                return `${hours}h ${minutes}m`;
+            };
+        },
     },
     methods: {
         async fetchBookings() {
@@ -599,64 +697,73 @@ new Vue({
                 const bookingsQuery = query(bookingsRef, orderBy('createdAt', 'desc')); // Sort by creation date
                 const bookingsSnapshot = await getDocs(bookingsQuery);
 
-                // Map the bookings data
-                this.bookings = bookingsSnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    console.log('Raw booking data:', data);
+                // Map the bookings data and filter out cancelled/deleted bookings
+                this.bookings = bookingsSnapshot.docs
+                    .map(doc => {
+                        const data = doc.data();
+                        console.log('Raw booking data:', data);
 
-                    // Handle case where checkOut might be undefined/null
-                    let checkOut = null;
-                    if (data.checkOut) {
-                        try {
-                            checkOut = data.checkOut?.toDate?.() || new Date(data.checkOut);
-                        } catch (e) {
-                            console.warn('Invalid checkOut date format:', e);
+                        // Handle case where checkOut might be undefined/null
+                        let checkOut = null;
+                        if (data.checkOut) {
+                            try {
+                                checkOut = data.checkOut?.toDate?.() || new Date(data.checkOut);
+                            } catch (e) {
+                                console.warn('Invalid checkOut date format:', e);
+                            }
                         }
-                    }
-                    
-                    // Handle case where checkIn might be undefined/null or invalid
-                    let checkIn = null;
-                    if (data.checkIn) {
-                        try {
-                            checkIn = data.checkIn?.toDate?.() || new Date(data.checkIn);
-                        } catch (e) {
-                            console.warn('Invalid checkIn date format:', e);
-                            checkIn = new Date(); // Default to current date if invalid
+                        
+                        // Handle case where checkIn might be undefined/null or invalid
+                        let checkIn = null;
+                        if (data.checkIn) {
+                            try {
+                                checkIn = data.checkIn?.toDate?.() || new Date(data.checkIn);
+                            } catch (e) {
+                                console.warn('Invalid checkIn date format:', e);
+                                checkIn = new Date(); // Default to current date if invalid
+                            }
+                        } else {
+                            checkIn = new Date(); // Default to current date if missing
                         }
-                    } else {
-                        checkIn = new Date(); // Default to current date if missing
-                    }
 
-                    // Get room number from different possible locations in the data
-                    const roomNumber = data.roomNumber || 
-                                     data.propertyDetails?.roomNumber || 
-                                     (typeof data.room === 'object' ? data.room.number : data.room) || 
-                                     'N/A';
+                        // Get room number from different possible locations in the data
+                        const roomNumber = data.roomNumber || 
+                                         data.propertyDetails?.roomNumber || 
+                                         (typeof data.room === 'object' ? data.room.number : data.room) || 
+                                         'N/A';
 
-                    return {
-                        id: doc.id,
-                        ...data,
-                        propertyDetails: {
-                            roomNumber: roomNumber,
-                            roomType: data.roomType || data.propertyDetails?.roomType || 'Standard',
-                            floorLevel: data.floorLevel || data.propertyDetails?.floorLevel || '1',
-                            name: data.propertyName || data.propertyDetails?.name || 'Ever Lodge',
-                            location: data.location || data.propertyDetails?.location || 'Baguio City'
-                        },
-                        guestName: data.guestName || data.guest?.name || 'N/A',
-                        email: data.email || data.guest?.email || 'N/A',
-                        contactNumber: data.contactNumber || data.guest?.contact || 'N/A',
-                        checkIn: checkIn,
-                        checkOut: checkOut,
-                        status: this.determineStatus(data) || data.status || 'Pending',
-                        totalPrice: data.totalPrice || 0,
-                        serviceFee: data.serviceFee || 0,
-                        nightlyRate: data.nightlyRate || 0,
-                        numberOfNights: data.numberOfNights || 0,
-                        hours: data.hours || 0,
-                        hasTvRemote: !!data.hasTvRemote,
-                    };
-                });
+                        return {
+                            id: doc.id,
+                            ...data,
+                            propertyDetails: {
+                                roomNumber: roomNumber,
+                                roomType: data.roomType || data.propertyDetails?.roomType || 'Standard',
+                                floorLevel: data.floorLevel || data.propertyDetails?.floorLevel || '1',
+                                name: data.propertyName || data.propertyDetails?.name || 'Ever Lodge',
+                                location: data.location || data.propertyDetails?.location || 'Baguio City'
+                            },
+                            guestName: data.guestName || data.guest?.name || 'N/A',
+                            email: data.email || data.guest?.email || 'N/A',
+                            contactNumber: data.contactNumber || data.guest?.contact || 'N/A',
+                            checkIn: checkIn,
+                            checkOut: checkOut,
+                            status: this.determineStatus(data) || data.status || 'Pending',
+                            totalPrice: data.totalPrice || 0,
+                            serviceFee: data.serviceFee || 0,
+                            nightlyRate: data.nightlyRate || 0,
+                            numberOfNights: data.numberOfNights || 0,
+                            hours: data.hours || 0,
+                            hasTvRemote: !!data.hasTvRemote,
+                        };
+                    })
+                    .filter(booking => {
+                        // Filter out cancelled and deleted bookings
+                        const status = (booking.status || '').toLowerCase();
+                        return status !== 'cancelled' && 
+                               status !== 'deleted' && 
+                               !booking.deleted && 
+                               !booking.cancelledAt;
+                    });
 
                 console.log(`Fetched ${this.bookings.length} bookings after duplicate removal`);
                 this.loading = false;
@@ -791,8 +898,31 @@ new Vue({
         formatDate(date) {
             if (!date) return '-';
             try {
-                if (typeof date === 'string') date = new Date(date);
-                if (date.toDate) date = date.toDate();
+                // Handle different date formats
+                if (typeof date === 'string') {
+                    date = new Date(date);
+                } else if (typeof date === 'object' && date !== null) {
+                    // Handle Firestore Timestamp
+                    if (typeof date.toDate === 'function') {
+                        date = date.toDate();
+                    } else if (date.seconds !== undefined) {
+                        // Handle Timestamp object with seconds property
+                        date = new Date(date.seconds * 1000);
+                    } else if (date instanceof Date) {
+                        // Already a Date object
+                        date = date;
+                    } else {
+                        console.warn('Unknown date object format:', date);
+                        return 'Invalid Date';
+                    }
+                }
+                
+                // Validate that we have a valid Date object
+                if (!(date instanceof Date) || isNaN(date.getTime())) {
+                    console.warn('Invalid date after conversion:', date);
+                    return 'Invalid Date';
+                }
+                
                 return date.toLocaleString('en-US', {
                     year: 'numeric',
                     month: 'short',
@@ -801,9 +931,31 @@ new Vue({
                     minute: '2-digit'
                 });
             } catch (error) {
-                console.error('Date formatting error:', error);
-                return '-';
+                console.error('Date formatting error:', error, 'Original date:', date);
+                return 'Invalid Date';
             }
+        },
+
+        formatBookingMethod(booking) {
+            if (!booking) return '-';
+            
+            // Check for manual booking indicators
+            if (booking.createdMethod === 'manual' || booking.createdBy === 'admin') {
+                return 'Manual Booking';
+            }
+            
+            // Check for online booking indicators
+            if (booking.createdMethod === 'online' || booking.createdBy === 'user' || booking.createdBy === 'client') {
+                return 'Online Booking';
+            }
+            
+            // Fallback - if no clear method is specified, try to infer from other fields
+            if (booking.userId && !booking.createdBy) {
+                return 'Online Booking'; // User ID suggests it came from frontend
+            }
+            
+            // Default fallback
+            return 'Online Booking';
         },
 
         async checkAdminStatus(user) {
@@ -884,6 +1036,34 @@ new Vue({
                 await this.fetchBookings();
 
                 alert('Booking status updated successfully!');
+
+                // Dispatch dashboard update event for real-time dashboard sync
+                try {
+                    const updateEvent = new CustomEvent('dashboard:booking:update', {
+                        detail: {
+                            action: 'status_update',
+                            bookingId: booking.id,
+                            newStatus: booking.status,
+                            timestamp: new Date().getTime()
+                        }
+                    });
+                    document.dispatchEvent(updateEvent);
+                    console.log('Dashboard update event dispatched for status change');
+                } catch (error) {
+                    console.warn('Could not dispatch dashboard update event:', error);
+                }
+
+                // Also send localStorage notification for cross-tab updates
+                try {
+                    localStorage.setItem('dashboard:refresh', JSON.stringify({
+                        action: 'booking_status_updated',
+                        bookingId: booking.id,
+                        newStatus: booking.status,
+                        timestamp: new Date().getTime()
+                    }));
+                } catch (error) {
+                    console.warn('Could not send localStorage notification:', error);
+                }
             } catch (error) {
                 console.error('Error updating booking status:', error);
                 alert('Failed to update booking status: ' + error.message);
@@ -1302,6 +1482,34 @@ new Vue({
                 // Show success message
                 alert('Booking updated successfully!');
 
+                // Dispatch dashboard update event for real-time dashboard sync
+                try {
+                    const updateEvent = new CustomEvent('dashboard:booking:update', {
+                        detail: {
+                            action: 'booking_updated',
+                            bookingId: bookingId,
+                            updatedFields: Object.keys(updateData),
+                            timestamp: new Date().getTime()
+                        }
+                    });
+                    document.dispatchEvent(updateEvent);
+                    console.log('Dashboard update event dispatched for booking update');
+                } catch (error) {
+                    console.warn('Could not dispatch dashboard update event:', error);
+                }
+
+                // Also send localStorage notification for cross-tab updates
+                try {
+                    localStorage.setItem('dashboard:refresh', JSON.stringify({
+                        action: 'booking_updated',
+                        bookingId: bookingId,
+                        updatedFields: Object.keys(updateData),
+                        timestamp: new Date().getTime()
+                    }));
+                } catch (error) {
+                    console.warn('Could not send localStorage notification:', error);
+                }
+
                 // Instead of fetching all bookings, just update the specific booking we modified
                 // This preserves the form fields we need for editing
                 console.log('Booking update completed successfully');
@@ -1389,10 +1597,97 @@ new Vue({
                 this.bookings = this.bookings.filter(b => b.id !== booking.id);
                 
                 alert('Booking deleted successfully!');
+
+                // Dispatch dashboard update event for booking deletion
+                try {
+                    const updateEvent = new CustomEvent('dashboard:booking:update', {
+                        detail: {
+                            action: 'booking_deleted',
+                            bookingId: booking.id,
+                            guestName: booking.guestName,
+                            timestamp: new Date().getTime()
+                        }
+                    });
+                    document.dispatchEvent(updateEvent);
+                    console.log('Dashboard update event dispatched for booking deletion');
+                } catch (error) {
+                    console.warn('Could not dispatch dashboard update event:', error);
+                }
+
+                // Also send localStorage notification for cross-tab updates
+                try {
+                    localStorage.setItem('dashboard:refresh', JSON.stringify({
+                        action: 'booking_deleted',
+                        bookingId: booking.id,
+                        guestName: booking.guestName,
+                        timestamp: new Date().getTime()
+                    }));
+                } catch (error) {
+                    console.warn('Could not send localStorage notification:', error);
+                }
                 
             } catch (error) {
                 console.error('Error deleting booking:', error);
                 alert('Failed to delete booking: ' + error.message);
+            }
+        },
+
+        // Method to delete room with 24-hour time limit
+        async deleteRoomFromBooking(booking) {
+            try {
+                this.loading = true; // Show loading state
+                
+                // Find the room ID from booking data
+                let roomId = booking.roomId;
+                
+                // If no roomId in booking, try to find it by room number
+                if (!roomId) {
+                    const roomQuery = query(
+                        collection(db(), 'rooms'),
+                        where('propertyDetails.roomNumber', '==', booking.propertyDetails?.roomNumber)
+                    );
+                    const roomSnapshot = await getDocs(roomQuery);
+                    
+                    if (!roomSnapshot.empty) {
+                        roomId = roomSnapshot.docs[0].id;
+                    }
+                }
+
+                if (!roomId) {
+                    alert('Room ID not found. Cannot delete room.');
+                    this.loading = false;
+                    return;
+                }
+
+                // Use the global deleteRoom function with time validation
+                const success = await deleteRoom(roomId, booking.createdAt);
+                
+                if (success) {
+                    // Remove this specific booking from the local state immediately
+                    this.bookings = this.bookings.filter(b => b.id !== booking.id);
+                    
+                    // Also remove any other bookings for the same room number
+                    this.bookings = this.bookings.filter(b => 
+                        b.propertyDetails?.roomNumber !== booking.propertyDetails?.roomNumber
+                    );
+                    
+                    // Force Vue to update the UI
+                    this.$forceUpdate();
+                    
+                    // Refresh from database after a short delay to ensure consistency
+                    setTimeout(async () => {
+                        await this.fetchBookings();
+                    }, 1000);
+                    
+                    console.log('Room and related bookings deleted successfully');
+                } else {
+                    console.log('Room deletion was cancelled or failed');
+                }
+            } catch (error) {
+                console.error('Error deleting room:', error);
+                alert('Failed to delete room: ' + error.message);
+            } finally {
+                this.loading = false;
             }
         },
 
@@ -1818,6 +2113,42 @@ new Vue({
                 );
                 
                 alert('Booking created successfully!');
+
+                console.log("=== ROOM MGMT DEBUG: Dispatching events for new booking ===");
+
+                // Dispatch dashboard update event for new booking
+                try {
+                    const updateEvent = new CustomEvent('dashboard:booking:update', {
+                        detail: {
+                            action: 'booking_created',
+                            bookingId: docRef.id,
+                            guestName: this.manualBooking.guestName,
+                            roomNumber: this.manualBooking.roomNumber,
+                            timestamp: new Date().getTime()
+                        }
+                    });
+                    document.dispatchEvent(updateEvent);
+                    console.log('ROOM MGMT DEBUG: Dashboard update event dispatched for new booking:', updateEvent.detail);
+                } catch (error) {
+                    console.warn('ROOM MGMT ERROR: Could not dispatch dashboard update event:', error);
+                }
+
+                // Also send localStorage notification for cross-tab updates
+                try {
+                    const storageData = {
+                        action: 'booking_created',
+                        bookingId: docRef.id,
+                        guestName: this.manualBooking.guestName,
+                        roomNumber: this.manualBooking.roomNumber,
+                        timestamp: new Date().getTime()
+                    };
+                    localStorage.setItem('dashboard:refresh', JSON.stringify(storageData));
+                    console.log('ROOM MGMT DEBUG: localStorage notification sent:', storageData);
+                } catch (error) {
+                    console.warn('ROOM MGMT ERROR: Could not send localStorage notification:', error);
+                }
+                
+                console.log("=== ROOM MGMT DEBUG: Event dispatching complete ===");
                 this.closeManualBookingModal();
                 this.resetManualBookingForm();
                 this.fetchBookings();
@@ -2189,5 +2520,18 @@ new Vue({
         console.log('Room Management Vue application mounted');
         // Just call checkAuthState which will handle auth check and data loading
         this.checkAuthState();
+        
+        // Set up timer to refresh delete button availability every minute
+        this.deleteTimeTimer = setInterval(() => {
+            // Force Vue to re-evaluate computed properties
+            this.$forceUpdate();
+        }, 60000); // Update every minute
+    },
+    
+    beforeDestroy() {
+        // Clear timer when component is destroyed
+        if (this.deleteTimeTimer) {
+            clearInterval(this.deleteTimeTimer);
+        }
     }
 });

@@ -477,6 +477,47 @@ h1, h2, h3, h4 {
     font-size: 18px !important;
 }
 
+.banner-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.refresh-button {
+    background: #1890ff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.refresh-button:hover {
+    background: #096dd9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(9, 109, 217, 0.3);
+}
+
+.refresh-button:active {
+    transform: translateY(0);
+}
+
+.refresh-button i.fa-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* Hide any global info buttons that might appear outside of cards */
 body > .info-button:not(.metric-card .info-button):not(.chart-card .info-button),
 .main-content > .info-button:not(.metric-card .info-button):not(.chart-card .info-button) {

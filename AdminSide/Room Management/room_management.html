@@ -157,7 +157,7 @@
                             <th>STATUS</th>
                             <th>CURRENT GUEST</th>
                             <th>CHECK-IN/OUT</th>
-                            <th>ACTIONS</th>
+                            <th>ACTIONS <small class="time-limit-note" title="Delete actions are only available for 24 hours after room creation"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -196,6 +196,20 @@
                                 <button @click="editBooking(booking)" class="action-btn edit-btn" title="Edit Booking">
                                     <i class="fas fa-edit"></i>
                                 </button>
+                                <!-- Delete Room Button with 24-hour time limit -->
+                                <button 
+                                    v-if="canDeleteRoom(booking)" 
+                                    @click="deleteRoomFromBooking(booking)" 
+                                    class="action-btn delete-room-btn" 
+                                    :title="'Delete Room (Available for ' + formatRemainingTime(booking) + ' more)'">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <span 
+                                    v-else 
+                                    class="delete-unavailable" 
+                                    title="Delete action is only available within 24 hours of room creation">
+                                    <i class="fas fa-lock"></i>
+                                </span>
                             </td>
                         </tr>
                     </tbody>
@@ -241,6 +255,7 @@
                             <p><strong>Total Amount:</strong> ₱{{ selectedBooking.totalPrice?.toLocaleString() || '0.00' }}</p>
                             <p><strong>Payment Status:</strong> {{ selectedBooking.paymentStatus || 'Pending' }}</p>
                             <p><strong>Booking Status:</strong> {{ selectedBooking.status || 'Pending' }}</p>
+                            <p><strong>Booking Method:</strong> {{ formatBookingMethod(selectedBooking) }}</p>
                             <p><strong>Booked On:</strong> {{ formatDate(selectedBooking.createdAt) }}</p>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 // Import Firebase modules
 import { db, auth, signOut } from '../firebase.js';
-import { collection, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc, Timestamp, where, addDoc, getFirestore, getDoc, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { collection, getDocs, query, orderBy, limit, doc, deleteDoc, updateDoc, Timestamp, where, addDoc, getFirestore, getDoc, writeBatch, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getChartData } from './chartData.js';
 import { occupancyService } from '../shared/occupancyCalculationService.js';
@@ -142,6 +142,8 @@ const app = new Vue({
         unreadNotificationsCount: 0,
         showNotificationDropdown: false,
         notificationListener: null,
+        // Add booking listener for real-time updates
+        bookingListener: null,
     },
     created() {
         // Check for dashboard refresh signals right away
@@ -316,17 +318,115 @@ const app = new Vue({
 
         async fetchBookings() {
             try {
-                console.log("Fetching bookings from everlodgebookings collection");
+                console.log("Setting up real-time listener for bookings from everlodgebookings collection");
                 const dbInstance = db();
                 const bookingsRef = collection(dbInstance, 'everlodgebookings');
                 const q = query(bookingsRef);
-                const querySnapshot = await getDocs(q);
                 
-                console.log(`Found ${querySnapshot.size} booking documents`);
+                // Remove existing listener if it exists
+                if (this.bookingListener) {
+                    this.bookingListener();
+                    console.log("Removed existing booking listener");
+                }
                 
-                if (querySnapshot.empty) {
-                    console.warn("No bookings found in everlodgebookings collection");
-                    // Set default values if no bookings are found
+                // Set up real-time listener
+                this.bookingListener = onSnapshot(q, (querySnapshot) => {
+                    console.log(`Real-time update: Found ${querySnapshot.size} booking documents`);
+                    
+                    // Log document changes for debugging
+                    querySnapshot.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            console.log("New booking added:", change.doc.id);
+                        }
+                        if (change.type === "modified") {
+                            console.log("Booking modified:", change.doc.id);
+                        }
+                        if (change.type === "removed") {
+                            console.log("Booking removed/deleted:", change.doc.id);
+                        }
+                    });
+                    
+                    if (querySnapshot.empty) {
+                        console.warn("No bookings found in everlodgebookings collection");
+                        // Set default values if no bookings are found
+                        this.todayCheckIns = 0;
+                        this.availableRooms = 36;
+                        this.stats = {
+                            totalBookings: 0,
+                            currentMonthRevenue: this.formatCurrency(0),
+                            occupancyRate: '0.0%'
+                        };
+                        return;
+                    }
+                    
+                    // Map the bookings with all necessary fields and proper defaults
+                    let allBookings = querySnapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            // Ensure essential fields have defaults
+                            checkIn: data.checkIn,
+                            checkOut: data.checkOut,
+                            contactNumber: data.contactNumber || 'Not provided',
+                            nightlyRate: data.nightlyRate || 0,
+                            totalPrice: data.totalPrice || data.totalAmount || 0,
+                            status: data.status || 'pending',
+                            // Use email as fallback if displayName is not available
+                            guestName: data.guestName || data.email || 'Guest',
+                            email: data.email || 'No email provided',
+                            // Ensure we have a timestamp for sorting (created or check-in date)
+                            createdAt: data.createdAt || data.checkIn || { seconds: Date.now() / 1000 },
+                            roomType: data.roomType || data.propertyDetails?.roomType || 'Standard',
+                            propertyDetails: data.propertyDetails || {
+                                roomType: data.roomType || 'Standard',
+                                name: data.lodgeName || 'Ever Lodge'
+                            }
+                        };
+                    });
+                    
+                    // Sort all bookings by creation date (newest first)
+                    allBookings.sort((a, b) => {
+                        const aTime = a.createdAt?.seconds || (a.createdAt instanceof Date ? a.createdAt.getTime() / 1000 : 0);
+                        const bTime = b.createdAt?.seconds || (b.createdAt instanceof Date ? b.createdAt.getTime() / 1000 : 0);
+                        return bTime - aTime; // Descending order (newest first)
+                    });
+                    
+                    // Log booking data for debugging
+                    console.log("Real-time update - Sorted bookings:", allBookings.slice(0, 3).map(b => ({
+                        id: b.id, 
+                        createdAt: b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000).toISOString() : 'unknown',
+                        guestName: b.guestName,
+                        status: b.status,
+                        roomNumber: b.propertyDetails?.roomNumber
+                    })));
+                    
+                    // Store all bookings for dashboard metrics calculations
+                    this.allBookings = allBookings;
+                    
+                    // DEBUG: Log the status distribution of all bookings
+                    const statusCounts = {};
+                    allBookings.forEach(booking => {
+                        statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1;
+                    });
+                    console.log("Real-time update - Booking status distribution:", statusCounts);
+                    
+                    // Use all bookings for metrics calculations and store a subset for display
+                    this.bookings = allBookings.slice(0, 5);
+                    
+                    console.log(`Real-time update - Displaying ${this.bookings.length} recent bookings out of ${allBookings.length} total`);
+                    
+                    // Calculate metrics based on actual data (using all bookings)
+                    this.calculateDashboardMetrics();
+                    this.updateDashboardStats();
+                    
+                    // Force Vue to refresh the UI
+                    this.$forceUpdate();
+                    
+                    console.log("Real-time booking data processing complete");
+                }, (error) => {
+                    console.error('Error in booking real-time listener:', error);
+                    // Set default values on error
                     this.todayCheckIns = 0;
                     this.availableRooms = 36;
                     this.stats = {
@@ -334,76 +434,14 @@ const app = new Vue({
                         currentMonthRevenue: this.formatCurrency(0),
                         occupancyRate: '0.0%'
                     };
-                    return;
-                }
-                
-                // Map the bookings with all necessary fields and proper defaults
-                let allBookings = querySnapshot.docs.map(doc => {
-                    const data = doc.data();
-                    return {
-                        id: doc.id,
-                        ...data,
-                        // Ensure essential fields have defaults
-                        checkIn: data.checkIn,
-                        checkOut: data.checkOut,
-                        contactNumber: data.contactNumber || 'Not provided',
-                        nightlyRate: data.nightlyRate || 0,
-                        totalPrice: data.totalPrice || data.totalAmount || 0,
-                        status: data.status || 'pending',
-                        // Use email as fallback if displayName is not available
-                        guestName: data.guestName || data.email || 'Guest',
-                        email: data.email || 'No email provided',
-                        // Ensure we have a timestamp for sorting (created or check-in date)
-                        createdAt: data.createdAt || data.checkIn || { seconds: Date.now() / 1000 },
-                        roomType: data.roomType || data.propertyDetails?.roomType || 'Standard',
-                        propertyDetails: data.propertyDetails || {
-                            roomType: data.roomType || 'Standard',
-                            name: data.lodgeName || 'Ever Lodge'
-                        }
-                    };
+                    // Force Vue to refresh the UI even on error
+                    this.$forceUpdate();
                 });
                 
-                // Sort all bookings by creation date (newest first)
-                allBookings.sort((a, b) => {
-                    const aTime = a.createdAt?.seconds || (a.createdAt instanceof Date ? a.createdAt.getTime() / 1000 : 0);
-                    const bTime = b.createdAt?.seconds || (b.createdAt instanceof Date ? b.createdAt.getTime() / 1000 : 0);
-                    return bTime - aTime; // Descending order (newest first)
-                });
+                console.log("Real-time booking listener established");
                 
-                // Log booking data for debugging
-                console.log("Sorted bookings:", allBookings.map(b => ({
-                    id: b.id, 
-                    createdAt: b.createdAt?.seconds ? new Date(b.createdAt.seconds * 1000).toISOString() : 'unknown',
-                    guestName: b.guestName,
-                    contactNumber: b.contactNumber
-                })));
-                
-                // Store all bookings for dashboard metrics calculations
-                this.allBookings = allBookings;
-                
-                // DEBUG: Log the status distribution of all bookings
-                const statusCounts = {};
-                allBookings.forEach(booking => {
-                    statusCounts[booking.status] = (statusCounts[booking.status] || 0) + 1;
-                });
-                console.log("Booking status distribution:", statusCounts);
-                
-                // Use all bookings for metrics calculations and store a subset for display
-                this.bookings = allBookings.slice(0, 5);
-                
-                console.log(`Displaying ${this.bookings.length} recent bookings out of ${allBookings.length} total`);
-                console.log("Using all bookings for metrics calculation to ensure consistency with other modules");
-
-                // Calculate metrics based on actual data (using all bookings)
-                await this.calculateDashboardMetrics();
-                await this.updateDashboardStats();
-                
-                // Force Vue to refresh the UI
-                this.$forceUpdate();
-                
-                console.log("Booking data processing complete");
             } catch (error) {
-                console.error('Error fetching bookings:', error);
+                console.error('Error setting up booking listener:', error);
                 // Set default values on error
                 this.todayCheckIns = 0;
                 this.availableRooms = 36;
@@ -812,14 +850,22 @@ const app = new Vue({
                 const currentMonth = now.getMonth();
                 const currentYear = now.getFullYear();
                 
-                // Filter for check-ins today
+                // Filter for check-ins today (exclude cancelled/deleted bookings)
                 const checkInsToday = this.allBookings.filter(booking => {
+                    // Skip cancelled or deleted bookings
+                    if (booking.status === 'cancelled' || booking.status === 'deleted') {
+                        return false;
+                    }
                     const checkInDate = booking.checkIn?.toDate?.() || new Date(booking.checkIn);
                     return checkInDate.toDateString() === today;
                 });
                 
-                // Calculate current month bookings
+                // Calculate current month bookings (exclude cancelled/deleted bookings)
                 const currentMonthBookings = this.allBookings.filter(booking => {
+                    // Skip cancelled or deleted bookings
+                    if (booking.status === 'cancelled' || booking.status === 'deleted') {
+                        return false;
+                    }
                     const bookingDate = booking.checkIn?.toDate?.() || new Date(booking.checkIn);
                     return bookingDate.getMonth() === currentMonth && 
                            bookingDate.getFullYear() === currentYear;
@@ -837,10 +883,15 @@ const app = new Vue({
                 const occupiedRooms = new Set();
                 
                 this.allBookings.forEach(booking => {
+                    // Skip cancelled or deleted bookings
+                    if (booking.status === 'cancelled' || booking.status === 'deleted') {
+                        return;
+                    }
+                    
                     const checkInDate = booking.checkIn?.toDate?.() || new Date(booking.checkIn);
                     const checkOutDate = booking.checkOut?.toDate?.() || new Date(booking.checkOut);
                     
-                    // Check if booking is currently active and not cancelled
+                    // Check if booking is currently active
                     const isCurrentlyActive = checkInDate <= now && checkOutDate >= now;
                     const isNotCancelled = booking.status !== 'cancelled' && booking.status !== 'completed';
                     
@@ -858,8 +909,8 @@ const app = new Vue({
                 
                 // Also calculate total sales for consistency with Business Analytics
                 const totalSales = this.allBookings.reduce((sum, booking) => {
-                    // Use consistent parsing for totalPrice and filter out cancelled bookings
-                    if (booking.status === 'cancelled') return sum;
+                    // Use consistent parsing for totalPrice and filter out cancelled/deleted bookings
+                    if (booking.status === 'cancelled' || booking.status === 'deleted') return sum;
                     const price = parseFloat(booking.totalPrice) || 0;
                     return sum + price;
                 }, 0);
@@ -906,33 +957,58 @@ const app = new Vue({
                 // Debug: Log all bookings to check their structure
                 console.log("All bookings:", this.allBookings.length);
 
-                // Calculate bookings made today instead of check-ins
+                // Calculate bookings made today or confirmed today
                 this.todayCheckIns = 0; // Reset counter
                 
                 // Log all bookings with their creation dates for debugging
-                console.log("All bookings with creation dates:");
+                console.log("All bookings with creation and verification dates:");
                 this.allBookings.forEach(booking => {
+                    // Skip cancelled or deleted bookings
+                    if (booking.status === 'cancelled' || booking.status === 'deleted') {
+                        return;
+                    }
+                    
                     const createdAt = parseDate(booking.createdAt);
+                    const verifiedAt = parseDate(booking.verifiedAt);
+                    let countAsToday = false;
+                    let reason = '';
+                    
                     if (createdAt) {
                         // Create date-only versions for comparison (ignore time)
                         const createdAtDateOnly = new Date(createdAt);
                         createdAtDateOnly.setHours(0, 0, 0, 0);
                         
-                        const isToday = createdAtDateOnly.getTime() === today.getTime();
+                        const createdToday = createdAtDateOnly.getTime() === today.getTime();
                         
-                        console.log(`Booking ${booking.id}: createdAt=${createdAtDateOnly.toISOString()}, status=${booking.status}, isToday=${isToday}`);
-                        
-                        // Count booking if it was created today
-                        if (isToday) {
-                            this.todayCheckIns++;
-                            console.log(`✓ Counting booking ${booking.id} as today's new booking`);
+                        if (createdToday) {
+                            countAsToday = true;
+                            reason = 'created today';
                         }
-                    } else {
-                        console.log(`Booking ${booking.id}: Invalid creation date`);
+                    }
+                    
+                    // Also count bookings that were confirmed/verified today
+                    if (verifiedAt && booking.status === 'confirmed') {
+                        const verifiedAtDateOnly = new Date(verifiedAt);
+                        verifiedAtDateOnly.setHours(0, 0, 0, 0);
+                        
+                        const verifiedToday = verifiedAtDateOnly.getTime() === today.getTime();
+                        
+                        if (verifiedToday && !countAsToday) {
+                            countAsToday = true;
+                            reason = 'confirmed today';
+                        }
+                    }
+                    
+                    console.log(`Booking ${booking.id}: createdAt=${createdAt ? new Date(createdAt).toISOString() : 'unknown'}, verifiedAt=${verifiedAt ? new Date(verifiedAt).toISOString() : 'none'}, status=${booking.status}, countAsToday=${countAsToday} (${reason})`);
+                    
+                    // Count booking if it was created today OR confirmed today
+                    if (countAsToday) {
+                        this.todayCheckIns++;
+                        console.log(`✓ Counting booking ${booking.id} as today's booking (${reason})`);
                     }
                 });
 
-                console.log(`Today's new bookings: ${this.todayCheckIns}`);
+                console.log(`Today's bookings (created + confirmed): ${this.todayCheckIns}`);
 
                 // Calculate total bookings for current month (based on creation date)
                 const currentMonth = today.getMonth();
@@ -945,7 +1021,7 @@ const app = new Vue({
                     
                     const isThisMonth = bookingCreatedDate.getMonth() === currentMonth && 
                            bookingCreatedDate.getFullYear() === currentYear;
-                    const isActive = booking.status !== 'cancelled';
+                    const isActive = booking.status !== 'cancelled' && booking.status !== 'deleted';
                     return isThisMonth && isActive;
                 }).length;
 
@@ -961,7 +1037,7 @@ const app = new Vue({
                         
                         const isThisMonth = bookingDate.getMonth() === currentMonth && 
                                bookingDate.getFullYear() === currentYear;
-                        const isActive = booking.status !== 'cancelled';
+                        const isActive = booking.status !== 'cancelled' && booking.status !== 'deleted';
                         return isThisMonth && isActive;
                     })
                     .reduce((total, booking) => {
@@ -1006,6 +1082,24 @@ const app = new Vue({
                 };
                 // Force UI update even after error
                 this.$forceUpdate();
+            }
+        },
+
+        // Manual refresh method for testing and user-initiated updates
+        async manualRefresh() {
+            try {
+                console.log("Manual refresh triggered by user");
+                this.loading = true;
+                
+                // Re-establish the real-time listener which will trigger data updates
+                await this.fetchBookings();
+                
+                console.log("Manual refresh completed");
+            } catch (error) {
+                console.error('Error during manual refresh:', error);
+                alert('Failed to refresh dashboard data. Please try again.');
+            } finally {
+                this.loading = false;
             }
         },
 
@@ -1824,7 +1918,7 @@ const app = new Vue({
             switch(metricType) {
                 case 'checkins':
                     this.metricInfoTitle = "Today's Bookings";
-                    this.metricInfoText = "Number of new bookings made today. This shows how many bookings were created on the current date.";
+                    this.metricInfoText = "Number of bookings created or confirmed today. This includes new bookings made today and previously pending bookings that were approved/confirmed today.";
                     break;
                 case 'rooms':
                     this.metricInfoTitle = "Available Rooms";
@@ -2492,6 +2586,25 @@ const app = new Vue({
                 }
             });
             
+            // Set up custom event listener for same-tab notifications
+            window.addEventListener('dashboardRefresh', (event) => {
+                try {
+                    const refreshData = event.detail;
+                    if (refreshData && refreshData.timestamp) {
+                        // Check if refresh notification is recent (within last 10 seconds)
+                        const now = new Date().getTime();
+                        const isFresh = (now - refreshData.timestamp) < 10000;
+                        
+                        if (isFresh && (refreshData.action === 'booking_approved' || refreshData.action === 'booking_rejected')) {
+                            console.log('Dashboard refreshing from custom event notification:', refreshData.action);
+                            this.fetchBookings();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing dashboard refresh custom event:', error);
+                }
+            });
+            
             // Setup periodic check for dashboard refresh signals
             const checkRefreshInterval = setInterval(() => {
                 try {
@@ -2515,6 +2628,16 @@ const app = new Vue({
             // Clear interval when component is destroyed
             this.$once('hook:beforeDestroy', () => {
                 clearInterval(checkRefreshInterval);
+                // Clean up booking listener
+                if (this.bookingListener) {
+                    this.bookingListener();
+                    console.log("Cleaned up booking listener");
+                }
+                // Clean up notification listener
+                if (this.notificationListener) {
+                    this.notificationListener();
+                    console.log("Cleaned up notification listener");
+                }
             });
             
             // Add message listener for cross-frame communication

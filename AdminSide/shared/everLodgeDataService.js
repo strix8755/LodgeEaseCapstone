@@ -64,6 +64,15 @@ export const EverLodgeDataService = {
     },
 
     /**
+     * Clear the cached data to force a fresh fetch
+     */
+    clearCache() {
+        console.log('🗑️ Clearing EverLodgeDataService cache');
+        cachedData = null;
+        lastFetchTime = 0;
+    },
+
+    /**
      * Gets Ever Lodge data with caching support
      * @param {boolean} forceRefresh Force a refresh of data
      * @returns {Promise<Object>} The Ever Lodge data
@@ -734,19 +743,36 @@ export const EverLodgeDataService = {
             
             console.log(`Calculating revenue from ${thirtyDaysAgo.toLocaleDateString()} to ${now.toLocaleDateString()}`);
             
+            console.log(`🔍 Processing ${bookings.length} bookings for revenue calculation`);
+            console.log(`📅 Date range: ${thirtyDaysAgo.toLocaleDateString()} to ${now.toLocaleDateString()}`);
+            
             // Sum revenue by month and calculate total (last 30 days only for total)
             let totalLast30Days = 0;
             let totalAllTimeForMonthly = 0; // Keep separate total for monthly chart
+            let processedCount = 0;
+            let skippedCount = 0;
             
             bookings.forEach(booking => {
                 try {
-                    // Skip cancelled bookings
-                    if (booking.status === 'cancelled') return;
+                    // Only include bookings that represent actual or potential revenue
+                    const validRevenueStatuses = ['pending', 'confirmed', 'active', 'verified', 'approved', 'completed', 'checked-in', 'occupied'];
+                    
+                    if (booking.status === 'cancelled') {
+                        console.log(`🚫 Skipping cancelled booking: ₱${booking.totalPrice || 0} (Status: ${booking.status})`);
+                        return;
+                    }
+                    
+                    const bookingStatus = booking.status?.toLowerCase() || 'pending';
+                    if (!validRevenueStatuses.includes(bookingStatus)) {
+                        console.log(`⚠️ Skipping booking with invalid status '${booking.status}': ₱${booking.totalPrice || 0}`);
+                        return;
+                    }
                     
                     const checkIn = this.convertToDate(booking.checkIn, 'checkIn');
                     
                     // Skip bookings with invalid checkIn dates
                     if (!checkIn) {
+                        console.log(`⚠️ Skipping booking with invalid checkIn date: ${booking.id}`);
                         return;
                     }
                     
@@ -762,12 +788,19 @@ export const EverLodgeDataService = {
                     // Add to 30-day total only if booking is within last 30 days
                     if (checkIn >= thirtyDaysAgo && checkIn <= now) {
                         totalLast30Days += amount;
-                        console.log(`Including booking from ${checkIn.toLocaleDateString()}: ₱${amount.toLocaleString()}`);
+                        console.log(`✅ Including booking from ${checkIn.toLocaleDateString()}: ₱${amount.toLocaleString()} (Status: ${booking.status})`);
+                    } else {
+                        console.log(`❌ Excluding booking from ${checkIn.toLocaleDateString()}: ₱${amount.toLocaleString()} (Status: ${booking.status}) - Outside date range`);
                     }
                 } catch (error) {
                     console.error('Error processing booking for revenue:', error);
                 }
             });
+            
+            console.log(`📊 Revenue calculation summary:`);
+            console.log(`   - Total bookings processed: ${bookings.length}`);
+            console.log(`   - Total sales (last 30 days): ₱${totalLast30Days.toLocaleString()}`);
+            console.log(`   - Total sales (monthly data): ₱${totalAllTimeForMonthly.toLocaleString()}`);
             
             // Convert to array and sort
             const monthly = Array.from(monthlyData.values()).sort((a, b) => {

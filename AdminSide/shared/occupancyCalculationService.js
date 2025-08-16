@@ -36,8 +36,8 @@ export class OccupancyCalculationService {
                     const checkIn = this.parseBookingDate(booking.checkIn);
                     const checkOut = this.parseBookingDate(booking.checkOut);
                     
-                    if (!checkIn || !checkOut) {
-                        console.warn(`OccupancyCalculationService: Invalid dates for booking ${booking.id}`);
+                    if (!checkIn) {
+                        console.warn(`OccupancyCalculationService: Invalid check-in date for booking ${booking.id}`);
                         return;
                     }
                     
@@ -45,7 +45,16 @@ export class OccupancyCalculationService {
                     const hasActiveStatus = this.ACTIVE_STATUSES.includes(booking.status?.toLowerCase());
                     
                     // Check if today falls between check-in and check-out
-                    const isCurrentlyActive = checkIn <= today && checkOut >= today;
+                    // If no check-out date, consider the booking active if checked in today or before
+                    let isCurrentlyActive = false;
+                    if (checkOut) {
+                        // Normal case: check if today is between check-in and check-out
+                        isCurrentlyActive = checkIn <= today && checkOut >= today;
+                    } else {
+                        // No check-out date: consider active if checked in today or before today
+                        isCurrentlyActive = checkIn <= today;
+                        console.log(`OccupancyCalculationService: Booking ${booking.id} has no check-out date, considering active since check-in: ${checkIn.toDateString()}`);
+                    }
                     
                     if (hasActiveStatus && isCurrentlyActive) {
                         activeBookingsToday.push(booking);
@@ -54,6 +63,7 @@ export class OccupancyCalculationService {
                         const roomNumber = booking.propertyDetails?.roomNumber || booking.roomNumber;
                         if (roomNumber) {
                             occupiedRoomsSet.add(roomNumber);
+                            console.log(`OccupancyCalculationService: Room ${roomNumber} is occupied by booking ${booking.id} (status: ${booking.status})`);
                         } else {
                             console.warn(`OccupancyCalculationService: No room number for active booking ${booking.id}`);
                         }

@@ -371,6 +371,76 @@ checkAuth().then(user => {
                     maximumFractionDigits: 2
                 });
             },
+            async refreshData() {
+                console.log('🔄 Refreshing business analytics data...');
+                
+                // Set loading state
+                this.loading.data = true;
+                this.loading.charts = true;
+                
+                try {
+                    // Clear all caches
+                    if (typeof chartDataService !== 'undefined' && chartDataService.clearCache) {
+                        chartDataService.clearCache();
+                    }
+                    
+                    // Fetch fresh data
+                    const chartData = await chartDataService.getChartData(true); // Force refresh
+                    
+                    // Update metrics
+                    if (chartData) {
+                        console.log('🔄 Fresh chart data received:', chartData);
+                        
+                        // Validate and cross-check the data for consistency
+                        const validatedMetrics = await this.validateAndCrossCheckMetrics(chartData);
+                        
+                        // Update sales metrics
+                        if (chartData.sales && chartData.sales.metrics) {
+                            this.metrics.totalSales = validatedMetrics.totalSales;
+                            
+                            // Calculate sales growth if available
+                            const monthlyGrowth = chartData.sales.metrics.monthlyGrowth || [];
+                            if (monthlyGrowth.length > 0) {
+                                let rawSalesGrowth = monthlyGrowth[monthlyGrowth.length - 1].growth || 0;
+                                this.metrics.salesGrowth = Math.max(-50, Math.min(200, rawSalesGrowth));
+                            }
+                        }
+                        
+                        // Update occupancy metrics
+                        if (chartData.occupancy && chartData.occupancy.metrics) {
+                            this.metrics.averageOccupancy = validatedMetrics.averageOccupancy;
+                        }
+                        
+                        // Update booking metrics
+                        if (chartData.bookings && chartData.bookings.metrics) {
+                            this.metrics.totalBookings = validatedMetrics.totalBookings;
+                        }
+                        
+                        // Calculate avgSalesPerBooking
+                        if (this.metrics.totalBookings > 0) {
+                            this.metrics.avgSalesPerBooking = this.metrics.totalSales / this.metrics.totalBookings;
+                        } else {
+                            this.metrics.avgSalesPerBooking = 0;
+                        }
+                        
+                        // Render the charts with the fresh data
+                        this.renderCharts(chartData);
+                        
+                        console.log('🎉 Data refresh completed successfully!');
+                        console.log(`   Total Sales: ₱${this.metrics.totalSales.toLocaleString()}`);
+                        console.log(`   Total Bookings: ${this.metrics.totalBookings}`);
+                        console.log(`   Average per Booking: ₱${this.metrics.avgSalesPerBooking.toFixed(2)}`);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error refreshing data:', error);
+                    this.error = 'Failed to refresh data. Please try again.';
+                } finally {
+                    // Clear loading state
+                    this.loading.data = false;
+                    this.loading.charts = false;
+                }
+            },
             getScoreArc(score) {
                 let normalizedScore = score;
                 if (isNaN(normalizedScore) || normalizedScore === null || normalizedScore === undefined) {

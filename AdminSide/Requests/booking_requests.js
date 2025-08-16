@@ -675,11 +675,17 @@ async function handleApprovePayment(requestId, request) {
         
         // Trigger cross-tab notification for dashboard refresh
         try {
-            localStorage.setItem('dashboard:refresh', JSON.stringify({
+            const refreshData = {
                 action: 'booking_approved',
                 bookingId: request.bookingId,
                 timestamp: new Date().getTime()
-            }));
+            };
+            
+            localStorage.setItem('dashboard:refresh', JSON.stringify(refreshData));
+            
+            // Also trigger a custom event for same-tab notifications
+            window.dispatchEvent(new CustomEvent('dashboardRefresh', { detail: refreshData }));
+            
         } catch (error) {
             console.warn('Could not trigger cross-tab notification:', error);
         }
@@ -767,11 +773,17 @@ async function handleRejectPayment(requestId, request) {
         
         // Trigger cross-tab notification for dashboard refresh
         try {
-            localStorage.setItem('dashboard:refresh', JSON.stringify({
+            const refreshData = {
                 action: 'booking_rejected',
                 bookingId: request.bookingId,
                 timestamp: new Date().getTime()
-            }));
+            };
+            
+            localStorage.setItem('dashboard:refresh', JSON.stringify(refreshData));
+            
+            // Also trigger a custom event for same-tab notifications
+            window.dispatchEvent(new CustomEvent('dashboardRefresh', { detail: refreshData }));
+            
         } catch (error) {
             console.warn('Could not trigger cross-tab notification:', error);
         }

@@ -522,6 +522,40 @@ body {
     color: white;
 }
 
+.delete-room-btn {
+    background-color: #fef2f2;
+    color: #ef4444;
+}
+
+.delete-room-btn:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
+.delete-unavailable {
+    padding: 6px;
+    margin: 0 2px;
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    border-radius: 4px;
+    cursor: not-allowed;
+    opacity: 0.6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-unavailable i {
+    font-size: 12px;
+}
+
+.time-limit-note {
+    font-size: 10px;
+    color: #6b7280;
+    font-weight: normal;
+    opacity: 0.8;
+}
+
 /* Add spacing between action buttons */
 .actions {
     display: flex;

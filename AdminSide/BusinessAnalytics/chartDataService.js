@@ -108,6 +108,15 @@ export const chartDataService = {
         }));
     },
 
+    clearCache() {
+        console.log('🗑️ Clearing chart data cache');
+        localStorage.removeItem('chartData');
+        // Also clear the EverLodgeDataService cache
+        if (typeof EverLodgeDataService !== 'undefined' && EverLodgeDataService.clearCache) {
+            EverLodgeDataService.clearCache();
+        }
+    },
+
     processSalesData(bookings) {
         try {
             // Group bookings by month

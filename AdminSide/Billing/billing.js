@@ -1426,6 +1426,9 @@ new Vue({
             
             console.log('Bills initialized with today\'s date filter');
             
+            // Set up refresh listeners for booking confirmations
+            this.setupRefreshListeners();
+            
             // Check if we need to force a reload for the duration fix
             // Use localStorage to prevent infinite reload loop
             if (!localStorage.getItem('durationFixApplied')) {
@@ -1435,6 +1438,54 @@ new Vue({
             }
         } catch (error) {
             console.error('Error during component initialization:', error);
+        }
+    },
+    
+    setupRefreshListeners() {
+        try {
+            // Set up localStorage change listener for cross-tab notifications
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'dashboard:refresh') {
+                    try {
+                        const refreshData = JSON.parse(event.newValue);
+                        if (refreshData && refreshData.timestamp) {
+                            // Check if refresh notification is recent (within last 10 seconds)
+                            const now = new Date().getTime();
+                            const isFresh = (now - refreshData.timestamp) < 10000;
+                            
+                            if (isFresh && (refreshData.action === 'booking_approved' || refreshData.action === 'booking_rejected')) {
+                                console.log('Billing page refreshing from localStorage notification:', refreshData.action);
+                                this.forceRefresh();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error processing billing refresh notification:', error);
+                    }
+                }
+            });
+            
+            // Set up custom event listener for same-tab notifications
+            window.addEventListener('dashboardRefresh', (event) => {
+                try {
+                    const refreshData = event.detail;
+                    if (refreshData && refreshData.timestamp) {
+                        // Check if refresh notification is recent (within last 10 seconds)
+                        const now = new Date().getTime();
+                        const isFresh = (now - refreshData.timestamp) < 10000;
+                        
+                        if (isFresh && (refreshData.action === 'booking_approved' || refreshData.action === 'booking_rejected')) {
+                            console.log('Billing page refreshing from custom event notification:', refreshData.action);
+                            this.forceRefresh();
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error processing billing refresh custom event:', error);
+                }
+            });
+            
+            console.log('Billing refresh listeners set up successfully');
+        } catch (error) {
+            console.error('Error setting up billing refresh listeners:', error);
         }
     }
 });

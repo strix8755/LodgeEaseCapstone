@@ -1275,7 +1275,8 @@ async function fetchBillingData() {
                     serviceFee: booking.serviceFee || 0,
                     totalAmount: booking.total || booking.totalPrice || booking.amount || 0,
                     expenses: [],
-                    status: 'pending',
+                    status: booking.status || 'pending', // Use actual booking status instead of hardcoded 'pending'
+                    paymentStatus: booking.paymentStatus || 'pending',
                     source: 'bookings'
                 };
             });
