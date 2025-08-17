@@ -16,39 +16,6 @@ h1, h2, h3, h4 {
     font-family: 'Montserrat', sans-serif;
 }
 
-/* Refresh Button Styles */
-.refresh-btn {
-    border-radius: 50%;
-    transition: all 0.3s ease;
-}
-
-.refresh-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    transform: scale(1.1);
-}
-
-.refresh-btn i {
-    transition: transform 0.3s ease;
-}
-
-.refresh-btn:hover i {
-    transform: rotate(45deg);
-}
-
-/* Spin animation for refresh button */
-@keyframes fa-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.fa-spin {
-    animation: fa-spin 1s infinite linear;
-}
-
 /* App Container */
 #app, .app {
     display: flex;

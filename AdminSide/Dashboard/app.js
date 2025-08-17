@@ -19,7 +19,7 @@ const app = new Vue({
         loading: true,
         revenueChart: null,
         occupancyChart: null,
-        roomTypeChart: null,
+        lengthOfStayChart: null,
         lastProcessedRefresh: null,
         stats: {
             totalBookings: 0,
@@ -46,7 +46,7 @@ const app = new Vue({
                 labels: [],
                 datasets: []
             },
-            roomType: {
+            lengthOfStay: {
                 labels: [],
                 datasets: []
             }
@@ -58,6 +58,9 @@ const app = new Vue({
             seasonalityPatterns: []
         },
         aiInsights: [],
+        // Length of Stay Year Selection
+        selectedLengthOfStayYear: new Date().getFullYear(),
+        availableYears: [],
         updateInterval: null,
         forecastInterval: null,
         revenueData: {
@@ -112,9 +115,9 @@ const app = new Vue({
                 title: 'Booking Trends Chart',
                 text: 'This chart combines bar and line representations to show booking patterns. The bars represent actual bookings, while the lines show predictions and historical comparisons. It helps identify peak booking periods and seasonal trends in guest reservations.'
             },
-            rooms: {
-                title: 'Room Distribution Chart',
-                text: 'The pie chart shows the distribution between Deluxe and Standard rooms in your hotel. Each segment represents the total number of rooms of that type. Hover over each segment to see detailed occupancy information including occupied rooms, available rooms, and current occupancy rates for real-time room management insights.'
+            lengthOfStay: {
+                title: 'Length-of-Stay Distribution Chart',
+                text: 'This histogram shows the distribution of bookings by the number of nights guests stay. The buckets are: 1 night, 2-3 nights, 4-7 nights, and 8+ nights. This helps identify typical guest stay patterns and can inform pricing strategies for different length bookings. Longer stays may warrant different rates or packages.'
             },
             sales: {
                 title: 'Sales Analysis Chart',
@@ -128,7 +131,7 @@ const app = new Vue({
         chartInstances: {
             revenue: null,
             occupancy: null,
-            roomType: null,
+            lengthOfStay: null,
             bookingTrend: null,
             sales: null
         },
@@ -403,6 +406,9 @@ const app = new Vue({
                     
                     // Store all bookings for dashboard metrics calculations
                     this.allBookings = allBookings;
+                    
+                    // Generate available years for length-of-stay chart
+                    this.generateAvailableYears();
                     
                     // DEBUG: Log the status distribution of all bookings
                     const statusCounts = {};
@@ -1294,17 +1300,17 @@ const app = new Vue({
                 // Get canvas elements
                 const revenueCtx = document.getElementById('revenueChart');
                 const occupancyCtx = document.getElementById('occupancyChart');
-                const roomTypeCtx = document.getElementById('roomTypeChart');
+                const lengthOfStayCtx = document.getElementById('lengthOfStayChart');
                 const bookingTrendsCtx = document.getElementById('bookingTrendChart');
                 const salesCtx = document.getElementById('salesChart'); // Add sales chart
                 
-                if (!revenueCtx || !occupancyCtx || !roomTypeCtx || !bookingTrendsCtx) {
+                if (!revenueCtx || !occupancyCtx || !lengthOfStayCtx || !bookingTrendsCtx) {
                     console.error('Chart canvas elements not found, cannot initialize charts');
                     return;
                 }
                 
-                // Import chart data
-                const chartData = await getChartData();
+                // Import chart data - use selected year for length-of-stay chart
+                const chartData = await getChartData(this.selectedLengthOfStayYear);
                 console.log('Chart data received:', chartData);
                 
                 if (!chartData) {
@@ -1313,7 +1319,7 @@ const app = new Vue({
                 }
                 
                 // Create chart instances with default data structure
-                this.createChartInstances(revenueCtx, occupancyCtx, roomTypeCtx, bookingTrendsCtx, salesCtx, chartData);
+                this.createChartInstances(revenueCtx, occupancyCtx, lengthOfStayCtx, bookingTrendsCtx, salesCtx, chartData);
                 
                 // Mark charts as initialized
                 this.isInitialized = true;
@@ -1322,6 +1328,113 @@ const app = new Vue({
                 console.error('Error initializing charts:', error);
                 // Reset initialization flag on error
                 this.isInitialized = false;
+            }
+        },
+
+        // Generate available years from booking data
+        generateAvailableYears() {
+            const yearsWithData = new Set();
+            
+            // Extract years from booking data only if bookings exist
+            if (this.allBookings && this.allBookings.length > 0) {
+                this.allBookings.forEach(booking => {
+                    // Only count non-cancelled bookings with valid nights data
+                    if (booking.checkIn && booking.status !== 'cancelled') {
+                        const checkInDate = typeof booking.checkIn.toDate === 'function' 
+                            ? booking.checkIn.toDate() 
+                            : new Date(booking.checkIn);
+                        
+                        if (!isNaN(checkInDate.getTime())) {
+                            // Validate that the booking has usable length-of-stay data
+                            let hasValidNights = false;
+                            
+                            // Check if numberOfNights is directly available and valid
+                            if (booking.numberOfNights && typeof booking.numberOfNights === 'number' && booking.numberOfNights > 0) {
+                                hasValidNights = true;
+                            } else {
+                                // Check if we can calculate nights from dates
+                                const checkOut = booking.checkOut;
+                                if (checkOut) {
+                                    const checkOutDate = typeof checkOut.toDate === 'function' 
+                                        ? checkOut.toDate() 
+                                        : new Date(checkOut);
+                                    
+                                    if (!isNaN(checkOutDate.getTime()) && checkOutDate > checkInDate) {
+                                        const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
+                                        if (nights > 0) {
+                                            hasValidNights = true;
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            // Only add year if booking has valid nights data
+                            if (hasValidNights) {
+                                yearsWithData.add(checkInDate.getFullYear());
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // If no years found from data, add current year as default
+            if (yearsWithData.size === 0) {
+                yearsWithData.add(new Date().getFullYear());
+            }
+            
+            // Convert to sorted array (newest first)
+            this.availableYears = Array.from(yearsWithData).sort((a, b) => b - a);
+            
+            // Set selected year to the most recent year with data
+            if (this.availableYears.length > 0) {
+                this.selectedLengthOfStayYear = this.availableYears[0];
+            }
+            
+            console.log('Available years for length-of-stay analysis (with valid data only):', this.availableYears);
+        },
+
+        // Update length-of-stay chart when year changes
+        async updateLengthOfStayChart() {
+            try {
+                console.log(`Updating length-of-stay chart for year ${this.selectedLengthOfStayYear}`);
+                
+                // Import the getChartData function
+                const { getChartData } = await import('./chartData.js');
+                
+                // Get new chart data for the selected year
+                const chartData = await getChartData(this.selectedLengthOfStayYear);
+                
+                if (chartData && chartData.lengthOfStay && this.lengthOfStayChart) {
+                    const lengthOfStayData = chartData.lengthOfStay;
+                    
+                    // Check if there's actually data for this year
+                    const totalBookings = lengthOfStayData.totalBookings || 0;
+                    
+                    if (totalBookings > 0) {
+                        // Update the chart data
+                        this.lengthOfStayChart.data.labels = lengthOfStayData.labels;
+                        this.lengthOfStayChart.data.datasets[0].data = lengthOfStayData.datasets[0].data;
+                        
+                        // Update the chart title
+                        this.lengthOfStayChart.options.plugins.title.text = `Year ${lengthOfStayData.year || this.selectedLengthOfStayYear} (${totalBookings} bookings)`;
+                        
+                        // Update the chart
+                        this.lengthOfStayChart.update();
+                        
+                        console.log(`Length-of-stay chart updated successfully for year ${this.selectedLengthOfStayYear} with ${totalBookings} bookings`);
+                    } else {
+                        // No data for this year - this shouldn't happen if generateAvailableYears works correctly
+                        console.warn(`No bookings found for year ${this.selectedLengthOfStayYear}`);
+                        
+                        // Update chart title to show no data
+                        this.lengthOfStayChart.options.plugins.title.text = `Year ${this.selectedLengthOfStayYear} (No data)`;
+                        this.lengthOfStayChart.update();
+                    }
+                } else {
+                    console.warn('No length-of-stay data available for selected year');
+                }
+            } catch (error) {
+                console.error('Error updating length-of-stay chart:', error);
             }
         },
 
@@ -1336,9 +1449,9 @@ const app = new Vue({
                 this.occupancyChart = null;
             }
             
-            if (this.roomTypeChart instanceof Chart) {
-                this.roomTypeChart.destroy();
-                this.roomTypeChart = null;
+            if (this.lengthOfStayChart instanceof Chart) {
+                this.lengthOfStayChart.destroy();
+                this.lengthOfStayChart = null;
             }
             
             if (this.bookingTrendsChart instanceof Chart) {
@@ -1354,11 +1467,7 @@ const app = new Vue({
             console.log('Existing chart instances destroyed');
         },
 
-        createChartInstances(revenueCtx, occupancyCtx, roomTypeCtx, bookingTrendsCtx, salesCtx, chartData) {
-            // Store occupancy data globally for tooltip access
-            window.roomOccupancyData = chartData.roomType?.occupancyData || null;
-            console.log('Stored room occupancy data:', window.roomOccupancyData);
-            
+        createChartInstances(revenueCtx, occupancyCtx, lengthOfStayCtx, bookingTrendsCtx, salesCtx, chartData) {
             // Create Revenue Chart
             this.revenueChart = new Chart(revenueCtx, {
                 type: 'line',
@@ -1671,54 +1780,59 @@ const app = new Vue({
                 }
             });
             
-            // Create Room Type Chart
-            const roomTypeData = chartData.roomType || {
-                labels: ['Deluxe Rooms', 'Standard Rooms'],
+            // Create Length-of-Stay Chart
+            const lengthOfStayData = chartData.lengthOfStay || {
+                labels: ['1 Night', '2-3 Nights', '4-7 Nights', '8+ Nights'],
                 datasets: [{
-                    label: 'Room Distribution',
-                    data: [18, 18],
+                    label: 'Bookings Count',
+                    data: [25, 45, 35, 15],
                     backgroundColor: [
-                        'rgba(255, 99, 132, 0.7)',   // Deluxe - Red
-                        'rgba(54, 162, 235, 0.7)'    // Standard - Blue
+                        'rgba(255, 99, 132, 0.7)',   // 1 Night - Red
+                        'rgba(54, 162, 235, 0.7)',   // 2-3 Nights - Blue
+                        'rgba(255, 205, 86, 0.7)',   // 4-7 Nights - Yellow
+                        'rgba(75, 192, 192, 0.7)'    // 8+ Nights - Green
                     ],
                     hoverBackgroundColor: [
                         'rgba(255, 99, 132, 0.9)',
-                        'rgba(54, 162, 235, 0.9)'
+                        'rgba(54, 162, 235, 0.9)',
+                        'rgba(255, 205, 86, 0.9)',
+                        'rgba(75, 192, 192, 0.9)'
                     ],
                     borderWidth: 2,
                     hoverBorderWidth: 3,
                     hoverBorderColor: '#ffffff'
                 }],
-                occupancyData: {
-                    deluxe: { 
-                        total: 18, 
-                        occupied: 0, 
-                        available: 18,
-                        occupancyRate: '0.0'
-                    },
-                    standard: { 
-                        total: 18, 
-                        occupied: 0, 
-                        available: 18,
-                        occupancyRate: '0.0'
-                    }
-                }
+                buckets: {
+                    '1 Night': 25,
+                    '2-3 Nights': 45,
+                    '4-7 Nights': 35,
+                    '8+ Nights': 15
+                },
+                totalBookings: 120
             };
 
-            this.roomTypeChart = new Chart(roomTypeCtx, {
-                type: 'pie',
-                data: roomTypeData,
+            this.lengthOfStayChart = new Chart(lengthOfStayCtx, {
+                type: 'bar',
+                data: lengthOfStayData,
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                padding: 15,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
+                        title: {
+                            display: true,
+                            text: `Year ${lengthOfStayData.year || new Date().getFullYear()} (${lengthOfStayData.totalBookings || 0} bookings)`,
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            },
+                            color: '#374151',
+                            padding: {
+                                top: 10,
+                                bottom: 20
                             }
+                        },
+                        legend: {
+                            display: false // Hide legend for bar chart as it's not needed
                         },
                         tooltip: {
                             enabled: true,
@@ -1739,82 +1853,82 @@ const app = new Vue({
                             displayColors: false,
                             callbacks: {
                                 title: function(context) {
-                                    return context[0].label;
+                                    return `${context[0].label} Stays`;
                                 },
                                 label: function(context) {
-                                    const roomType = context.label;
-                                    const totalRooms = context.parsed;
-                                    const occupancyData = window.roomOccupancyData;
+                                    const label = context.label;
+                                    const count = context.parsed.y;
+                                    const total = chartData.lengthOfStay?.totalBookings || 120;
+                                    const percentage = ((count / total) * 100).toFixed(1);
                                     
-                                    console.log('Tooltip - Room type:', roomType);
-                                    console.log('Tooltip - Available occupancy data:', occupancyData);
-                                    
-                                    let occupancy;
-                                    if (roomType === 'Deluxe Rooms' && occupancyData && occupancyData.deluxe) {
-                                        occupancy = occupancyData.deluxe;
-                                    } else if (roomType === 'Standard Rooms' && occupancyData && occupancyData.standard) {
-                                        occupancy = occupancyData.standard;
-                                    } else {
-                                        // Fallback if occupancy data is not available
-                                        console.warn('Occupancy data not found for:', roomType, 'Available data:', occupancyData);
-                                        return [
-                                            `Total Rooms: ${totalRooms}`,
-                                            'Real-time data unavailable'
-                                        ];
-                                    }
-                                    
-                                    console.log('Using occupancy data:', occupancy);
-                                    
-                                    // Create detailed tooltip information
-                                    const occupancyRate = parseFloat(occupancy.occupancyRate);
-                                    const status = occupancyRate > 80 ? 'High Occupancy' : 
-                                                 occupancyRate > 50 ? 'Moderate Occupancy' : 'Low Occupancy';
-                                    
-                                    return [
-                                        `Total Rooms: ${totalRooms}`,
-                                        `🟢 Available: ${occupancy.available} rooms`,
-                                        `🔴 Occupied: ${occupancy.occupied} rooms`,
-                                        `📊 Occupancy Rate: ${occupancy.occupancyRate}%`,
-                                        `📈 Status: ${status}`
-                                    ];
-                                },
-                                afterLabel: function(context) {
-                                    const roomType = context.label;
-                                    const occupancyData = window.roomOccupancyData;
-                                    
-                                    let occupancy;
-                                    if (roomType === 'Deluxe Rooms' && occupancyData && occupancyData.deluxe) {
-                                        occupancy = occupancyData.deluxe;
-                                    } else if (roomType === 'Standard Rooms' && occupancyData && occupancyData.standard) {
-                                        occupancy = occupancyData.standard;
-                                    } else {
-                                        return '';
-                                    }
-                                    
-                                    // Add management insights
                                     const insights = [];
-                                    const occupancyRate = parseFloat(occupancy.occupancyRate);
+                                    insights.push(`📊 ${count} bookings (${percentage}%)`);
                                     
-                                    if (occupancy.available === 0) {
-                                        insights.push('⚠️ Fully Booked');
-                                    } else if (occupancy.available <= 2) {
-                                        insights.push('⚠️ Limited Availability');
-                                    } else if (occupancy.available >= Math.floor(occupancy.total * 0.7)) {
-                                        insights.push('✅ High Availability');
+                                    // Add insights based on the length of stay category
+                                    if (label === '1 Night') {
+                                        insights.push('💼 Business/Transit travelers');
+                                        if (percentage > 30) {
+                                            insights.push('💡 Consider express services');
+                                        }
+                                    } else if (label === '2-3 Nights') {
+                                        insights.push('🏖️ Weekend/Short leisure stays');
+                                        if (percentage > 40) {
+                                            insights.push('💡 Most common stay duration');
+                                        }
+                                    } else if (label === '4-7 Nights') {
+                                        insights.push('🌴 Extended vacation stays');
+                                        if (percentage > 25) {
+                                            insights.push('💡 Consider weekly packages');
+                                        }
+                                    } else if (label === '8+ Nights') {
+                                        insights.push('🏠 Long-term/Extended stays');
+                                        if (percentage > 15) {
+                                            insights.push('� Ideal for monthly discounts');
+                                        }
                                     }
                                     
-                                    if (occupancyRate > 90) {
-                                        insights.push('💰 Peak Revenue Opportunity');
-                                    }
-                                    
-                                    return insights.length > 0 ? ['', ...insights] : '';
+                                    return insights;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Length of Stay',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Number of Bookings',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5,
+                                font: {
+                                    size: 12
                                 }
                             }
                         }
                     },
                     animation: {
-                        animateRotate: true,
-                        animateScale: true
+                        duration: 1000,
+                        easing: 'easeOutQuart'
                     }
                 }
             });
@@ -1968,8 +2082,33 @@ const app = new Vue({
                     const rate = parseFloat(this.stats.occupancyRate);
                     this.explanationText = `Your current occupancy rate is ${rate}%. ${rate > 70 ? 'This is a healthy occupancy level.' : 'There may be opportunity to increase bookings.'}`;
                     break;
-                case 'rooms':
-                    this.explanationText = 'The room distribution chart shows the breakdown of your property by room type. This helps identify which room types are most common in your inventory.';
+                case 'lengthOfStay':
+                    const lengthOfStayData = this.lengthOfStayChart?.data;
+                    if (lengthOfStayData && lengthOfStayData.datasets && lengthOfStayData.datasets[0]) {
+                        const data = lengthOfStayData.datasets[0].data;
+                        const labels = lengthOfStayData.labels;
+                        const total = data.reduce((sum, val) => sum + val, 0);
+                        
+                        // Find the most common length of stay
+                        let maxIndex = 0;
+                        for (let i = 1; i < data.length; i++) {
+                            if (data[i] > data[maxIndex]) {
+                                maxIndex = i;
+                            }
+                        }
+                        
+                        const mostCommon = labels[maxIndex];
+                        const percentage = ((data[maxIndex] / total) * 100).toFixed(1);
+                        
+                        this.explanationText = `Length-of-stay analysis shows guest booking patterns. Most guests (${percentage}%) book ${mostCommon.toLowerCase()}, which indicates ${
+                            maxIndex === 0 ? 'many business or transit travelers' :
+                            maxIndex === 1 ? 'typical weekend and short leisure stays' :
+                            maxIndex === 2 ? 'extended vacation and leisure travel' :
+                            'long-term or extended stay guests'
+                        }. This distribution helps optimize pricing strategies and service packages for different stay durations.`;
+                    } else {
+                        this.explanationText = 'The length-of-stay distribution shows how many nights guests typically book, helping you understand guest patterns and optimize pricing strategies.';
+                    }
                     break;
                 case 'bookings':
                     this.explanationText = 'The booking trends chart shows patterns in reservation activity. Understanding these patterns can help with staffing and resource planning.';
@@ -1995,7 +2134,7 @@ const app = new Vue({
             const charts = [
                 { instance: this.revenueChart, container: document.querySelector('.sales-chart') },
                 { instance: this.occupancyChart, container: document.querySelector('.occupancy-chart') },
-                { instance: this.roomTypeChart, container: document.querySelector('.room-type-chart') },
+                { instance: this.lengthOfStayChart, container: document.querySelector('.length-of-stay-chart') },
                 { instance: this.bookingTrendsChart, container: document.querySelector('.booking-trend-chart') }
             ];
 

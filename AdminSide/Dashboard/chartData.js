@@ -92,6 +92,33 @@ function getDefaultDataset() {
                 fill: true
             }]
         },
+        lengthOfStay: {
+            labels: ['1 Night', '2-3 Nights', '4-7 Nights', '8+ Nights'],
+            datasets: [{
+                label: 'Bookings Count',
+                data: [25, 45, 35, 15],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.7)',   // 1 Night - Red
+                    'rgba(54, 162, 235, 0.7)',   // 2-3 Nights - Blue
+                    'rgba(255, 205, 86, 0.7)',   // 4-7 Nights - Yellow
+                    'rgba(75, 192, 192, 0.7)'    // 8+ Nights - Green
+                ],
+                hoverBackgroundColor: [
+                    'rgba(255, 99, 132, 0.9)',
+                    'rgba(54, 162, 235, 0.9)',
+                    'rgba(255, 205, 86, 0.9)',
+                    'rgba(75, 192, 192, 0.9)'
+                ]
+            }],
+            buckets: {
+                '1 Night': 25,
+                '2-3 Nights': 45,
+                '4-7 Nights': 35,
+                '8+ Nights': 15
+            },
+            totalBookings: 120,
+            year: new Date().getFullYear()
+        },
         roomType: {
             labels: ['Deluxe Rooms', 'Standard Rooms'],
             datasets: [{
@@ -207,6 +234,97 @@ function formatOccupancyData(bookings) {
     return {
         labels: months,
         rates: occupancyRates
+    };
+}
+
+function formatLengthOfStayData(bookings, targetYear = null) {
+    // Define length-of-stay buckets
+    const buckets = {
+        '1 Night': 0,
+        '2-3 Nights': 0,
+        '4-7 Nights': 0,
+        '8+ Nights': 0
+    };
+    
+    // Use current year if no target year is specified
+    const currentYear = new Date().getFullYear();
+    const filterYear = targetYear || currentYear;
+    
+    console.log(`Processing ${bookings.length} bookings for length-of-stay distribution for year ${filterYear}`);
+    
+    let processedBookings = 0;
+    let validBookings = 0;
+    let yearFilteredBookings = 0;
+    
+    bookings.forEach(booking => {
+        processedBookings++;
+        
+        // Only count confirmed bookings (not cancelled)
+        if (booking.status === 'cancelled') {
+            return;
+        }
+        
+        // Parse check-in date to filter by year
+        const checkIn = parseDate(booking.checkIn);
+        if (!checkIn) {
+            return;
+        }
+        
+        // Filter by year - only include bookings from the specified year
+        if (checkIn.getFullYear() !== filterYear) {
+            return;
+        }
+        
+        yearFilteredBookings++;
+        
+        // Get the number of nights from the booking data
+        let numberOfNights = 0;
+        
+        // First check if numberOfNights is directly available
+        if (booking.numberOfNights && typeof booking.numberOfNights === 'number') {
+            numberOfNights = booking.numberOfNights;
+        } else {
+            // Calculate from check-in and check-out dates
+            const checkOut = parseDate(booking.checkOut);
+            
+            if (checkIn && checkOut && checkOut > checkIn) {
+                const timeDiff = checkOut.getTime() - checkIn.getTime();
+                numberOfNights = Math.ceil(timeDiff / (1000 * 3600 * 24));
+            }
+        }
+        
+        // Skip bookings with invalid night counts
+        if (numberOfNights <= 0) {
+            return;
+        }
+        
+        validBookings++;
+        
+        // Categorize into buckets
+        if (numberOfNights === 1) {
+            buckets['1 Night']++;
+        } else if (numberOfNights >= 2 && numberOfNights <= 3) {
+            buckets['2-3 Nights']++;
+        } else if (numberOfNights >= 4 && numberOfNights <= 7) {
+            buckets['4-7 Nights']++;
+        } else if (numberOfNights >= 8) {
+            buckets['8+ Nights']++;
+        }
+    });
+    
+    console.log(`Length-of-stay distribution calculation completed for year ${filterYear}:`, {
+        processedBookings,
+        yearFilteredBookings,
+        validBookings,
+        buckets
+    });
+    
+    return {
+        labels: Object.keys(buckets),
+        data: Object.values(buckets),
+        buckets: buckets,
+        totalBookings: validBookings,
+        year: filterYear
     };
 }
 
@@ -339,7 +457,7 @@ function formatBookingTrends(bookings) {
     };
 }
 
-export async function getChartData() {
+export async function getChartData(targetYear = null) {
     try {
         // Check if user is authenticated
         const authInstance = auth();
@@ -398,6 +516,7 @@ export async function getChartData() {
             // Format data for charts
             const revenueData = formatRevenueData(validBookings);
             const occupancyData = formatOccupancyData(validBookings);
+            const lengthOfStayData = formatLengthOfStayData(validBookings, targetYear);
             const roomTypeData = formatRoomTypeData(validBookings);
             const bookingTrends = formatBookingTrends(validBookings);
 
@@ -423,6 +542,31 @@ export async function getChartData() {
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         fill: true
                     }]
+                },
+                lengthOfStay: {
+                    labels: lengthOfStayData.labels,
+                    datasets: [{
+                        label: 'Bookings Count',
+                        data: lengthOfStayData.data,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',   // 1 Night - Red
+                            'rgba(54, 162, 235, 0.7)',   // 2-3 Nights - Blue
+                            'rgba(255, 205, 86, 0.7)',   // 4-7 Nights - Yellow
+                            'rgba(75, 192, 192, 0.7)'    // 8+ Nights - Green
+                        ],
+                        hoverBackgroundColor: [
+                            'rgba(255, 99, 132, 0.9)',
+                            'rgba(54, 162, 235, 0.9)',
+                            'rgba(255, 205, 86, 0.9)',
+                            'rgba(75, 192, 192, 0.9)'
+                        ],
+                        borderWidth: 2,
+                        hoverBorderWidth: 3,
+                        hoverBorderColor: '#ffffff'
+                    }],
+                    buckets: lengthOfStayData.buckets,
+                    totalBookings: lengthOfStayData.totalBookings,
+                    year: lengthOfStayData.year
                 },
                 roomType: {
                     labels: roomTypeData.labels,

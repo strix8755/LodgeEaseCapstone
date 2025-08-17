@@ -1036,34 +1036,6 @@ new Vue({
                 await this.fetchBookings();
 
                 alert('Booking status updated successfully!');
-
-                // Dispatch dashboard update event for real-time dashboard sync
-                try {
-                    const updateEvent = new CustomEvent('dashboard:booking:update', {
-                        detail: {
-                            action: 'status_update',
-                            bookingId: booking.id,
-                            newStatus: booking.status,
-                            timestamp: new Date().getTime()
-                        }
-                    });
-                    document.dispatchEvent(updateEvent);
-                    console.log('Dashboard update event dispatched for status change');
-                } catch (error) {
-                    console.warn('Could not dispatch dashboard update event:', error);
-                }
-
-                // Also send localStorage notification for cross-tab updates
-                try {
-                    localStorage.setItem('dashboard:refresh', JSON.stringify({
-                        action: 'booking_status_updated',
-                        bookingId: booking.id,
-                        newStatus: booking.status,
-                        timestamp: new Date().getTime()
-                    }));
-                } catch (error) {
-                    console.warn('Could not send localStorage notification:', error);
-                }
             } catch (error) {
                 console.error('Error updating booking status:', error);
                 alert('Failed to update booking status: ' + error.message);
@@ -1482,34 +1454,6 @@ new Vue({
                 // Show success message
                 alert('Booking updated successfully!');
 
-                // Dispatch dashboard update event for real-time dashboard sync
-                try {
-                    const updateEvent = new CustomEvent('dashboard:booking:update', {
-                        detail: {
-                            action: 'booking_updated',
-                            bookingId: bookingId,
-                            updatedFields: Object.keys(updateData),
-                            timestamp: new Date().getTime()
-                        }
-                    });
-                    document.dispatchEvent(updateEvent);
-                    console.log('Dashboard update event dispatched for booking update');
-                } catch (error) {
-                    console.warn('Could not dispatch dashboard update event:', error);
-                }
-
-                // Also send localStorage notification for cross-tab updates
-                try {
-                    localStorage.setItem('dashboard:refresh', JSON.stringify({
-                        action: 'booking_updated',
-                        bookingId: bookingId,
-                        updatedFields: Object.keys(updateData),
-                        timestamp: new Date().getTime()
-                    }));
-                } catch (error) {
-                    console.warn('Could not send localStorage notification:', error);
-                }
-
                 // Instead of fetching all bookings, just update the specific booking we modified
                 // This preserves the form fields we need for editing
                 console.log('Booking update completed successfully');
@@ -1597,34 +1541,6 @@ new Vue({
                 this.bookings = this.bookings.filter(b => b.id !== booking.id);
                 
                 alert('Booking deleted successfully!');
-
-                // Dispatch dashboard update event for booking deletion
-                try {
-                    const updateEvent = new CustomEvent('dashboard:booking:update', {
-                        detail: {
-                            action: 'booking_deleted',
-                            bookingId: booking.id,
-                            guestName: booking.guestName,
-                            timestamp: new Date().getTime()
-                        }
-                    });
-                    document.dispatchEvent(updateEvent);
-                    console.log('Dashboard update event dispatched for booking deletion');
-                } catch (error) {
-                    console.warn('Could not dispatch dashboard update event:', error);
-                }
-
-                // Also send localStorage notification for cross-tab updates
-                try {
-                    localStorage.setItem('dashboard:refresh', JSON.stringify({
-                        action: 'booking_deleted',
-                        bookingId: booking.id,
-                        guestName: booking.guestName,
-                        timestamp: new Date().getTime()
-                    }));
-                } catch (error) {
-                    console.warn('Could not send localStorage notification:', error);
-                }
                 
             } catch (error) {
                 console.error('Error deleting booking:', error);
@@ -2113,42 +2029,6 @@ new Vue({
                 );
                 
                 alert('Booking created successfully!');
-
-                console.log("=== ROOM MGMT DEBUG: Dispatching events for new booking ===");
-
-                // Dispatch dashboard update event for new booking
-                try {
-                    const updateEvent = new CustomEvent('dashboard:booking:update', {
-                        detail: {
-                            action: 'booking_created',
-                            bookingId: docRef.id,
-                            guestName: this.manualBooking.guestName,
-                            roomNumber: this.manualBooking.roomNumber,
-                            timestamp: new Date().getTime()
-                        }
-                    });
-                    document.dispatchEvent(updateEvent);
-                    console.log('ROOM MGMT DEBUG: Dashboard update event dispatched for new booking:', updateEvent.detail);
-                } catch (error) {
-                    console.warn('ROOM MGMT ERROR: Could not dispatch dashboard update event:', error);
-                }
-
-                // Also send localStorage notification for cross-tab updates
-                try {
-                    const storageData = {
-                        action: 'booking_created',
-                        bookingId: docRef.id,
-                        guestName: this.manualBooking.guestName,
-                        roomNumber: this.manualBooking.roomNumber,
-                        timestamp: new Date().getTime()
-                    };
-                    localStorage.setItem('dashboard:refresh', JSON.stringify(storageData));
-                    console.log('ROOM MGMT DEBUG: localStorage notification sent:', storageData);
-                } catch (error) {
-                    console.warn('ROOM MGMT ERROR: Could not send localStorage notification:', error);
-                }
-                
-                console.log("=== ROOM MGMT DEBUG: Event dispatching complete ===");
                 this.closeManualBookingModal();
                 this.resetManualBookingForm();
                 this.fetchBookings();
