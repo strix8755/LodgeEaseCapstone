@@ -1,11 +1,6 @@
 import { 
     auth, 
     db, 
-    fetchBillingData,
-    addBillingRecord,
-    updateBillingRecord,
-    deleteBillingRecord,
-    updateBookingBilling,
     collection, 
     addDoc,
     doc,
@@ -17,9 +12,7 @@ import {
     orderBy,
     where,
     getDoc,
-    deleteBookingRecord,
     checkAdminAuth,
-    markBookingHiddenInBilling,
     signOut
 } from '../firebase.js';
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -103,24 +96,8 @@ new Vue({
         return {
             isAuthenticated: false,
             loading: true,
-            showModal: false,
-            isSubmitting: false,
             isUpdating: false,
             searchQuery: '',
-            newBill: {
-                customerName: '',
-                date: '',
-                checkInTime: '12:00',
-                checkOut: '',
-                checkOutTime: '11:00',
-                roomNumber: '',
-                roomType: '',
-                baseCost: 0,
-                expenses: [],
-                bookingType: 'standard', // Added: standard, night-promo, or hourly
-                duration: 3, // Added: for hourly bookings
-                hourlyPrice: 0 // <-- Add this line
-            },
             bills: [],
             filteredBills: [], 
             showViewModal: false,
@@ -142,19 +119,6 @@ new Vue({
         }
     },
     computed: {
-        calculateTotal() {
-            let total = 0;
-            
-            // Add base cost
-            total += parseFloat(this.newBill.baseCost) || 0;
-            
-            // Add expenses
-            if (this.newBill.expenses) {
-                total += this.newBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
-            }
-            
-            return total.toFixed(2);
-        },
         calculateEditTotal() {
             if (!this.editingBill) return '0.00';
             
@@ -263,56 +227,6 @@ new Vue({
                     return billDate >= today && billDate <= endOfDay;
                 }
             });
-        },
-        calculateBaseCost() {
-            let baseCost = 0;
-            
-            // Check if dates are provided
-            if (!this.newBill.date) return 0;
-            
-            // Get check-in date/time
-            const checkInDateTime = new Date(this.newBill.date);
-            const [checkInHours, checkInMinutes] = this.newBill.checkInTime.split(':').map(Number);
-            checkInDateTime.setHours(checkInHours, checkInMinutes, 0);
-            
-            // Calculate checkout date/time
-            let checkOutDateTime = null;
-            
-            if (this.newBill.checkOut) {
-                checkOutDateTime = new Date(this.newBill.checkOut);
-                const [checkOutHours, checkOutMinutes] = this.newBill.checkOutTime.split(':').map(Number);
-                checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
-            } else if (this.newBill.bookingType === 'hourly') {
-                // For hourly bookings without checkout, use duration
-                checkOutDateTime = new Date(checkInDateTime);
-                checkOutDateTime.setHours(checkOutDateTime.getHours() + parseInt(this.newBill.duration));
-            } else {
-                // Default to 3 hour stay
-                checkOutDateTime = new Date(checkInDateTime);
-                checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
-            }
-            
-            // Calculate nights and hours
-            const nights = calculateNights(checkInDateTime, checkOutDateTime);
-            const hours = this.newBill.bookingType === 'hourly' ? parseInt(this.newBill.duration) : calculateHours(checkInDateTime, checkOutDateTime);
-
-            // If hourly, use manual price
-            if (this.newBill.bookingType === 'hourly') {
-                baseCost = parseFloat(this.newBill.hourlyPrice) || 0;
-                return baseCost;
-            }
-
-            // Get calculated costs
-            const bookingCosts = calculateBookingCosts(
-                nights,
-                this.newBill.bookingType,
-                Boolean(this.newBill.checkOut), // Has checkout
-                this.newBill.hasTvRemote,
-                hours
-            );
-            
-            // Return the calculated subtotal
-            return bookingCosts.subtotal;
         }
     },
     watch: {
@@ -373,9 +287,21 @@ new Vue({
             }
         },
 
-        // Check if a bill can be edited (only bills from today or future dates can be edited)
+        // Check if a bill can be edited (only bills from today or future dates can be edited and not checked out or cancelled)
         canEditBill(bill) {
             console.log('Checking if bill can be edited:', bill);
+            
+            // First check the status - bills that are checked out or cancelled cannot be edited
+            if (bill.status) {
+                const status = bill.status.toLowerCase();
+                if (status === 'canceled' || status === 'cancelled' || 
+                    status === 'checked out' || status === 'checked-out' || 
+                    status === 'completed' || status === 'complete' ||
+                    status === 'finished' || status === 'ended') {
+                    console.log('Bill cannot be edited due to status:', bill.status);
+                    return false;
+                }
+            }
             
             // Use check-in date for comparison
             if (!bill.date) {
@@ -414,51 +340,63 @@ new Vue({
             return canEdit;
         },
 
-        openModal() {
-            console.log('Opening modal');
-            this.showModal = true;
-        },
-        closeModal() {
-            this.showModal = false;
-        },
-        resetNewBill() {
-            this.newBill = {
-                customerName: '',
-                date: '',
-                checkInTime: '12:00',
-                checkOut: '',
-                checkOutTime: '11:00',
-                roomNumber: '',
-                roomType: '',
-                baseCost: 0,
-                expenses: [],
-                bookingType: 'standard',
-                duration: 3,
-                hasTvRemote: false,
-                hourlyPrice: 0 // <-- Add this line
-            };
-        },
-        addExpense() {
-            this.newBill.expenses.push({ description: '', amount: 0 });
-        },
-        removeExpense(index) {
-            this.newBill.expenses.splice(index, 1);
-        },
         async loadBills() {
             try {
                 this.loading = true;
-                console.log("Loading bills from Firebase...");
+                console.log("Loading bills from everlodgebookings collection...");
                 
                 // Reset cached data to force a fresh load
                 this.bills = [];
                 this.filteredBills = [];
                 
-                // Fetch bill data from Firebase
-                const billsData = await fetchBillingData();
-                console.log("Bills data received:", billsData.length, "records");
+                // Fetch booking data directly from everlodgebookings collection
+                const bookingsQuery = query(collection(db(), 'everlodgebookings'), orderBy('createdAt', 'desc'));
+                const bookingsSnapshot = await getDocs(bookingsQuery);
+                
+                const bookings = bookingsSnapshot.docs
+                    .filter(doc => {
+                        // Filter out bookings that are marked as hidden in billing
+                        const data = doc.data();
+                        return !data.hiddenInBilling;
+                    })
+                    .map(doc => {
+                        const data = doc.data();
+                        console.log('Raw booking data for billing:', data);
+                        
+                        // Extract room details with enhanced fallback options
+                        const roomNumber = data.roomNumber || 
+                            (data.propertyDetails && data.propertyDetails.roomNumber) || 
+                            (data.room && data.room.number) || '';
+                        
+                        const roomType = data.roomType || 
+                            (data.propertyDetails && data.propertyDetails.roomType) || 
+                            (data.room && data.room.type) || '';
+
+                        // Create billing record from booking
+                        return {
+                            id: doc.id,
+                            bookingId: doc.id,
+                            customerName: data.guestName || (data.guest && data.guest.name) || (data.propertyDetails && data.propertyDetails.guestName) || 'Guest',
+                            date: data.checkIn,
+                            checkOut: data.checkOut,
+                            roomNumber: roomNumber,
+                            roomType: roomType,
+                            baseCost: data.subtotal || data.basePrice || data.price || 0,
+                            serviceFee: data.serviceFee || 0,
+                            totalAmount: data.total || data.totalPrice || data.amount || 0,
+                            expenses: data.expenses || [],
+                            status: data.status || 'pending',
+                            paymentStatus: data.paymentStatus || 'pending',
+                            bookingType: data.bookingType || 'daily',
+                            duration: data.duration || '',
+                            source: 'everlodgebookings'
+                        };
+                    });
+                
+                console.log("Bills data received:", bookings.length, "records");
                 
                 // Process each bill to ensure proper format for display
-                this.bills = billsData.map(bill => {
+                this.bills = bookings.map(bill => {
                     // Ensure expenses array exists
                     if (!bill.expenses) {
                         bill.expenses = [];
@@ -687,9 +625,20 @@ new Vue({
         openEditModal(bill) {
             console.log('Opening edit modal for bill:', bill);
             
-            // Check if bill can be edited (only bills from today or future dates can be edited)
+            // Check if bill can be edited
             if (!this.canEditBill(bill)) {
-                alert('This bill cannot be edited because it is from a date older than today. You can only edit bills from today or future dates.');
+                const status = bill.status ? bill.status.toLowerCase() : '';
+                let message = 'This bill cannot be edited.';
+                
+                if (status === 'canceled' || status === 'cancelled') {
+                    message = 'This bill cannot be edited because it has been cancelled.';
+                } else if (status === 'checked out' || status === 'checked-out' || status === 'completed' || status === 'complete' || status === 'finished' || status === 'ended') {
+                    message = 'This bill cannot be edited because it has been checked out or completed.';
+                } else {
+                    message = 'This bill cannot be edited because it is from a date older than today. You can only edit bills from today or future dates.';
+                }
+                
+                alert(message);
                 return;
             }
             
@@ -738,6 +687,23 @@ new Vue({
         
         editBill(bill) {
             console.log('Edit bill function called for expenses only', bill);
+            
+            // Check if bill can be edited
+            if (!this.canEditBill(bill)) {
+                const status = bill.status ? bill.status.toLowerCase() : '';
+                let message = 'This bill cannot be edited.';
+                
+                if (status === 'canceled' || status === 'cancelled') {
+                    message = 'This bill cannot be edited because it has been cancelled.';
+                } else if (status === 'checked out' || status === 'checked-out' || status === 'completed' || status === 'complete' || status === 'finished' || status === 'ended') {
+                    message = 'This bill cannot be edited because it has been checked out or completed.';
+                } else {
+                    message = 'This bill cannot be edited because it is from a date older than today. You can only edit bills from today or future dates.';
+                }
+                
+                alert(message);
+                return;
+            }
             
             // Create a deep copy of the bill but set restricted edit mode
             this.editingBill = {
@@ -805,14 +771,7 @@ new Vue({
                 this.loading = true;
                 
                 // Get bill ID with fallbacks
-                let billId = this.currentBillId;
-                
-                // If currentBillId is not set, try to get it from the editingBill
-                if (!billId && this.editingBill) {
-                    billId = this.editingBill.id || 
-                            (this.editingBill.source === 'bookings' ? this.editingBill.bookingId : null);
-                    console.log('Fallback to editingBill ID:', billId);
-                }
+                let billId = this.currentBillId || this.editingBill.id;
                 
                 // Check if we have a valid bill ID before attempting to update
                 if (!billId) {
@@ -835,7 +794,7 @@ new Vue({
                     const [checkOutHours, checkOutMinutes] = this.editingBill.checkOutTime.split(':').map(Number);
                     checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
 
-                    // --- Validation: Check-out cannot be before check-in ---
+                    // Check-out cannot be before check-in
                     if (checkOutDateTime < checkInDateTime) {
                         alert('Check-out date/time cannot be earlier than check-in date/time.');
                         this.loading = false;
@@ -852,179 +811,59 @@ new Vue({
                     checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
                 }
                 
-                // Calculate nights and hours
-                const nights = calculateNights(checkInDateTime, checkOutDateTime);
-                const hours = this.editingBill.bookingType === 'hourly' ? 
-                    parseInt(this.editingBill.duration) : 
-                    calculateHours(checkInDateTime, checkOutDateTime);
-                
-                // Get calculated costs with updated parameters
-                const bookingCosts = calculateBookingCosts(
-                    nights,
-                    this.editingBill.bookingType,
-                    Boolean(this.editingBill.checkOut),
-                    this.editingBill.hasTvRemote,
-                    hours
-                );
-                
-                // Prepare the update data - retain original values for certain fields
-                const updateData = {
-                    customerName: this.editingBill.customerName,
-                    date: Timestamp.fromDate(checkInDateTime),
-                    checkInTime: this.editingBill.checkInTime,
-                    checkOut: this.editingBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
-                    checkOutTime: this.editingBill.checkOutTime,
-                    roomNumber: this.editingBill.roomNumber,
-                    roomType: "Standard", // Always set to Standard
-                    
-                    // Retain the original values for these fields
-                    baseCost: this.editingBill.baseCost,
-                    
-                    // Retain original booking type
-                    bookingType: this.editingBill.bookingType,
-                    duration: this.editingBill.bookingType === 'hourly' ? parseInt(this.editingBill.duration) : null,
-                    hasTvRemote: this.editingBill.hasTvRemote,
-                    tvRemoteFee: this.editingBill.hasTvRemote ? this.TV_REMOTE_FEE : 0,
-                    hourlyPrice: this.editingBill.bookingType === 'hourly' ? parseFloat(this.editingBill.hourlyPrice) || 0 : undefined,
-                    
-                    expenses: this.editingBill.expenses || [],
-                    status: this.editingBill.status,
-                    paymentStatus: this.editingBill.paymentStatus,
-                    updatedAt: Timestamp.now()
-                };
-                
-                // Clean up any undefined values to prevent Firebase errors
-                // Firebase doesn't allow undefined values, but accepts null
-                Object.keys(updateData).forEach(key => {
-                    if (typeof updateData[key] === 'undefined') {
-                        console.log(`Found undefined value for field: ${key}. Setting to null or removing.`);
-                        // If the value is undefined, either delete it or set to null based on field
-                        if (key === 'paymentStatus' || key === 'bookingId' || key === 'duration') {
-                            delete updateData[key];
-                        } else {
-                            updateData[key] = null;
-                        }
-                    }
-                });
-                
-                // If paymentStatus is undefined, remove it from the update object
-                if (typeof updateData.paymentStatus === 'undefined') {
-                    console.log('Extra check: paymentStatus is undefined, removing from update data');
-                    delete updateData.paymentStatus;
-                }
-                
-                // Double-check for any remaining undefined values
-                const hasUndefined = Object.entries(updateData).some(([key, value]) => typeof value === 'undefined');
-                if (hasUndefined) {
-                    console.warn('Warning: There are still undefined values in the update data after cleanup');
-                }
-                
-                // If this was from a booking, preserve the booking ID reference
-                if (this.editingBill.bookingId) {
-                    updateData.bookingId = this.editingBill.bookingId;
-                }
-                
                 // Calculate total amount including expenses
-                let totalAmount = parseFloat(this.editingBill.baseCost);
+                let totalAmount = parseFloat(this.editingBill.baseCost) || 0;
                 if (this.editingBill.expenses && this.editingBill.expenses.length > 0) {
                     totalAmount += this.editingBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
                 }
-                updateData.totalAmount = totalAmount;
                 
-                console.log('Updating bill data:', updateData);
-
-                // Check if the bill exists in the billing system
-                const billDocRef = doc(db(), 'everlodgebilling', billId);
-                const billDocSnap = await getDoc(billDocRef);
-                
-                // If bill doesn't exist in everlodgebilling but is from a booking, create a new billing record
-                if (!billDocSnap.exists() && this.editingBill.source === 'bookings') {
-                    console.log('Bill does not exist in billing records. Creating a new billing record from booking.');
-                    
-                    // If we have a bookingId, make sure it's included in the data
-                    if (this.editingBill.bookingId) {
-                        updateData.bookingId = this.editingBill.bookingId;
-                    } else if (this.editingBill.id && this.editingBill.source === 'bookings') {
-                        // If no explicit bookingId but we know this came from bookings, use the id
-                        updateData.bookingId = this.editingBill.id;
-                    }
-                    
-                    // Add created timestamp
-                    updateData.createdAt = Timestamp.now();
-                    
-                    // Create new billing record
-                    const newBillRecord = await addBillingRecord(updateData);
-                    
-                    // Update current bill ID to the new billing record ID
-                    this.currentBillId = newBillRecord.id;
-                    
-                    console.log('Created new billing record:', newBillRecord);
-                    
-                    // Log activity
-                    await logBillingActivity(
-                        'bill_created_from_booking',
-                        `Created billing record for ${this.editingBill.customerName}, Room ${this.editingBill.roomNumber} from booking`
-                    );
-                    
-                    // Update local data
-                    this.editingBill.id = newBillRecord.id;
-                    this.editingBill.source = 'everlodgebilling';
-                } else if (!billDocSnap.exists()) {
-                    // If bill doesn't exist and it's not from a booking, show error
-                    alert('Cannot update: This bill does not exist in the billing records.');
-                    this.loading = false;
-                    this.isUpdating = false;
-                    return;
-                } else {
-                    // Bill exists, update it
-                    await updateBillingRecord(billId, updateData);
-                    
-                    // If this record is linked to a booking, update the booking as well
-                    if (this.editingBill.bookingId) {
-                        try {
-                            const bookingUpdateData = {
-                                guestName: this.editingBill.customerName,
-                                checkIn: Timestamp.fromDate(checkInDateTime),
-                                checkOut: this.editingBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
-                                subtotal: parseFloat(this.editingBill.baseCost),
-                                totalPrice: totalAmount,
-                                bookingType: this.editingBill.bookingType,
-                                duration: this.editingBill.bookingType === 'hourly' ? parseInt(this.editingBill.duration) : null,
-                                hasTvRemote: this.editingBill.hasTvRemote,
-                                hourlyPrice: this.editingBill.bookingType === 'hourly' ? parseFloat(this.editingBill.hourlyPrice) || 0 : undefined,
-                                updatedAt: Timestamp.now()
-                            };
-                            
-                            // Update the corresponding booking
-                            await updateBookingInRoomManagement(this.editingBill.bookingId, bookingUpdateData);
-                            console.log(`Updated corresponding booking ${this.editingBill.bookingId}`);
-                        } catch (bookingError) {
-                            console.error('Error updating booking:', bookingError);
-                            // Continue with bill update even if booking update fails
-                        }
-                    }
-                    
-                    // Log the activity
-                    await logBillingActivity(
-                        'bill_updated',
-                        `Updated billing record for ${this.editingBill.customerName}, Room ${this.editingBill.roomNumber}`
-                    );
+                // Add service fee if exists
+                if (this.editingBill.serviceFee) {
+                    totalAmount += parseFloat(this.editingBill.serviceFee) || 0;
                 }
                 
-                // Close the modal
-                this.showModal = false;
-                this.isEditMode = false;
-                this.showViewModal = false;
+                // Prepare the update data for everlodgebookings collection
+                const updateData = {
+                    guestName: this.editingBill.customerName,
+                    checkIn: Timestamp.fromDate(checkInDateTime),
+                    checkOut: checkOutDateTime ? Timestamp.fromDate(checkOutDateTime) : null,
+                    roomNumber: this.editingBill.roomNumber,
+                    roomType: this.editingBill.roomType || "Standard",
+                    subtotal: parseFloat(this.editingBill.baseCost) || 0,
+                    serviceFee: parseFloat(this.editingBill.serviceFee) || 0,
+                    total: totalAmount,
+                    expenses: this.editingBill.expenses || [],
+                    status: this.editingBill.status,
+                    paymentStatus: this.editingBill.paymentStatus,
+                    bookingType: this.editingBill.bookingType,
+                    duration: this.editingBill.bookingType === 'hourly' ? parseInt(this.editingBill.duration) : null,
+                    updatedAt: Timestamp.now()
+                };
                 
-                // Use forceRefresh to ensure filters and pagination are preserved
-                console.log("Forcing refresh after bill update");
-                this.forceRefresh();
+                console.log('Updating booking data:', updateData);
+
+                // Update the record in everlodgebookings collection
+                const bookingRef = doc(db(), 'everlodgebookings', billId);
+                await updateDoc(bookingRef, updateData);
                 
+                console.log('Bill updated successfully');
+                
+                // Log activity
+                await logBillingActivity(
+                    'bill_updated',
+                    `Updated billing record for ${this.editingBill.customerName}, Room ${this.editingBill.roomNumber}`
+                );
+                
+                // Show success message and close modal
                 alert('Bill updated successfully!');
+                this.closeViewModal();
+                
+                // Reload bills to reflect changes
+                await this.loadBills();
                 
             } catch (error) {
                 console.error('Error updating bill:', error);
-                alert('Failed to update bill: ' + error.message);
+                alert('Error updating bill: ' + error.message);
             } finally {
                 this.loading = false;
                 this.isUpdating = false;
@@ -1083,59 +922,58 @@ new Vue({
                 
                 this.loading = true;
                 
-                // Handle deletion based on the source of the bill
-                if (bill.source === 'bookings') {
-                    // For bills from the bookings collection
-                    if (!bill.id && !bill.bookingId) {
-                        console.error("Cannot delete bill - no valid ID found");
-                        alert("Cannot delete this bill - no valid ID found");
-                        this.loading = false;
-                        return;
-                    }
-                    
-                    // Use bookingId if bill.id is null (meaning this is a booking displayed in billing but not yet saved as a dedicated bill)
-                    const bookingId = bill.id || bill.bookingId;
-                    console.log("Using booking ID for deletion:", bookingId);
-                    
-                    // For booking-based bills, we need to check if the actual booking should be deleted
-                    if (confirm('This is a booking charge. Do you want to delete the entire booking record as well?')) {
-                        console.log("Deleting booking record with ID:", bookingId);
-                        // Delete the booking from everlodgebookings
-                        await deleteBookingRecord(bookingId);
-                        console.log("Booking record deleted successfully");
-                    } else {
-                        // User chose not to delete the actual booking but hide it from billing view
-                        console.log("Marking booking as hidden from billing view, ID:", bookingId);
-                        // Create or update a flag in a separate collection to hide this booking
-                        await markBookingHiddenInBilling(bookingId);
-                        console.log("Booking marked as hidden");
-                        alert('The booking record was preserved but hidden from billing view.');
-                    }
-                } else {
-                    // Delete regular billing record from everlodgebilling
-                    if (!bill.id) {
-                        console.error("Cannot delete custom bill - no valid ID found");
-                        alert("Cannot delete this bill - no valid ID found");
-                        this.loading = false;
-                        return;
-                    }
-                    
-                    console.log("Deleting billing record with ID:", bill.id);
-                    await deleteBillingRecord(bill.id);
-                    console.log("Billing record deleted successfully");
+                // Get bill ID
+                const billId = bill.id;
+                
+                if (!billId) {
+                    console.error("Cannot delete bill - no valid ID found");
+                    alert("Cannot delete this bill - no valid ID found");
+                    this.loading = false;
+                    return;
                 }
                 
-                console.log("Forcing refresh after deletion");
-                // Use our special force refresh method to ensure UI is updated
-                this.forceRefresh();
+                // Ask user if they want to hide or completely delete the record
+                const shouldHide = confirm(
+                    'Would you like to hide this record from billing view (recommended) or completely delete it?\n\n' +
+                    'Click OK to HIDE (recommended)\n' +
+                    'Click Cancel to DELETE permanently'
+                );
                 
-                // Success message
-                this.loading = false;
-                alert('Bill deleted successfully');
+                if (shouldHide) {
+                    // Hide the record from billing view
+                    console.log("Marking booking as hidden from billing view, ID:", billId);
+                    const bookingRef = doc(db(), 'everlodgebookings', billId);
+                    await updateDoc(bookingRef, {
+                        hiddenInBilling: true,
+                        updatedAt: Timestamp.now()
+                    });
+                    
+                    console.log("Booking marked as hidden");
+                    alert('The booking record was hidden from billing view.');
+                } else {
+                    // Completely delete the record
+                    console.log("Deleting booking record with ID:", billId);
+                    const bookingRef = doc(db(), 'everlodgebookings', billId);
+                    await deleteDoc(bookingRef);
+                    console.log("Booking record deleted successfully");
+                    alert('The booking record was permanently deleted.');
+                }
+                
+                // Log activity
+                await logBillingActivity(
+                    shouldHide ? 'bill_hidden' : 'bill_deleted',
+                    `${shouldHide ? 'Hidden' : 'Deleted'} billing record for ${bill.customerName}, Room ${bill.roomNumber}`
+                );
+                
+                console.log("Forcing refresh after deletion");
+                // Refresh the bill list
+                await this.loadBills();
+                
             } catch (error) {
+                console.error("Error deleting bill:", error);
+                alert("Error deleting bill: " + error.message);
+            } finally {
                 this.loading = false;
-                console.error('Error deleting bill:', error);
-                alert('Error deleting bill: ' + error.message);
             }
         },
 
@@ -1291,105 +1129,11 @@ new Vue({
             };
         },
         updateBookingTypeAndPricing() {
-            // Calculate the base cost based on the selected booking type
-            if (this.newBill.bookingType === 'hourly') {
-                this.newBill.baseCost = parseFloat(this.newBill.hourlyPrice) || 0;
-            } else {
-                this.newBill.baseCost = this.calculateBaseCost;
-            }
-        },
-        async submitBill() {
-            try {
-                this.isSubmitting = true;
-                this.loading = true;
-                // Prepare bill data
-                const checkInDateTime = new Date(this.newBill.date);
-                const [checkInHours, checkInMinutes] = this.newBill.checkInTime.split(':').map(Number);
-                checkInDateTime.setHours(checkInHours, checkInMinutes, 0);
-
-                let checkOutDateTime = null;
-                if (this.newBill.checkOut) {
-                    checkOutDateTime = new Date(this.newBill.checkOut);
-                    const [checkOutHours, checkOutMinutes] = this.newBill.checkOutTime.split(':').map(Number);
-                    checkOutDateTime.setHours(checkOutHours, checkOutMinutes, 0);
-
-                    // --- Validation: Check-out cannot be before check-in ---
-                    if (checkOutDateTime < checkInDateTime) {
-                        alert('Check-out date/time cannot be earlier than check-in date/time.');
-                        this.loading = false;
-                        this.isSubmitting = false;
-                        return;
-                    }
-                } else if (this.newBill.bookingType === 'hourly') {
-                    checkOutDateTime = new Date(checkInDateTime);
-                    checkOutDateTime.setHours(checkOutDateTime.getHours() + parseInt(this.newBill.duration || 3));
-                } else {
-                    checkOutDateTime = new Date(checkInDateTime);
-                    checkOutDateTime.setHours(checkOutDateTime.getHours() + 3);
-                }
-
-                const nights = calculateNights(checkInDateTime, checkOutDateTime);
-                const hours = this.newBill.bookingType === 'hourly'
-                    ? parseInt(this.newBill.duration)
-                    : calculateHours(checkInDateTime, checkOutDateTime);
-
-                // Calculate base cost
-                let baseCost = this.newBill.bookingType === 'hourly'
-                    ? parseFloat(this.newBill.hourlyPrice) || 0
-                    : this.calculateBaseCost;
-
-                // Calculate total amount
-                let totalAmount = parseFloat(baseCost);
-                if (this.newBill.expenses && this.newBill.expenses.length > 0) {
-                    totalAmount += this.newBill.expenses.reduce((sum, expense) => sum + (parseFloat(expense.amount) || 0), 0);
-                }
-
-                // Prepare bill object
-                const billData = {
-                    customerName: this.newBill.customerName,
-                    date: Timestamp.fromDate(checkInDateTime),
-                    checkInTime: this.newBill.checkInTime,
-                    checkOut: this.newBill.checkOut ? Timestamp.fromDate(checkOutDateTime) : null,
-                    checkOutTime: this.newBill.checkOutTime,
-                    roomNumber: this.newBill.roomNumber,
-                    roomType: this.newBill.roomType,
-                    baseCost: baseCost,
-                    bookingType: this.newBill.bookingType,
-                    duration: this.newBill.bookingType === 'hourly' ? parseInt(this.newBill.duration) : null,
-                    hasTvRemote: this.newBill.hasTvRemote,
-                    hourlyPrice: this.newBill.bookingType === 'hourly' ? parseFloat(this.newBill.hourlyPrice) || 0 : undefined,
-                    expenses: this.newBill.expenses || [],
-                    status: 'pending',
-                    totalAmount: totalAmount,
-                    createdAt: Timestamp.now(),
-                    updatedAt: Timestamp.now()
-                };
-
-                // Remove undefined fields
-                Object.keys(billData).forEach(key => {
-                    if (typeof billData[key] === 'undefined') {
-                        delete billData[key];
-                    }
-                });
-
-                // Save to Firestore
-                await addBillingRecord(billData);
-
-                // Log activity
-                await logBillingActivity('bill_created', `Created new bill for ${this.newBill.customerName}, Room ${this.newBill.roomNumber}`);
-
-                // Reset form and close modal
-                this.resetNewBill();
-                this.showModal = false;
-                this.forceRefresh();
-
-                alert('Bill created successfully!');
-            } catch (error) {
-                console.error('Error creating bill:', error);
-                alert('Failed to create bill: ' + error.message);
-            } finally {
-                this.loading = false;
-                this.isSubmitting = false;
+            // This function is used for editing existing bills, not creating new ones
+            // Update base cost calculation if needed for editing
+            if (this.editingBill && this.editingBill.bookingType === 'hourly') {
+                // For hourly bookings being edited, update the base cost
+                this.editingBill.baseCost = parseFloat(this.editingBill.hourlyPrice) || 0;
             }
         },
         forceReload() {

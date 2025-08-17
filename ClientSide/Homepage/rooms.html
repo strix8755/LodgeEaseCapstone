@@ -238,7 +238,7 @@
       margin-bottom: 2rem;
       animation: fadeIn 0.7s ease-in-out;
       animation-fill-mode: both;
-      z-index: 1;
+      z-index: 0;
     }
     
     .hero-bg {
@@ -803,12 +803,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       console.log('User drawer init script running');
       
-      // Load userDrawer-fallback.js directly to ensure it's available when needed
-      if (!document.querySelector('script[src*="userDrawer-fallback.js"]')) {
+      // Load userDrawer.js directly to ensure it's available when needed
+      if (!document.querySelector('script[src*="userDrawer.js"]')) {
         const fallbackScript = document.createElement('script');
-        fallbackScript.src = 'userDrawer-fallback.js';
+        fallbackScript.src = '../components/userDrawer.js';
         fallbackScript.onload = function() {
-          console.log('userDrawer-fallback.js loaded successfully');
+          console.log('userDrawer.js loaded successfully');
+        };
           
           // Initialize the drawer if Firebase is available
           setTimeout(function() {
@@ -1765,6 +1766,75 @@
   
   <!-- User Drawer Overlay -->
   <div id="drawerOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[199999]" style="z-index: 199999 !important;"></div>
+
+  <!-- Settings Modal with higher z-index -->
+  <div id="settingsPopup" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[300000]" style="z-index: 300000 !important;">
+      <div class="fixed right-0 top-0 w-96 h-full bg-white shadow-xl overflow-y-auto" style="z-index: 300001 !important;">
+          <div class="p-6">
+              <div class="flex justify-between items-center mb-6">
+                  <h3 class="text-xl font-bold">Profile Settings</h3>
+                  <button id="closeSettingsPopup" class="text-gray-500 hover:text-gray-700">
+                      <i class="fas fa-times text-xl"></i>
+                  </button>
+              </div>
+              <form id="settingsForm" class="space-y-6">
+                  <!-- Profile Picture -->
+                  <div class="flex flex-col items-center space-y-3">
+                      <div class="relative w-24 h-24 rounded-full overflow-hidden bg-gray-200">
+                          <!-- Profile picture display -->
+                          <img id="profilePictureDisplay" class="w-full h-full object-cover hidden" src="" alt="Profile Picture">
+                          <!-- Default profile icon container -->
+                          <div id="profileIconContainer_settings" class="w-full h-full flex items-center justify-center">
+                              <i class="ri-user-fill text-4xl text-gray-400"></i>
+                          </div>
+                      </div>
+                      <label class="cursor-pointer text-blue-600 hover:text-blue-700 text-sm">
+                          <span>Change Photo</span>
+                          <input type="file" id="profilePictureInput" class="hidden" accept="image/*">
+                      </label>
+                  </div>
+                  
+                  <!-- Full Name -->
+                  <div>
+                      <label for="fullname" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                      <input type="text" id="fullname" name="fullname" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  
+                  <!-- Email (Read Only) -->
+                  <div>
+                      <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                      <input type="email" id="email" name="email" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" readonly>
+                  </div>
+                  
+                  <!-- Phone Number -->
+                  <div>
+                      <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input type="tel" id="phone" name="phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  </div>
+                  
+                  <!-- Email Notifications -->
+                  <div class="flex items-center">
+                      <input type="checkbox" id="emailNotifications" name="emailNotifications" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                      <label for="emailNotifications" class="ml-2 block text-sm text-gray-700">Receive email notifications for booking updates</label>
+                  </div>
+                  
+                  <!-- Change Password Button -->
+                  <div>
+                      <button type="button" id="changePasswordBtn" class="w-full py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          Change Password
+                      </button>
+                  </div>
+                  
+                  <!-- Save Button -->
+                  <div>
+                      <button type="submit" class="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          Save Changes
+                      </button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
 
   <!-- Map View Container -->
   <div id="mapView" class="hidden">

@@ -1773,12 +1773,9 @@ function showDummyReviews(container) {
 }
 
 export function getMonthlyOccupancyByRoomType() {
-    // Temporarily simulating this month's occupancy data:
+    // Occupancy data for Ever Lodge - all rooms are Deluxe Suite type
     const occupancyData = [
-        { roomType: 'Standard', occupancy: 45 },
-        { roomType: 'Deluxe', occupancy: 32 },
-        { roomType: 'Suite', occupancy: 59 },
-        { roomType: 'Family', occupancy: 27 }
+        { roomType: 'Deluxe Suite', occupancy: 85 }
     ];
     return occupancyData;
 }
@@ -2487,6 +2484,14 @@ export async function handleReserveClick(event) {
       throw new Error('Please select a check-out time for same-day booking');
     }
     
+    // Validate room selection
+    const availableRoomsSelect = document.getElementById('available-rooms');
+    const selectedRoomNumber = availableRoomsSelect?.value;
+    
+    if (!selectedRoomNumber) {
+      throw new Error('Please select a room from the available rooms. If no rooms are showing, please select your dates first.');
+    }
+    
     // Get the number of guests
     const guests = parseInt(document.getElementById('guests').value) || 1;
     
@@ -2590,11 +2595,25 @@ export async function handleReserveClick(event) {
     // Log the user ID we're using
     console.log('Using user ID for booking:', userData.uid);
     
-    // Check for an available room
-    const availableRoom = await findAvailableRoom(checkInDateObj, checkOutDateObj);
-    if (!availableRoom.available) {
-      throw new Error(availableRoom.error || 'No rooms available for the selected dates');
+    // Check if a room has been selected from the dropdown
+    const roomFromDropdown = window.selectedRoomNumber || document.getElementById('available-rooms')?.value;
+    
+    if (!roomFromDropdown || roomFromDropdown !== selectedRoomNumber) {
+      throw new Error('Please select a room from the available rooms dropdown');
     }
+    
+    // Verify the selected room is still available
+    const roomAvailability = await checkRoomAvailability(selectedRoomNumber, checkInDateObj, checkOutDateObj);
+    if (!roomAvailability.available) {
+      throw new Error(`Room ${selectedRoomNumber} is no longer available for the selected dates. Please choose another room.`);
+    }
+    
+    // Use the selected room
+    const selectedRoom = {
+      available: true,
+      roomNumber: selectedRoomNumber,
+      floorLevel: Math.ceil(parseInt(selectedRoomNumber) / 18).toString() // Calculate floor level
+    };
     
     // Calculate staying details
     const nights = calculateNights(checkInDateObj, checkOutDateObj);
@@ -2642,7 +2661,7 @@ export async function handleReserveClick(event) {
       userData.uid, 
       checkInDateObj, 
       checkOutDateObj, 
-      availableRoom.roomNumber
+      selectedRoom.roomNumber
     );
     
     if (hasDuplicate) {
@@ -2658,9 +2677,9 @@ export async function handleReserveClick(event) {
       propertyDetails: {
         name: 'Ever Lodge',
         location: 'Baguio City, Philippines',
-        roomNumber: availableRoom.roomNumber,
+        roomNumber: selectedRoom.roomNumber,
         roomType: 'Deluxe Suite',
-        floorLevel: availableRoom.floorLevel || '2'
+        floorLevel: selectedRoom.floorLevel || '2'
       },
       checkIn: checkInDateObj.toISOString(), // Store as ISO string for localStorage
       checkOut: checkOutDateObj.toISOString(), // Store as ISO string for localStorage

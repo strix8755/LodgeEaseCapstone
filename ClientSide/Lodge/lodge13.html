@@ -17,9 +17,9 @@
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
   <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
   <script src="../components/messagePopup.js"></script>
-  <!-- Bridge script to expose Firebase instances for userDrawer-fallback.js -->
+  <!-- Bridge script to expose Firebase instances for userDrawer.js -->
   <script>
-    // Create a bridge to make Firebase accessible to the fallback drawer script
+    // Create a bridge to make Firebase accessible to the drawer script
     document.addEventListener('DOMContentLoaded', function() {
       // Wait a short time to ensure Firebase module is loaded
       setTimeout(function() {
@@ -27,12 +27,12 @@
           // Try to find Firebase from various modules
           import('../firebase.js')
             .then(module => {
-              console.log('Making Firebase available to fallback script');
+              console.log('Making Firebase available to drawer script');
               window.firebaseAuth = module.auth;
               window.firebaseDb = module.db;
               window.firebaseModule = module;
               
-              // Force initialize user drawer when Firebase is available
+              // Initialize user drawer when Firebase is available
               if (typeof window.initializeUserDrawer === 'function') {
                 window.initializeUserDrawer(module.auth, module.db);
               }
@@ -46,7 +46,6 @@
       }, 500);
     });
   </script>
-  <script src="../Homepage/userDrawer-fallback.js"></script>
   <script>
     // Initialize Google Map
     function initMap() {
@@ -627,12 +626,23 @@
             >
             <div id="contact-error" class="text-red-500 text-sm hidden mt-1">Please enter a valid 11-digit phone number</div>
         </div>
-        <!-- Room Availability Button -->
-        <div class="booking-button-container">
-          <button id="view-availability-btn" class="w-full bg-green-500 text-white py-2 rounded-md font-medium hover:bg-green-600 transition-colors flex items-center justify-center space-x-2">
-            <i class="fas fa-bed"></i>
-            <span>View Room Availability</span>
-          </button>
+        
+        <!-- Available Rooms Dropdown -->
+        <div class="form-group mb-4">
+            <label for="available-rooms" class="block text-sm font-medium text-gray-700 mb-2">
+                <i class="fas fa-bed mr-1"></i>
+                Select Available Room
+            </label>
+            <select id="available-rooms" class="block w-full border border-gray-300 rounded-md p-2" disabled>
+                <option value="">Please select dates first</option>
+            </select>
+            <div id="room-selection-help" class="text-sm text-gray-500 mt-1">
+                Select your check-in and check-out dates to see available rooms
+            </div>
+            <div id="room-loading" class="text-sm text-blue-600 mt-1 hidden">
+                <i class="fas fa-spinner fa-spin mr-1"></i>
+                Checking room availability...
+            </div>
         </div>        
 
         <!-- Pricing Details -->
@@ -710,237 +720,6 @@
           <img src="../components/8.jpg" onclick="showImage(2)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
           <img src="../components/9.jpg" onclick="showImage(3)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
           <img src="../components/10.jpg" onclick="showImage(4)" class="w-16 h-16 object-cover cursor-pointer rounded gallery-thumb">
-        </div>
-      </div>
-    </div>
-
-    <!-- Room Availability Modal -->
-    <div id="room-availability-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
-      <div class="bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="p-6 border-b border-gray-200 flex justify-between items-center">
-          <div>
-            <h2 class="text-2xl font-bold text-gray-800">Ever Lodge - Room Availability</h2>
-            <p id="availability-dates" class="text-sm text-gray-600 mt-1">Select your dates to check availability</p>
-          </div>
-          <button id="close-availability-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
-            <i class="fas fa-times text-2xl"></i>
-          </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6">
-          <!-- Legend -->
-          <div class="mb-6 flex flex-wrap gap-4 justify-center">
-            <div class="flex items-center space-x-2">
-              <div class="w-4 h-4 bg-green-500 rounded"></div>
-              <span class="text-sm">Available</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-4 h-4 bg-red-500 rounded"></div>
-              <span class="text-sm">Occupied</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-4 h-4 bg-blue-500 rounded border-2 border-blue-700"></div>
-              <span class="text-sm">Selected</span>
-            </div>
-            <div class="flex items-center space-x-2">
-              <div class="w-4 h-4 bg-gray-300 rounded"></div>
-              <span class="text-sm">Check dates first</span>
-            </div>
-          </div>
-          
-          <!-- Interactive Room Layout -->
-          <div class="bg-gray-100 rounded-lg p-6 min-h-[500px] relative">
-            <!-- Building Layout -->
-            <div class="relative">
-              <!-- Title -->
-              <div class="text-center mb-6">
-                <h3 class="text-lg font-semibold text-gray-700">Ever Lodge Floor Plan</h3>
-                <p class="text-sm text-gray-500">Click on available rooms to select</p>
-              </div>
-              
-              <!-- Floor Layout Grid -->
-              <div class="grid grid-cols-6 gap-3 max-w-4xl mx-auto">
-                <!-- Ground Floor (Rooms 1-18) -->
-                <div class="col-span-6 mb-4">
-                  <h4 class="text-center font-medium text-gray-600 mb-3 border-b pb-2">Ground Floor</h4>
-                  <div class="grid grid-cols-6 gap-2">
-                    <!-- Rooms 1-6 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="1">
-                      <div class="text-sm font-semibold">Room 1</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="2">
-                      <div class="text-sm font-semibold">Room 2</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="3">
-                      <div class="text-sm font-semibold">Room 3</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="4">
-                      <div class="text-sm font-semibold">Room 4</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="5">
-                      <div class="text-sm font-semibold">Room 5</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="6">
-                      <div class="text-sm font-semibold">Room 6</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    
-                    <!-- Rooms 7-12 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="7">
-                      <div class="text-sm font-semibold">Room 7</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="8">
-                      <div class="text-sm font-semibold">Room 8</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="9">
-                      <div class="text-sm font-semibold">Room 9</div>
-                      <div class="text-xs text-gray-600">Suite</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="10">
-                      <div class="text-sm font-semibold">Room 10</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="11">
-                      <div class="text-sm font-semibold">Room 11</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="12">
-                      <div class="text-sm font-semibold">Room 12</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    
-                    <!-- Rooms 13-18 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="13">
-                      <div class="text-sm font-semibold">Room 13</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="14">
-                      <div class="text-sm font-semibold">Room 14</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="15">
-                      <div class="text-sm font-semibold">Room 15</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="16">
-                      <div class="text-sm font-semibold">Room 16</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="17">
-                      <div class="text-sm font-semibold">Room 17</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="18">
-                      <div class="text-sm font-semibold">Room 18</div>
-                      <div class="text-xs text-gray-600">Suite</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Second Floor (Rooms 19-36) -->
-                <div class="col-span-6">
-                  <h4 class="text-center font-medium text-gray-600 mb-3 border-b pb-2">Second Floor</h4>
-                  <div class="grid grid-cols-6 gap-2">
-                    <!-- Rooms 19-24 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="19">
-                      <div class="text-sm font-semibold">Room 19</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="20">
-                      <div class="text-sm font-semibold">Room 20</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="21">
-                      <div class="text-sm font-semibold">Room 21</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="22">
-                      <div class="text-sm font-semibold">Room 22</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="23">
-                      <div class="text-sm font-semibold">Room 23</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="24">
-                      <div class="text-sm font-semibold">Room 24</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    
-                    <!-- Rooms 25-30 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="25">
-                      <div class="text-sm font-semibold">Room 25</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="26">
-                      <div class="text-sm font-semibold">Room 26</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="27">
-                      <div class="text-sm font-semibold">Room 27</div>
-                      <div class="text-xs text-gray-600">Suite</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="28">
-                      <div class="text-sm font-semibold">Room 28</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="29">
-                      <div class="text-sm font-semibold">Room 29</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="30">
-                      <div class="text-sm font-semibold">Room 30</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    
-                    <!-- Rooms 31-36 -->
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="31">
-                      <div class="text-sm font-semibold">Room 31</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="32">
-                      <div class="text-sm font-semibold">Room 32</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="33">
-                      <div class="text-sm font-semibold">Room 33</div>
-                      <div class="text-xs text-gray-600">Deluxe</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="34">
-                      <div class="text-sm font-semibold">Room 34</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="35">
-                      <div class="text-sm font-semibold">Room 35</div>
-                      <div class="text-xs text-gray-600">Standard</div>
-                    </div>
-                    <div class="room-item bg-gray-300 p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all" data-room="36">
-                      <div class="text-sm font-semibold">Room 36</div>
-                      <div class="text-xs text-gray-600">Suite</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Selected Room Info -->
-          <div id="selected-room-info" class="mt-6 p-4 bg-blue-50 rounded-lg hidden">
-            <h4 class="font-semibold text-blue-800">Selected Room</h4>
-            <p id="selected-room-details" class="text-sm text-blue-600 mt-1"></p>
-            <button id="confirm-room-selection" class="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
-              Select This Room
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -2397,80 +2176,166 @@
     });
   </script>
 
-  <!-- Room Availability Modal Script -->
+  <!-- Room Dropdown Availability Script -->
   <script>
-    // Room Availability Modal functionality
+    // Room dropdown functionality
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('Initializing room availability modal');
+      console.log('Initializing room dropdown availability');
       
       // Prevent multiple initializations
-      if (window.roomAvailabilityInitialized) {
-        console.log('Room availability already initialized, skipping...');
+      if (window.roomDropdownInitialized) {
+        console.log('Room dropdown already initialized, skipping...');
         return;
       }
-      window.roomAvailabilityInitialized = true;
+      window.roomDropdownInitialized = true;
       
-      const modal = document.getElementById('room-availability-modal');
-      const viewAvailabilityBtn = document.getElementById('view-availability-btn');
-      const closeModalBtn = document.getElementById('close-availability-modal');
-      const availabilityDatesP = document.getElementById('availability-dates');
-      const selectedRoomInfo = document.getElementById('selected-room-info');
-      const selectedRoomDetails = document.getElementById('selected-room-details');
-      const confirmRoomSelectionBtn = document.getElementById('confirm-room-selection');
+      const availableRoomsSelect = document.getElementById('available-rooms');
+      const roomSelectionHelp = document.getElementById('room-selection-help');
+      const roomLoading = document.getElementById('room-loading');
+      const checkInInput = document.getElementById('check-in-date');
+      const checkOutInput = document.getElementById('check-out-date');
       
-      let selectedRoom = null;
-      let currentAvailability = {};
+      let currentAvailableRooms = [];
       
-      // Room type pricing
-      const roomPricing = {
-        'Standard': 1300,
-        'Deluxe': 1500,
-        'Suite': 1800
+      // Room type mapping for Ever Lodge (rooms 1-36)
+      // Ever Lodge uses "Deluxe Suite" as the standard room type for all rooms
+      const roomTypeMap = {
+        // All rooms are Deluxe Suite type in Ever Lodge
       };
       
-      // Open modal
-      viewAvailabilityBtn?.addEventListener('click', function() {
-        console.log('Opening room availability modal');
-        openRoomAvailabilityModal();
-      });
-      
-      // Close modal
-      closeModalBtn?.addEventListener('click', function() {
-        modal?.classList.add('hidden');
-      });
-      
-      // Close modal on background click
-      modal?.addEventListener('click', function(e) {
-        if (e.target === modal) {
-          modal.classList.add('hidden');
-        }
-      });
-      
-      function openRoomAvailabilityModal() {
-        // Get selected dates
-        const checkInDate = document.getElementById('check-in-date')?.value;
-        const checkOutDate = document.getElementById('check-out-date')?.value;
-        
-        if (!checkInDate || !checkOutDate) {
-          alert('Please select check-in and check-out dates first');
-          return;
-        }
-        
-        // Update modal dates display
-        if (availabilityDatesP) {
-          availabilityDatesP.textContent = `Availability for ${checkInDate} to ${checkOutDate}`;
-        }
-        
-        // Show modal
-        modal?.classList.remove('hidden');
-        
-        // Check room availability
-        checkRoomAvailability(checkInDate, checkOutDate);
+      // Helper function to get room type - Ever Lodge uses consistent "Deluxe Suite" for all rooms
+      function getRoomType(roomNumber) {
+        return 'Deluxe Suite'; // Ever Lodge has consistent room type
       }
       
-      async function checkRoomAvailability(checkIn, checkOut) {
-        console.log('Checking room availability for:', checkIn, 'to', checkOut);
+      // Listen for date changes
+      function onDateChange() {
+        const checkInDate = checkInInput?.value;
+        const checkOutDate = checkOutInput?.value;
         
+        if (checkInDate && checkOutDate) {
+          updateAvailableRooms(checkInDate, checkOutDate);
+        } else {
+          resetRoomDropdown();
+        }
+      }
+      
+      // Add event listeners for date inputs
+      checkInInput?.addEventListener('change', onDateChange);
+      checkOutInput?.addEventListener('change', onDateChange);
+      
+      // Also listen for manual updates from other parts of the code
+      if (typeof window.syncDateVariables === 'function') {
+        const originalSyncDateVariables = window.syncDateVariables;
+        window.syncDateVariables = function(checkInDate, checkOutDate) {
+          originalSyncDateVariables.call(this, checkInDate, checkOutDate);
+          if (checkInDate && checkOutDate) {
+            updateAvailableRooms(
+              checkInDate instanceof Date ? checkInDate.toISOString().split('T')[0] : checkInDate,
+              checkOutDate instanceof Date ? checkOutDate.toISOString().split('T')[0] : checkOutDate
+            );
+          } else {
+            resetRoomDropdown();
+          }
+        };
+      }
+      
+      function resetRoomDropdown() {
+        availableRoomsSelect.disabled = true;
+        availableRoomsSelect.innerHTML = '<option value="">Please select dates first</option>';
+        roomSelectionHelp.textContent = 'Select your check-in and check-out dates to see available rooms';
+        roomSelectionHelp.className = 'text-sm text-gray-500 mt-1';
+        currentAvailableRooms = [];
+      }
+      
+      async function updateAvailableRooms(checkIn, checkOut) {
+        console.log('Updating available rooms for:', checkIn, 'to', checkOut);
+        
+        // Show loading state
+        roomLoading.classList.remove('hidden');
+        roomSelectionHelp.classList.add('hidden');
+        availableRoomsSelect.disabled = true;
+        availableRoomsSelect.innerHTML = '<option value="">Checking availability...</option>';
+        
+        try {
+          const availableRooms = await getAvailableRoomsForDates(checkIn, checkOut);
+          
+          if (availableRooms.length > 0) {
+            // Populate dropdown with available rooms - all rooms are Deluxe Suite type
+            availableRoomsSelect.innerHTML = '<option value="">Select a room</option>';
+            
+            // Group rooms by floor since all are the same type
+            const groundFloorRooms = [];
+            const secondFloorRooms = [];
+            
+            availableRooms.forEach(roomNum => {
+              const floor = roomNum <= 18 ? 'Ground Floor' : 'Second Floor';
+              const roomData = { 
+                number: roomNum, 
+                floor: floor,
+                type: 'Deluxe Suite' 
+              };
+              
+              if (floor === 'Ground Floor') {
+                groundFloorRooms.push(roomData);
+              } else {
+                secondFloorRooms.push(roomData);
+              }
+            });
+            
+            // Add ground floor rooms
+            if (groundFloorRooms.length > 0) {
+              const optgroup = document.createElement('optgroup');
+              optgroup.label = `Ground Floor - Deluxe Suite (${groundFloorRooms.length} available)`;
+              
+              groundFloorRooms.sort((a, b) => a.number - b.number).forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.number.toString().padStart(2, '0');
+                option.textContent = `Room ${room.number.toString().padStart(2, '0')} (${room.type}, ${room.floor})`;
+                optgroup.appendChild(option);
+              });
+              
+              availableRoomsSelect.appendChild(optgroup);
+            }
+            
+            // Add second floor rooms
+            if (secondFloorRooms.length > 0) {
+              const optgroup = document.createElement('optgroup');
+              optgroup.label = `Second Floor - Deluxe Suite (${secondFloorRooms.length} available)`;
+              
+              secondFloorRooms.sort((a, b) => a.number - b.number).forEach(room => {
+                const option = document.createElement('option');
+                option.value = room.number.toString().padStart(2, '0');
+                option.textContent = `Room ${room.number.toString().padStart(2, '0')} (${room.type}, ${room.floor})`;
+                optgroup.appendChild(option);
+              });
+              
+              availableRoomsSelect.appendChild(optgroup);
+            }
+            
+            availableRoomsSelect.disabled = false;
+            roomSelectionHelp.textContent = `${availableRooms.length} room(s) available for your selected dates`;
+            roomSelectionHelp.className = 'text-sm text-green-600 mt-1';
+            currentAvailableRooms = availableRooms;
+          } else {
+            availableRoomsSelect.innerHTML = '<option value="">No rooms available</option>';
+            roomSelectionHelp.textContent = 'Sorry, no rooms are available for the selected dates. Please try different dates.';
+            roomSelectionHelp.className = 'text-sm text-red-600 mt-1';
+            currentAvailableRooms = [];
+          }
+        } catch (error) {
+          console.error('Error checking room availability:', error);
+          availableRoomsSelect.innerHTML = '<option value="">Error checking availability</option>';
+          roomSelectionHelp.textContent = 'Unable to check room availability. Please try again.';
+          roomSelectionHelp.className = 'text-sm text-red-600 mt-1';
+          currentAvailableRooms = [];
+        } finally {
+          roomLoading.classList.add('hidden');
+          roomSelectionHelp.classList.remove('hidden');
+        }
+      }
+      
+      async function getAvailableRoomsForDates(checkIn, checkOut) {
         try {
           // Parse dates
           const startDate = new Date(checkIn);
@@ -2487,193 +2352,111 @@
           }
           
           if (!db) {
-            console.warn('No database connection available, showing mock availability');
-            showMockAvailability();
-            return;
+            console.warn('No database connection available, using mock data');
+            return getMockAvailableRooms();
           }
           
-          // Query bookings that overlap with the selected dates
-          // We need to check for bookings where:
-          // - booking start date is before our end date AND
-          // - booking end date is after our start date
+          // Import Firestore functions
+          const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
           
-          const { collection, query, where, getDocs, and, or } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
-          
-          const bookingsRef = collection(db, 'bookings');
-          
-          // Get all bookings for Ever Lodge (propertyId: 13)
+          // Query bookings for Ever Lodge that might conflict with selected dates
+          const bookingsRef = collection(db, 'everlodgebookings');
           const q = query(
             bookingsRef,
-            where('propertyDetails.propertyId', '==', '13'),
-            where('status', 'in', ['confirmed', 'approved', 'pending'])
+            where('propertyDetails.name', '==', 'Ever Lodge'),
+            where('status', 'in', ['Confirmed', 'Checked In', 'pending'])
           );
           
           const querySnapshot = await getDocs(q);
           
-          // Initialize all rooms as available
-          const availability = {};
-          for (let i = 1; i <= 36; i++) {
-            availability[i] = 'available';
-          }
+          // Set to track occupied rooms
+          const occupiedRooms = new Set();
           
           // Check each booking for conflicts
           querySnapshot.forEach((doc) => {
             const booking = doc.data();
             
-            // Parse booking dates
-            let bookingStart, bookingEnd;
-            
-            if (booking.checkIn?.toDate) {
-              bookingStart = booking.checkIn.toDate();
-            } else if (booking.checkIn) {
-              bookingStart = new Date(booking.checkIn);
-            }
-            
-            if (booking.checkOut?.toDate) {
-              bookingEnd = booking.checkOut.toDate();
-            } else if (booking.checkOut) {
-              bookingEnd = new Date(booking.checkOut);
-            }
-            
-            // Check for overlap
-            if (bookingStart && bookingEnd) {
-              const hasOverlap = (bookingStart < endDate) && (bookingEnd > startDate);
+            try {
+              // Parse booking dates
+              let bookingStart, bookingEnd;
               
-              if (hasOverlap) {
-                const roomNumber = booking.propertyDetails?.roomNumber || booking.roomNumber;
-                if (roomNumber && availability[roomNumber]) {
-                  availability[roomNumber] = 'occupied';
-                  console.log(`Room ${roomNumber} is occupied during selected dates`);
+              if (booking.checkIn?.toDate) {
+                bookingStart = booking.checkIn.toDate();
+              } else if (booking.checkIn) {
+                bookingStart = new Date(booking.checkIn);
+              }
+              
+              if (booking.checkOut?.toDate) {
+                bookingEnd = booking.checkOut.toDate();
+              } else if (booking.checkOut) {
+                bookingEnd = new Date(booking.checkOut);
+              }
+              
+              // Check for overlap
+              if (bookingStart && bookingEnd && !isNaN(bookingStart.getTime()) && !isNaN(bookingEnd.getTime())) {
+                const hasOverlap = (bookingStart < endDate) && (bookingEnd > startDate);
+                
+                if (hasOverlap) {
+                  const roomNumber = booking.propertyDetails?.roomNumber;
+                  if (roomNumber) {
+                    occupiedRooms.add(parseInt(roomNumber));
+                    console.log(`Room ${roomNumber} is occupied during selected dates`);
+                  }
                 }
               }
+            } catch (error) {
+              console.error('Error processing booking:', error);
             }
           });
           
-          currentAvailability = availability;
-          updateRoomDisplay(availability);
+          // Return list of available rooms (1-36 minus occupied)
+          const availableRooms = [];
+          for (let i = 1; i <= 36; i++) {
+            if (!occupiedRooms.has(i)) {
+              availableRooms.push(i);
+            }
+          }
+          
+          console.log(`Found ${availableRooms.length} available rooms:`, availableRooms);
+          return availableRooms;
           
         } catch (error) {
-          console.error('Error checking room availability:', error);
-          showMockAvailability();
+          console.error('Error fetching available rooms:', error);
+          return getMockAvailableRooms();
         }
       }
       
-      function showMockAvailability() {
-        // Mock availability for demonstration
-        const availability = {};
+      function getMockAvailableRooms() {
+        // Mock availability for demonstration - randomly make some rooms available
+        const availableRooms = [];
         for (let i = 1; i <= 36; i++) {
-          // Randomly make some rooms occupied for demo
-          availability[i] = Math.random() > 0.7 ? 'occupied' : 'available';
-        }
-        
-        currentAvailability = availability;
-        updateRoomDisplay(availability);
-      }
-      
-      function updateRoomDisplay(availability) {
-        const roomItems = document.querySelectorAll('.room-item');
-        
-        roomItems.forEach(item => {
-          const roomNumber = parseInt(item.dataset.room);
-          const status = availability[roomNumber];
-          
-          // Reset classes
-          item.className = 'room-item p-3 rounded-lg text-center cursor-pointer hover:shadow-md transition-all';
-          
-          // Apply status styling
-          if (status === 'available') {
-            item.classList.add('bg-green-500', 'text-white');
-            item.style.cursor = 'pointer';
-          } else if (status === 'occupied') {
-            item.classList.add('bg-red-500', 'text-white');
-            item.style.cursor = 'not-allowed';
-          } else {
-            item.classList.add('bg-gray-300');
-            item.style.cursor = 'default';
+          if (Math.random() > 0.3) { // 70% chance a room is available
+            availableRooms.push(i);
           }
+        }
+        console.log('Using mock available rooms:', availableRooms);
+        return availableRooms;
+      }
+      
+      // Make the selected room available globally for the booking process
+      availableRoomsSelect?.addEventListener('change', function() {
+        const selectedRoomNumber = this.value;
+        if (selectedRoomNumber) {
+          window.selectedRoomNumber = selectedRoomNumber;
+          console.log('Selected room:', selectedRoomNumber);
           
-          // Add click handler for available rooms
-          item.onclick = function() {
-            if (status === 'available') {
-              selectRoom(roomNumber, item);
-            } else if (status === 'occupied') {
-              alert(`Room ${roomNumber} is not available for the selected dates.`);
-            }
-          };
-        });
-      }
-      
-      function selectRoom(roomNumber, roomElement) {
-        // Clear previous selection
-        document.querySelectorAll('.room-item').forEach(item => {
-          item.classList.remove('bg-blue-500', 'border-2', 'border-blue-700');
-          if (currentAvailability[parseInt(item.dataset.room)] === 'available') {
-            item.classList.add('bg-green-500');
-          }
-        });
-        
-        // Highlight selected room
-        roomElement.classList.remove('bg-green-500');
-        roomElement.classList.add('bg-blue-500', 'border-2', 'border-blue-700');
-        
-        // Get room type
-        const roomTypeElement = roomElement.querySelector('.text-xs');
-        const roomType = roomTypeElement ? roomTypeElement.textContent : 'Standard';
-        const price = roomPricing[roomType] || 1300;
-        
-        selectedRoom = {
-          number: roomNumber,
-          type: roomType,
-          price: price
-        };
-        
-        // Show selected room info
-        if (selectedRoomInfo && selectedRoomDetails) {
-          selectedRoomDetails.textContent = `Room ${roomNumber} - ${roomType} (₱${price.toLocaleString()}/night)`;
-          selectedRoomInfo.classList.remove('hidden');
+          // All Ever Lodge rooms are Deluxe Suite type
+          const roomType = 'Deluxe Suite';
+          console.log(`Room ${selectedRoomNumber} is a ${roomType} room`);
+        } else {
+          window.selectedRoomNumber = null;
         }
-      }
-      
-      // Confirm room selection
-      confirmRoomSelectionBtn?.addEventListener('click', function() {
-        if (!selectedRoom) {
-          alert('Please select a room first');
-          return;
-        }
-        
-        // Update the main booking form with selected room
-        updateBookingFormWithRoom(selectedRoom);
-        
-        // Close modal
-        modal?.classList.add('hidden');
-        
-        // Show success message
-        alert(`Room ${selectedRoom.number} (${selectedRoom.type}) has been selected for your booking!`);
       });
       
-      function updateBookingFormWithRoom(room) {
-        // Store selected room data for use in booking
-        window.selectedRoomData = room;
-        
-        // Update any existing room display elements if they exist
-        const roomDisplayElements = document.querySelectorAll('[data-room-display]');
-        roomDisplayElements.forEach(element => {
-          element.textContent = `Room ${room.number} - ${room.type}`;
-        });
-        
-        // Update pricing if needed
-        console.log('Selected room for booking:', room);
-        
-        // Trigger pricing update if function exists
-        if (typeof window.updatePricingCalculation === 'function') {
-          window.updatePricingCalculation();
-        }
-      }
-      
-      // Make functions available globally
-      window.openRoomAvailabilityModal = openRoomAvailabilityModal;
-      window.checkRoomAvailability = checkRoomAvailability;
-      window.selectedRoomData = null;
+      // Initialize with current dates if they exist
+      setTimeout(() => {
+        onDateChange();
+      }, 500);
     });
   </script>
 </body>

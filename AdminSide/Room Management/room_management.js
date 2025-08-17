@@ -158,6 +158,7 @@ new Vue({
             }
         },
         availableRooms: [],
+        roomAvailabilityLoading: false,
         manualBooking: {
             guestName: '',
             roomNumber: '',
@@ -633,6 +634,19 @@ new Vue({
                 this.manualBooking.checkInDate !== '' &&
                 this.manualBooking.roomNumber !== '';
             // Note: checkOutDate is not required
+        },
+
+        getRoomDropdownPlaceholder() {
+            if (!this.manualBooking.checkInDate) {
+                return 'Please select check-in date first';
+            }
+            if (this.roomAvailabilityLoading) {
+                return 'Checking availability...';
+            }
+            if (this.availableRooms.length === 0) {
+                return 'No rooms available for selected dates';
+            }
+            return 'Select an available room';
         },
 
         // Check if room can be deleted (within 24 hours)
@@ -1717,45 +1731,132 @@ new Vue({
                 bookingType: 'standard',
                 duration: 3,
             };
+            // Clear available rooms when form is reset
+            this.availableRooms = [];
+            this.roomAvailabilityLoading = false;
         },
 
         async fetchAvailableRooms() {
-            if (!this.manualBooking.establishment) return;
+            // Only fetch if we have check-in date
+            if (!this.manualBooking.checkInDate) {
+                this.availableRooms = [];
+                return;
+            }
 
             try {
-                this.loading = true;
-                console.log('Fetching available rooms for establishment:', this.manualBooking.establishment);
+                this.roomAvailabilityLoading = true;
+                console.log('Fetching available rooms for Ever Lodge');
 
-                // Fetch all rooms for the establishment
-                const roomsRef = collection(db(), 'rooms');
-                const roomsQuery = query(
-                    roomsRef,
-                    where('propertyDetails.name', '==', this.manualBooking.establishment)
-                );
-                const roomsSnapshot = await getDocs(roomsQuery);
-                this.availableRooms = roomsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+                const checkInDate = new Date(this.manualBooking.checkInDate + 'T' + (this.manualBooking.checkInTime || '12:00'));
+                const checkOutDate = this.manualBooking.checkOutDate 
+                    ? new Date(this.manualBooking.checkOutDate + 'T' + (this.manualBooking.checkOutTime || '11:00'))
+                    : new Date(checkInDate.getTime() + 3 * 60 * 60 * 1000); // Default to 3 hours for short stay
 
-                // Fetch bookings from everlodgebookings collection
+                console.log('Checking availability from', checkInDate, 'to', checkOutDate);
+
+                // Get all bookings for Ever Lodge that might conflict
                 const bookingsRef = collection(db(), 'everlodgebookings');
-                const bookingsSnapshot = await getDocs(
-                    query(
-                        bookingsRef,
-                        where('propertyDetails.name', '==', this.manualBooking.establishment),
-                        where('status', 'in', ['Confirmed', 'Checked In'])
-                    )
+                const bookingsQuery = query(
+                    bookingsRef,
+                    where('propertyDetails.name', '==', 'Ever Lodge'),
+                    where('status', 'in', ['Confirmed', 'Checked In', 'pending'])
                 );
 
-                const bookedRoomIds = bookingsSnapshot.docs.map(doc => doc.data().roomId);
-                this.availableRooms = this.availableRooms.filter(room => !bookedRoomIds.includes(room.id));
+                const bookingsSnapshot = await getDocs(bookingsQuery);
+
+                // Create a set of unavailable rooms (with conflicts)
+                const unavailableRooms = new Set();
+
+                // Check all existing bookings for conflicts
+                for (const doc of bookingsSnapshot.docs) {
+                    const booking = doc.data();
+                    if (!booking.propertyDetails?.roomNumber) continue;
+
+                    // Convert Firebase timestamps to JavaScript dates
+                    let existingCheckIn, existingCheckOut;
+
+                    try {
+                        // Parse existing booking's check-in date
+                        if (booking.checkIn) {
+                            if (typeof booking.checkIn.toDate === 'function') {
+                                existingCheckIn = booking.checkIn.toDate();
+                            } else if (booking.checkIn instanceof Date) {
+                                existingCheckIn = booking.checkIn;
+                            } else if (typeof booking.checkIn === 'string') {
+                                existingCheckIn = new Date(booking.checkIn);
+                            } else {
+                                continue; // Skip invalid date format
+                            }
+                        } else {
+                            continue; // Skip if no check-in date
+                        }
+
+                        // Parse existing booking's check-out date
+                        if (booking.checkOut) {
+                            if (typeof booking.checkOut.toDate === 'function') {
+                                existingCheckOut = booking.checkOut.toDate();
+                            } else if (booking.checkOut instanceof Date) {
+                                existingCheckOut = booking.checkOut;
+                            } else if (typeof booking.checkOut === 'string') {
+                                existingCheckOut = new Date(booking.checkOut);
+                            } else {
+                                // If no checkout date, assume it's a 3-hour booking
+                                existingCheckOut = new Date(existingCheckIn.getTime() + 3 * 60 * 60 * 1000);
+                            }
+                        } else {
+                            // If no checkout date, assume it's a 3-hour booking
+                            existingCheckOut = new Date(existingCheckIn.getTime() + 3 * 60 * 60 * 1000);
+                        }
+
+                        // Verify dates are valid
+                        if (isNaN(existingCheckIn.getTime()) || isNaN(existingCheckOut.getTime())) {
+                            continue; // Skip invalid dates
+                        }
+
+                        // Check if booking overlaps with requested dates
+                        if ((checkInDate < existingCheckOut && checkInDate >= existingCheckIn) ||
+                            (checkOutDate > existingCheckIn && checkOutDate <= existingCheckOut) ||
+                            (checkInDate <= existingCheckIn && checkOutDate >= existingCheckOut)) {
+
+                            // Add to unavailable rooms
+                            unavailableRooms.add(booking.propertyDetails.roomNumber);
+                            console.log(`Room ${booking.propertyDetails.roomNumber} is unavailable due to existing booking`);
+                        }
+                    } catch (error) {
+                        console.error('Error processing booking dates:', error);
+                        continue;
+                    }
+                }
+
+                // Generate list of available rooms (1-36, formatted as "01", "02", etc.)
+                const availableRoomsList = [];
+                for (let roomNum = 1; roomNum <= 36; roomNum++) {
+                    const roomNumber = roomNum.toString().padStart(2, '0'); // Format as "01", "02", etc.
+
+                    if (!unavailableRooms.has(roomNumber)) {
+                        // Determine room type based on room number (you can adjust this logic)
+                        let roomType = 'Standard Room';
+                        if (roomNum >= 1 && roomNum <= 12) roomType = '1st Floor Standard';
+                        else if (roomNum >= 13 && roomNum <= 24) roomType = '2nd Floor Standard';
+                        else if (roomNum >= 25 && roomNum <= 36) roomType = '3rd Floor Standard';
+
+                        availableRoomsList.push({
+                            roomNumber: roomNumber,
+                            roomType: roomType,
+                            floorLevel: Math.ceil(roomNum / 12).toString()
+                        });
+                    }
+                }
+
+                this.availableRooms = availableRoomsList;
+                console.log(`Found ${availableRoomsList.length} available rooms:`, availableRoomsList.map(r => r.roomNumber));
 
             } catch (error) {
                 console.error('Error fetching available rooms:', error);
-                alert('Failed to fetch available rooms');
+                this.availableRooms = [];
+                // Don't show alert in admin interface, just log error
             } finally {
-                this.loading = false;
+                this.roomAvailabilityLoading = false;
             }
         },
 
@@ -2047,6 +2148,12 @@ new Vue({
             this.$forceUpdate();
         },
 
+        onRoomSelectionChange() {
+            // This method is called when user selects a room from dropdown
+            console.log('Room selected:', this.manualBooking.roomNumber);
+            // You can add additional logic here if needed when room is selected
+        },
+
         async handleLogout() {
             try {
                 await signOut();
@@ -2112,6 +2219,12 @@ new Vue({
                 // Clear the checkOut value if either date or time is missing
                 this.manualBooking.checkOut = null;
             }
+            
+            // Reset room selection when dates change
+            this.manualBooking.roomNumber = '';
+            
+            // Fetch available rooms based on new dates
+            this.fetchAvailableRooms();
             
             // Force Vue to re-compute night calculations and pricing
             this.$forceUpdate();
@@ -2394,6 +2507,35 @@ new Vue({
         },
         'selectedBooking.guests': function() {
             this.updateEditPricing();
+        },
+        // Watch manual booking date/time changes for room availability
+        'manualBooking.checkInDate': function() {
+            if (this.manualBooking.checkInDate) {
+                // Reset room selection when check-in date changes
+                this.manualBooking.roomNumber = '';
+                this.fetchAvailableRooms();
+            }
+        },
+        'manualBooking.checkInTime': function() {
+            if (this.manualBooking.checkInDate) {
+                // Reset room selection when check-in time changes
+                this.manualBooking.roomNumber = '';
+                this.fetchAvailableRooms();
+            }
+        },
+        'manualBooking.checkOutDate': function() {
+            if (this.manualBooking.checkInDate) {
+                // Reset room selection when check-out date changes
+                this.manualBooking.roomNumber = '';
+                this.fetchAvailableRooms();
+            }
+        },
+        'manualBooking.checkOutTime': function() {
+            if (this.manualBooking.checkInDate) {
+                // Reset room selection when check-out time changes
+                this.manualBooking.roomNumber = '';
+                this.fetchAvailableRooms();
+            }
         }
     },
     async mounted() {

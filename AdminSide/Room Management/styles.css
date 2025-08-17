@@ -747,26 +747,213 @@ body {
     font-size: 1rem;
 }
 
+/* Form Actions and Button Styles */
 .form-actions {
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Base button styles */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn:hover::before {
+    left: 100%;
 }
 
 .cancel-btn {
-    background-color: #f8f9fa;
-    color: #333;
+    background: linear-gradient(135deg, #6c757d, #5a6268);
+    color: white;
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.cancel-btn:hover {
+    background: linear-gradient(135deg, #5a6268, #495057);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.cancel-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(108, 117, 125, 0.3);
 }
 
 .submit-btn {
-    background-color: #1e3c72;
+    background: linear-gradient(135deg, #28a745, #20c997);
     color: white;
+    box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #218838, #1e7e34);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.submit-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 3px 10px rgba(40, 167, 69, 0.3);
 }
 
 .btn:disabled {
-    opacity: 0.7;
+    opacity: 0.6;
     cursor: not-allowed;
+    transform: none !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    background: linear-gradient(135deg, #95d5a7, #b3e0c7) !important;
+}
+
+/* Manual Booking Form Specific Styles */
+.manual-booking-form .form-actions {
+    background: linear-gradient(90deg, #f8f9fa, #ffffff);
+    margin: 1.5rem -1.5rem -1.5rem -1.5rem;
+    padding: 1.5rem;
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid #dee2e6;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+.manual-booking-form .btn {
+    font-size: 1rem;
+    padding: 14px 28px;
+    border-radius: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    min-width: 140px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.manual-booking-form .cancel-btn {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.manual-booking-form .cancel-btn:hover {
+    background: linear-gradient(135deg, #c82333, #bd2130);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.manual-booking-form .submit-btn {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    position: relative;
+    border: 2px solid transparent;
+}
+
+.manual-booking-form .submit-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #0056b3, #004085);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.4);
+    border-color: rgba(0, 123, 255, 0.3);
+}
+
+/* Enhanced button states */
+.manual-booking-form .btn:active:not(:disabled) {
+    transform: translateY(-1px);
+    transition-duration: 0.1s;
+}
+
+.manual-booking-form .cancel-btn:active:not(:disabled) {
+    box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.manual-booking-form .submit-btn:active:not(:disabled) {
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+}
+
+/* Loading animation for submit button */
+.manual-booking-form .submit-btn:disabled {
+    background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+    animation: pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    100% {
+        opacity: 0.8;
+    }
+}
+
+/* Icon styles for buttons */
+.btn i {
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+
+/* Responsive button styles */
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .manual-booking-form .form-actions {
+        margin: 1rem -1rem -1rem -1rem;
+        padding: 1rem;
+    }
+    
+    .btn {
+        width: 100%;
+        min-width: unset;
+        padding: 16px 20px;
+        font-size: 1rem;
+    }
+    
+    .manual-booking-form .btn {
+        padding: 18px 24px;
+        font-size: 1.1rem;
+    }
+}
+
+/* Button focus styles for accessibility */
+.btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.cancel-btn:focus {
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+}
+
+.submit-btn:focus {
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
 }
 
 /* Add Room Form Styles */

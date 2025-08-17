@@ -1192,9 +1192,10 @@ async function fetchBillingData() {
         // Log the action
         await logAdminActivity(user.uid, 'view_billing', 'Viewed billing data');
 
-        // First get all bookings data to integrate with billing
+        // Fetch all booking data from everlodgebookings collection
         const bookingsQuery = query(collection(_db, 'everlodgebookings'), orderBy('createdAt', 'desc'));
         const bookingsSnapshot = await getDocs(bookingsQuery);
+        
         const bookings = bookingsSnapshot.docs
             .filter(doc => {
                 // Filter out bookings that are marked as hidden in billing
@@ -1204,85 +1205,38 @@ async function fetchBillingData() {
             .map(doc => {
                 const data = doc.data();
                 console.log('Raw booking data for billing:', data);
-                return {
-                    id: doc.id,
-                    ...data,
-                    source: 'bookings'
-                };
-            });
-
-        // Then get billing data
-        const billingQuery = query(collection(_db, 'everlodgebilling'), orderBy('createdAt', 'desc'));
-        const billingSnapshot = await getDocs(billingQuery);
-        const billingRecords = billingSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            source: 'everlodgebilling'
-        }));
-
-        // Create a map to track which bookings already have corresponding billing records
-        // This helps prevent duplicates when the same booking appears in both collections
-        const processedBookings = new Map();
-        
-        // First, add all billing records to our result set and mark their booking IDs as processed
-        // This ensures dedicated billing records take precedence
-        billingRecords.forEach(bill => {
-            if (bill.bookingId) {
-                processedBookings.set(bill.bookingId, true);
-            }
-        });
-        
-        // Next, add booking records that don't have a corresponding billing record
-        const bookingBills = bookings
-            .filter(booking => {
-                // Skip this booking if we already have a billing record for it
-                if (processedBookings.has(booking.id)) {
-                    return false;
-                }
                 
-                // Also skip if we have a booking with the same guest, room, and dates
-                // This catches duplicate bookings even if IDs don't match
-                for (const bill of billingRecords) {
-                    if (booking.guestName === bill.customerName && 
-                        booking.roomNumber === bill.roomNumber &&
-                        new Date(booking.checkIn).toDateString() === new Date(bill.date).toDateString()) {
-                        return false;
-                    }
-                }
-                
-                return true;
-            })
-            .map(booking => {
                 // Extract room details with enhanced fallback options
-                const roomNumber = booking.roomNumber || 
-                    (booking.propertyDetails && booking.propertyDetails.roomNumber) || 
-                    (booking.room && booking.room.number) || '';
+                const roomNumber = data.roomNumber || 
+                    (data.propertyDetails && data.propertyDetails.roomNumber) || 
+                    (data.room && data.room.number) || '';
                 
-                const roomType = booking.roomType || 
-                    (booking.propertyDetails && booking.propertyDetails.roomType) || 
-                    (booking.room && booking.room.type) || '';
-                
+                const roomType = data.roomType || 
+                    (data.propertyDetails && data.propertyDetails.roomType) || 
+                    (data.room && data.room.type) || '';
+
                 // Create billing record from booking
                 return {
-                    id: null, // Will be assigned when saved
-                    bookingId: booking.id,
-                    customerName: booking.guestName || (booking.guest && booking.guest.name) || (booking.propertyDetails && booking.propertyDetails.guestName) || 'Guest',
-                    date: booking.checkIn,
-                    checkOut: booking.checkOut,
+                    id: doc.id,
+                    bookingId: doc.id,
+                    customerName: data.guestName || (data.guest && data.guest.name) || (data.propertyDetails && data.propertyDetails.guestName) || 'Guest',
+                    date: data.checkIn,
+                    checkOut: data.checkOut,
                     roomNumber: roomNumber,
                     roomType: roomType,
-                    baseCost: booking.subtotal || booking.basePrice || booking.price || 0,
-                    serviceFee: booking.serviceFee || 0,
-                    totalAmount: booking.total || booking.totalPrice || booking.amount || 0,
-                    expenses: [],
-                    status: booking.status || 'pending', // Use actual booking status instead of hardcoded 'pending'
-                    paymentStatus: booking.paymentStatus || 'pending',
-                    source: 'bookings'
+                    baseCost: data.subtotal || data.basePrice || data.price || 0,
+                    serviceFee: data.serviceFee || 0,
+                    totalAmount: data.total || data.totalPrice || data.amount || 0,
+                    expenses: data.expenses || [],
+                    status: data.status || 'pending',
+                    paymentStatus: data.paymentStatus || 'pending',
+                    bookingType: data.bookingType || 'daily',
+                    duration: data.duration || '',
+                    source: 'everlodgebookings'
                 };
             });
         
-        // Combine and return all records, ensuring no duplicates
-        return [...billingRecords, ...bookingBills];
+        return bookings;
     } catch (error) {
         console.error('Error fetching billing data:', error);
         throw error;
@@ -1294,17 +1248,27 @@ async function addBillingRecord(billingData) {
         const user = await checkAdminAuth();
         if (!user) throw new Error('Authentication required');
 
-        // Format and validate billing data
+        // Format and validate billing data for everlodgebookings collection
         const formattedData = {
-            ...billingData,
-            totalAmount: parseFloat(calculateBillingTotal(billingData)),
+            guestName: billingData.customerName,
+            checkIn: billingData.date,
+            checkOut: billingData.checkOut,
+            roomNumber: billingData.roomNumber,
+            roomType: billingData.roomType,
+            subtotal: parseFloat(billingData.baseCost || 0),
+            serviceFee: parseFloat(billingData.serviceFee || 0),
+            total: parseFloat(calculateBillingTotal(billingData)),
+            expenses: billingData.expenses || [],
+            status: billingData.status || 'pending',
+            paymentStatus: billingData.paymentStatus || 'pending',
+            bookingType: billingData.bookingType || 'daily',
+            duration: billingData.duration || '',
             createdAt: Timestamp.now(),
-            createdBy: user.uid,
-            status: billingData.status || 'unpaid'
+            createdBy: user.uid
         };
 
-        // Add to everlodgebilling collection
-        const docRef = await addDoc(collection(_db, 'everlodgebilling'), formattedData);
+        // Add to everlodgebookings collection
+        const docRef = await addDoc(collection(_db, 'everlodgebookings'), formattedData);
         
         // Log the action
         await logAdminActivity(user.uid, 'add_billing', `Added billing record for ${billingData.customerName}`);
@@ -1324,46 +1288,47 @@ async function updateBillingRecord(billingId, updateData) {
         const user = await checkAdminAuth();
         if (!user) throw new Error('Authentication required');
 
-        // Handle case where billingId is not provided but we have a bookingId
-        if (!billingId && updateData.bookingId) {
+        // Handle case where billingId is not provided
+        if (!billingId) {
             return await addBillingRecord(updateData);
         }
         
         // Validate billingId to prevent error with doc reference
-        if (!billingId || typeof billingId !== 'string' || billingId.trim() === '') {
+        if (typeof billingId !== 'string' || billingId.trim() === '') {
             throw new Error('Invalid billing ID: Must be a non-empty string');
         }
 
-        // If expenses are included, recalculate total
-        let data = { ...updateData };
-        data.totalAmount = parseFloat(calculateBillingTotal(data));
-        data.updatedAt = Timestamp.now();
-        data.updatedBy = user.uid;
+        // Map billing data fields to booking data fields
+        let data = {
+            guestName: updateData.customerName,
+            checkIn: updateData.date,
+            checkOut: updateData.checkOut,
+            roomNumber: updateData.roomNumber,
+            roomType: updateData.roomType,
+            subtotal: parseFloat(updateData.baseCost || 0),
+            serviceFee: parseFloat(updateData.serviceFee || 0),
+            expenses: updateData.expenses || [],
+            status: updateData.status,
+            paymentStatus: updateData.paymentStatus,
+            bookingType: updateData.bookingType,
+            duration: updateData.duration,
+            updatedAt: Timestamp.now(),
+            updatedBy: user.uid
+        };
 
-        // Update in everlodgebilling collection
-        const billingRef = doc(_db, 'everlodgebilling', billingId);
-        await updateDoc(billingRef, data);
+        // Calculate total amount
+        data.total = parseFloat(calculateBillingTotal({
+            baseCost: data.subtotal,
+            serviceFee: data.serviceFee,
+            expenses: data.expenses
+        }));
+
+        // Update in everlodgebookings collection
+        const bookingRef = doc(_db, 'everlodgebookings', billingId);
+        await updateDoc(bookingRef, data);
         
         // Log the action
         await logAdminActivity(user.uid, 'update_billing', `Updated billing record ${billingId}`);
-        
-        // If this is linked to a booking, update the booking total too
-        if (data.bookingId) {
-            try {
-                const bookingRef = doc(_db, 'everlodgebookings', data.bookingId);
-                const bookingSnapshot = await getDoc(bookingRef);
-                
-                if (bookingSnapshot.exists()) {
-                    await updateDoc(bookingRef, {
-                        total: data.totalAmount,
-                        updatedAt: Timestamp.now()
-                    });
-                }
-            } catch (bookingError) {
-                console.error('Error updating associated booking:', bookingError);
-                // Continue even if booking update fails
-            }
-        }
         
         return { id: billingId, ...data };
     } catch (error) {
@@ -1382,9 +1347,9 @@ async function deleteBillingRecord(billingId) {
             return true;
         }
 
-        // Delete from everlodgebilling collection
-        const billingRef = doc(_db, 'everlodgebilling', billingId);
-        await deleteDoc(billingRef);
+        // Delete from everlodgebookings collection
+        const bookingRef = doc(_db, 'everlodgebookings', billingId);
+        await deleteDoc(bookingRef);
         
         // Log the action
         await logAdminActivity(user.uid, 'delete_billing', `Deleted billing record ${billingId}`);
@@ -1431,44 +1396,64 @@ async function updateBookingBilling(bookingId, billingData) {
         const existingData = bookingSnapshot.data();
         const updateData = {};
         
-        // Only update fields that have changed
-        if (parseFloat(billingData.baseCost) !== parseFloat(existingData.basePrice || 0)) {
-            updateData.basePrice = parseFloat(billingData.baseCost) || 0;
+        // Map billing fields to booking fields
+        if (billingData.customerName && billingData.customerName !== existingData.guestName) {
+            updateData.guestName = billingData.customerName;
         }
         
+        // Only update subtotal if baseCost has changed
+        if (parseFloat(billingData.baseCost) !== parseFloat(existingData.subtotal || 0)) {
+            updateData.subtotal = parseFloat(billingData.baseCost) || 0;
+        }
+        
+        // Update service fee
+        if (parseFloat(billingData.serviceFee) !== parseFloat(existingData.serviceFee || 0)) {
+            updateData.serviceFee = parseFloat(billingData.serviceFee) || 0;
+        }
+        
+        // Calculate and update total amount
         const totalAmount = parseFloat(billingData.totalAmount) || 0;
         if (totalAmount !== parseFloat(existingData.total || 0)) {
             updateData.total = totalAmount;
         }
         
-        // Check if check-in date has changed - compare with time precision
+        // Check if check-in date has changed
         if (billingData.date && existingData.checkIn) {
             const newCheckIn = billingData.date instanceof Date ? billingData.date : new Date(billingData.date);
             const existingCheckIn = existingData.checkIn.toDate ? existingData.checkIn.toDate() : new Date(existingData.checkIn);
             
-            // Compare with time precision - convert to milliseconds for accurate comparison
+            // Compare with time precision
             if (newCheckIn.getTime() !== existingCheckIn.getTime()) {
                 updateData.checkIn = Timestamp.fromDate(newCheckIn);
             }
         }
         
-        // Check if check-out date has changed - compare with time precision
+        // Check if check-out date has changed
         if (billingData.checkOut && existingData.checkOut) {
             const newCheckOut = billingData.checkOut instanceof Date ? billingData.checkOut : new Date(billingData.checkOut);
             const existingCheckOut = existingData.checkOut.toDate ? existingData.checkOut.toDate() : new Date(existingData.checkOut);
             
-            // Compare with time precision - convert to milliseconds for accurate comparison
+            // Compare with time precision
             if (newCheckOut.getTime() !== existingCheckOut.getTime()) {
                 updateData.checkOut = Timestamp.fromDate(newCheckOut);
             }
         }
         
-        // Check if expenses have changed by comparing JSON strings
-        const existingExpensesJSON = JSON.stringify(existingData.additionalCharges || []);
+        // Check if expenses have changed
+        const existingExpensesJSON = JSON.stringify(existingData.expenses || []);
         const newExpensesJSON = JSON.stringify(billingData.expenses || []);
         
         if (existingExpensesJSON !== newExpensesJSON) {
-            updateData.additionalCharges = billingData.expenses || [];
+            updateData.expenses = billingData.expenses || [];
+        }
+        
+        // Update status fields
+        if (billingData.status && billingData.status !== existingData.status) {
+            updateData.status = billingData.status;
+        }
+        
+        if (billingData.paymentStatus && billingData.paymentStatus !== existingData.paymentStatus) {
+            updateData.paymentStatus = billingData.paymentStatus;
         }
         
         // Only proceed with update if there are changes

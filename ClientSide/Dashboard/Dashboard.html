@@ -175,8 +175,18 @@
       }
     </script>
     
-    <!-- User Drawer fallback script -->
-    <script src="userDrawer-fallback.js?v=1.3"></script>
+    <!-- User Drawer script -->
+    <script>
+      // Try to load user drawer as module first, with fallback to global function
+      import('../components/userDrawer.js')
+        .then(module => {
+          console.log('User drawer module loaded successfully');
+          // The module will auto-initialize
+        })
+        .catch(error => {
+          console.log('Module loading failed, user drawer should auto-initialize globally:', error);
+        });
+    </script>
     
     <!-- Booking History script - load this first -->
     <script src="bookingHistory.js?v=1.3"></script>
@@ -2181,7 +2191,7 @@
         }, 5000);
     </script>
 
-    <!-- Bridge script to expose Firebase instances for userDrawer-fallback.js -->
+    <!-- Bridge script to expose Firebase instances for userDrawer.js -->
     <script>
       // Create a bridge to make Firebase accessible to the fallback drawer script
       document.addEventListener('DOMContentLoaded', function() {
@@ -2343,7 +2353,7 @@
       });
     </script>
 
-    <script src="userDrawer-fallback.js?v=1.3"></script>
+    <!-- User drawer has auto-initialization in the main module -->
     
     <!-- Immediate UserDrawer Init Script -->
     <script>

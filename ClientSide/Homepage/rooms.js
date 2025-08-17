@@ -2557,12 +2557,12 @@
         }
         
         // Try to load the fallback script if it's not already loaded
-        if (!document.querySelector('script[src*="userDrawer-fallback.js"]')) {
-            console.log('Loading userDrawer-fallback.js script');
+        if (!document.querySelector('script[src*="../components/userDrawer.js"]')) {
+            console.log('Loading userDrawer.js script');
             const fallbackScript = document.createElement('script');
-            fallbackScript.src = 'userDrawer-fallback.js';
+            fallbackScript.src = '../components/userDrawer.js';
             fallbackScript.onload = function() {
-                console.log('userDrawer-fallback.js loaded successfully');
+                console.log('userDrawer.js loaded successfully');
                 if (typeof window.initializeUserDrawer === 'function') {
                     try {
                         // Get Firebase instances
@@ -2581,12 +2581,12 @@
                 }
             };
             fallbackScript.onerror = function() {
-                console.error('Failed to load userDrawer-fallback.js');
+                console.error('Failed to load userDrawer.js');
                 initializeSimpleUserDrawer();
             };
             document.head.appendChild(fallbackScript);
         } else {
-            console.log('userDrawer-fallback.js is already loaded, initializing directly');
+            console.log('userDrawer.js is already loaded, initializing directly');
             if (typeof window.initializeUserDrawer === 'function') {
                 try {
                     // Get Firebase instances

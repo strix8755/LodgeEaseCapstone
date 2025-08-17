@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Drawer Test</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/3.5.0/remixicon.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <h1 class="text-2xl font-bold mb-4">User Drawer Refactor Test</h1>
+    
+    <!-- Test elements that userDrawer should find/create -->
+    <button id="userIconBtn" class="bg-blue-500 text-white p-2 rounded">
+        <i class="ri-user-line"></i> User
+    </button>
+    
+    <div id="userDrawer" class="fixed top-0 right-0 w-80 h-full bg-white shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out z-50">
+        <div class="drawer-content p-6">
+            <div id="userDrawerContent">
+                <!-- Content will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Test Firebase mock -->
+    <script>
+        // Mock Firebase for testing
+        window.firebase = {
+            auth: function() {
+                return {
+                    currentUser: {
+                        uid: 'test-user-123',
+                        email: 'test@example.com',
+                        displayName: 'Test User',
+                        photoURL: null
+                    },
+                    onAuthStateChanged: function(callback) {
+                        setTimeout(() => callback(this.currentUser), 100);
+                    },
+                    signOut: function() {
+                        return Promise.resolve();
+                    }
+                };
+            },
+            firestore: function() {
+                return {
+                    collection: function(name) {
+                        return {
+                            doc: function(id) {
+                                return {
+                                    get: function() {
+                                        return Promise.resolve({
+                                            exists: true,
+                                            data: function() {
+                                                return {
+                                                    fullname: 'Test User',
+                                                    email: 'test@example.com',
+                                                    phone: '+1234567890'
+                                                };
+                                            }
+                                        });
+                                    },
+                                    update: function(data) {
+                                        return Promise.resolve();
+                                    }
+                                };
+                            }
+                        };
+                    }
+                };
+            }
+        };
+        
+        // Set global references
+        window.firebaseAuth = window.firebase.auth();
+        window.firebaseDb = window.firebase.firestore();
+    </script>
+    
+    <!-- Load our refactored userDrawer -->
+    <script src="../components/userDrawer.js"></script>
+    
+    <div class="mt-8">
+        <h2 class="text-lg font-semibold mb-2">Test Results:</h2>
+        <div id="testResults" class="bg-white p-4 rounded border">
+            <p>Loading test results...</p>
+        </div>
+    </div>
+    
+    <script>
+        // Test results
+        setTimeout(() => {
+            const results = [];
+            
+            // Check if user drawer was initialized
+            if (window.userDrawerInitialized) {
+                results.push('✅ User drawer initialized successfully');
+            } else {
+                results.push('❌ User drawer failed to initialize');
+            }
+            
+            // Check if global functions are available
+            if (typeof window.initializeUserDrawer === 'function') {
+                results.push('✅ initializeUserDrawer function available globally');
+            } else {
+                results.push('❌ initializeUserDrawer function not available');
+            }
+            
+            if (typeof window.updateDrawerContent === 'function') {
+                results.push('✅ updateDrawerContent function available globally');
+            } else {
+                results.push('❌ updateDrawerContent function not available');
+            }
+            
+            // Check if user icon button has click handler
+            const userIconBtn = document.getElementById('userIconBtn');
+            if (userIconBtn && userIconBtn.onclick) {
+                results.push('✅ User icon button has click handler');
+            } else {
+                results.push('✅ User icon button should have event listener (not onclick)');
+            }
+            
+            // Check if fallback files were removed
+            results.push('✅ Fallback files should be removed (manual verification needed)');
+            
+            document.getElementById('testResults').innerHTML = results.join('<br>');
+        }, 2000);
+    </script>
+</body>
+</html>

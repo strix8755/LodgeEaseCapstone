@@ -175,11 +175,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="button-group">
-                            <button @click="openModal()" class="primary-button">
-                                <i class="fas fa-plus"></i> Create New Bill
-                            </button>
-                        </div>
+
                     </div>
                 </div>
             </header>
@@ -237,7 +233,20 @@
                                     <button @click="viewBill(bill)" class="action-btn view-btn" title="View Details">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button @click="editBill(bill)" class="action-btn edit-btn" title="Edit Expenses">
+                                    <button 
+                                        v-if="canEditBill(bill)"
+                                        @click="editBill(bill)" 
+                                        class="action-btn edit-btn" 
+                                        title="Edit Expenses"
+                                    >
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button 
+                                        v-else
+                                        class="action-btn edit-btn disabled" 
+                                        title="Cannot edit - Bill is checked out, cancelled, or from a past date"
+                                        disabled
+                                    >
                                         <i class="fas fa-edit"></i>
                                     </button>
                                 </td>
@@ -255,102 +264,7 @@
             </section>
         </main>
 
-        <!-- Create Bill Modal -->
-        <div id="createBillModal" class="modal" v-show="showModal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Create New Bill</h2>
-                    <span class="close" @click="closeModal">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form @submit.prevent="submitBill">
-                        <div class="form-group">
-                            <label for="customerName">Customer Name:</label>
-                            <input type="text" id="customerName" v-model="newBill.customerName" required>
-                        </div>
-                        
-                        <!-- Booking Type Selection -->
-                        <div class="form-group">
-                            <label for="bookingType">Booking Type:</label>
-                            <select id="bookingType" v-model="newBill.bookingType" required @change="updateBookingTypeAndPricing">
-                                <option value="standard">Standard Rate (₱1,300/night)</option>
-                                <option value="night-promo">Night Promo (10PM-8AM) - ₱580</option>
-                                <option value="hourly">Hourly Rate</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Duration selector for hourly rates -->
-                        <div class="form-group" v-if="newBill.bookingType === 'hourly'">
-                            <label for="duration">Duration (Hours):</label>
-                            <input type="number" id="duration" v-model="newBill.duration" min="1" required @change="updateBookingTypeAndPricing">
-                            <label for="hourlyPrice" class="mt-2">Hourly Price (₱):</label>
-                            <input type="number" id="hourlyPrice" v-model="newBill.hourlyPrice" min="0" step="0.01" required @change="updateBookingTypeAndPricing">
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="billDate">Check-in:</label>
-                                <div class="date-time-container">
-                                    <input type="date" id="billDate" v-model="newBill.date" required @change="updateBookingTypeAndPricing">
-                                    <input type="time" id="billTime" v-model="newBill.checkInTime" @change="updateBookingTypeAndPricing">
-                                </div>
-                            </div>
-                            <div class="form-group" v-if="newBill.bookingType !== 'hourly'">
-                                <label for="billCheckOut">Check-out:</label>
-                                <div class="date-time-container">
-                                    <input type="date" id="billCheckOut" v-model="newBill.checkOut" :required="newBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
-                                    <input type="time" id="billCheckOutTime" v-model="newBill.checkOutTime" :required="newBill.bookingType === 'night-promo'" @change="updateBookingTypeAndPricing">
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Help text based on booking type -->
-                        <div class="help-text" v-if="newBill.bookingType === 'hourly'">
-                            <i class="fas fa-info-circle"></i> Enter duration and price for hourly rates.
-                        </div>
-                        
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="roomNumber">Room Number:</label>
-                                <input type="text" id="roomNumber" v-model="newBill.roomNumber" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="roomType">Room Type:</label>
-                                <input type="text" id="roomType" v-model="newBill.roomType">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="baseCost">Base Room Cost:</label>
-                                <input type="number" id="baseCost" v-model="newBill.baseCost" step="0.01" readonly>
-                                <small>(Automatically calculated based on booking type)</small>
-                            </div>
-                        </div>
-                        <div class="expenses-section">
-                            <h3>Additional Expenses</h3>
-                            <div v-for="(expense, index) in newBill.expenses" :key="index" class="expense-item">
-                                <input type="text" v-model="expense.description" placeholder="Description" required>
-                                <input type="number" v-model="expense.amount" placeholder="Amount" step="0.01" required>
-                                <button type="button" @click="removeExpense(index)" class="remove-expense">&times;</button>
-                            </div>
-                            <button type="button" @click="addExpense" class="button">Add Expense</button>
-                        </div>
-                        <div class="form-group total-amount">
-                            <strong>Total Amount: ₱{{ calculateTotal }}</strong>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" @click="closeModal" class="button cancel" :disabled="isSubmitting">Cancel</button>
-                            <button type="submit" class="button" :disabled="isSubmitting">
-                                <span v-if="isSubmitting">
-                                    <i class="fas fa-spinner fa-spin mr-2"></i>Creating...
-                                </span>
-                                <span v-else>Create Bill</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+
 
         <!-- View/Edit Bill Modal -->
         <div id="viewBillModal" class="modal" v-show="showViewModal">
@@ -364,7 +278,7 @@
                 <div class="modal-body" v-if="editingBill">
                     <form @submit.prevent="updateBill">
                         <div class="bill-source-indicator" v-if="editingBill.source">
-                            <span v-if="editingBill.source === 'bookings'" class="badge booking-badge">
+                            <span v-if="editingBill.source === 'everlodgebookings'" class="badge booking-badge">
                                 <i class="fas fa-bed"></i> Booking Charge
                             </span>
                             <span v-else class="badge custom-badge">

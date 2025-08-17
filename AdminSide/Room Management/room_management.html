@@ -474,14 +474,32 @@
                         <div class="form-section">
                             <h3>Booking Details</h3>
                             <div class="form-group">
-                                <label for="roomNumber">Room Number*</label>
-                                <input 
-                                    type="text" 
+                                <label for="roomNumber">Available Rooms*</label>
+                                <select 
                                     id="roomNumber" 
                                     v-model="manualBooking.roomNumber" 
                                     required 
-                                    placeholder="Enter room number"
+                                    :disabled="!manualBooking.checkInDate || roomAvailabilityLoading"
+                                    @change="onRoomSelectionChange"
                                 >
+                                    <option value="">{{ getRoomDropdownPlaceholder }}</option>
+                                    <option 
+                                        v-for="room in availableRooms" 
+                                        :key="room.roomNumber" 
+                                        :value="room.roomNumber"
+                                    >
+                                        Room {{ room.roomNumber }} ({{ room.roomType }})
+                                    </option>
+                                </select>
+                                <div class="help-text" v-if="!manualBooking.checkInDate">
+                                    <i class="fas fa-info-circle"></i> Please select check-in date first to see available rooms
+                                </div>
+                                <div class="help-text" v-if="manualBooking.checkInDate && availableRooms.length === 0 && !roomAvailabilityLoading">
+                                    <i class="fas fa-exclamation-triangle"></i> No rooms available for the selected dates
+                                </div>
+                                <div class="help-text" v-if="roomAvailabilityLoading && manualBooking.checkInDate">
+                                    <i class="fas fa-spinner fa-spin"></i> Checking room availability...
+                                </div>
                             </div>
 
                             <!-- Booking Type, Duration, and Status fields removed -->
@@ -575,9 +593,13 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="button" class="btn cancel-btn" @click="closeManualBookingModal">Cancel</button>
-                            <button type="submit" class="btn submit-btn" :disabled="loading || !isManualBookingFormValid">
-                                {{ loading ? 'Processing...' : 'Create Booking' }}
+                            <button type="button" class="btn cancel-btn" @click="closeManualBookingModal">
+                                <i class="fas fa-times"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn submit-btn" :disabled="loading || roomAvailabilityLoading || !isManualBookingFormValid">
+                                <i class="fas fa-check" v-if="!loading && !roomAvailabilityLoading"></i>
+                                <i class="fas fa-spinner fa-spin" v-if="loading || roomAvailabilityLoading"></i>
+                                {{ (loading || roomAvailabilityLoading) ? 'Processing...' : 'Create Booking' }}
                             </button>
                         </div>
                     </form>

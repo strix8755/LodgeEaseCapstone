@@ -1402,3 +1402,97 @@ tbody tr:hover {
         width: auto;
     }
 }
+
+/* Billing Action Buttons */
+.billing-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.billing-actions .action-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.charge-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+.charge-btn:hover {
+    background-color: #218838;
+    transform: translateY(-1px);
+}
+
+.discount-btn {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.discount-btn:hover {
+    background-color: #138496;
+    transform: translateY(-1px);
+}
+
+.payment-btn {
+    background-color: #007bff;
+    color: white;
+}
+
+.payment-btn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+/* Modal Footer Layout */
+.modal-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #dee2e6;
+}
+
+.modal-controls {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Enhanced Button Styling */
+.action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.action-btn:disabled:hover {
+    transform: none;
+}
+
+/* Responsive billing actions */
+@media (max-width: 768px) {
+    .billing-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .billing-actions .action-btn {
+        justify-content: center;
+        padding: 10px 16px;
+    }
+}

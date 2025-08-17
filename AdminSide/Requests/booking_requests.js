@@ -500,9 +500,6 @@ function createPaymentVerificationCard(requestId, request) {
         }
     }
     
-    // Get room type if available
-    const roomType = request.bookingDetails?.roomType || request.bookingDetails?.propertyDetails?.room || 'N/A';
-    
     card.innerHTML = `
         <div class="p-6">
             <div class="flex justify-between items-start mb-4">
@@ -540,10 +537,10 @@ function createPaymentVerificationCard(requestId, request) {
                     
                     <div class="flex items-center">
                         <svg class="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h4a1 1 0 011 1v5m-6 0V9a1 1 0 011-1h4a1 1 0 011 1v12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                         </svg>
-                        <span class="text-sm font-medium text-gray-700">Room:</span>
-                        <span class="text-sm text-gray-900 ml-1">${roomType}</span>
+                        <span class="text-sm font-medium text-gray-700">Reference:</span>
+                        <span class="text-sm text-gray-900 ml-1">${requestId}</span>
                     </div>
                 </div>
                 
@@ -583,12 +580,6 @@ function createPaymentVerificationCard(requestId, request) {
             </div>
             
             <div class="border-t pt-4">
-                <div class="flex items-center text-xs text-gray-500 mb-3">
-                    <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    Reference Number: ${requestId}
-                </div>
                 <div class="flex space-x-3">
                     <button id="approve-${requestId}" class="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
                         <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
